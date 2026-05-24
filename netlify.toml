@@ -1,10 +1,7 @@
 [build]
   command = "npm install"
   functions = "functions"
-
-[dev]
-  command = "npm install && netlify dev"
-  framework = "#custom"
+  publish = "."
 
 [[redirects]]
   from = "/*"
