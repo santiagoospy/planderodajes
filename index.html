@@ -331,138 +331,221 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
 <script src="https://unpkg.com/suncalc@1.9.2/suncalc.js"></script>
 
-<!-- Firebase -->
+<!-- Netlify Blobs Backend -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-  import {
-    getFirestore, doc, collection, getDoc, getDocs, setDoc, deleteDoc, onSnapshot, serverTimestamp,
-    query, where
-  } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+  // ── Netlify Blobs backend (reemplaza Firebase) ──────────────────
+  const API = '/.netlify/functions';
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyB1uYTWfpQBT1lPD23_9p6Qq2Etg2PMXdk",
-    authDomain: "produapp-dd9c3.firebaseapp.com",
-    projectId: "produapp-dd9c3",
-    storageBucket: "produapp-dd9c3.firebasestorage.app",
-    messagingSenderId: "200727250524",
-    appId: "1:200727250524:web:62a118150709a0b1904899",
-    measurementId: "G-DYHJ47F1D0"
-  };
+  async function apiCall(fn, method, body, params) {
+    const url = params ? `${API}/${fn}?${new URLSearchParams(params)}` : `${API}/${fn}`;
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  }
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
+  // Almacenamiento local como cache
+  function localGet(key) {
+    try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+  }
+  function localSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  }
+  function localDel(key) {
+    try { localStorage.removeItem(key); } catch {}
+  }
 
-  // ── Helpers de Firestore expuestos a window ──────────────────
-  window._db = db;
+  // Listeners para simular onSnapshot
+  const listeners = {};
+  function notify(channel, data) {
+    (listeners[channel] || []).forEach(cb => cb(data));
+  }
+
+  window._db = {};
   window._fb = {
     // ── Productoras ──
     async getProductora(id) {
-      const ref = doc(db, 'productoras', id);
-      const snap = await getDoc(ref);
-      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      try {
+        const p = await apiCall('data', 'GET', null, { store: 'productoras', key: id });
+        localSet(`productora:${id}`, p);
+        return p;
+      } catch {
+        return localGet(`productora:${id}`);
+      }
     },
     async saveProductora(prod) {
-      await setDoc(doc(db, 'productoras', prod.id), prod);
+      localSet(`productora:${prod.id}`, prod);
+      try { await apiCall('data', 'POST', { store: 'productoras', key: prod.id, data: prod }); }
+      catch(e) { console.warn('Save productora offline:', e.message); }
+      notify('productoras', null);
     },
     async productoraExists(id) {
-      const ref = doc(db, 'productoras', id);
-      const snap = await getDoc(ref);
-      return snap.exists();
+      const p = await window._fb.getProductora(id);
+      return !!p;
     },
     async getAllProductoras() {
-      const snap = await getDocs(collection(db, 'productoras'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'productoras', list: 'true' });
+        (res.items || []).forEach(p => localSet(`productora:${p.id}`, p));
+        return res.items || [];
+      } catch {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('productora:'));
+        return keys.map(k => JSON.parse(localStorage.getItem(k))).filter(Boolean);
+      }
     },
     async deleteProductora(id) {
-      await deleteDoc(doc(db, 'productoras', id));
+      localDel(`productora:${id}`);
+      try { await apiCall('data', 'POST', { store: 'productoras', key: id, delete: true }); } catch {}
+      notify('productoras', null);
     },
-    // Listar proyectos de UNA productora específica
+
+    // ── Proyectos ──
     onProjectsByProductora(productoraId, cb) {
-      const q = query(collection(db, 'projects'), where('productoraId', '==', productoraId));
-      return onSnapshot(q, snap => {
-        cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      const fn = async () => {
+        const all = await window._fb.getProjectsByProductora(productoraId);
+        cb(all);
+      };
+      fn();
+      const key = `projects:${productoraId}`;
+      if (!listeners[key]) listeners[key] = [];
+      listeners[key].push(cb);
+      return () => { listeners[key] = listeners[key].filter(c => c !== cb); };
     },
     async getProjectsByProductora(productoraId) {
-      const q = query(collection(db, 'projects'), where('productoraId', '==', productoraId));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'projects', list: 'true' });
+        const all = res.items || [];
+        all.forEach(p => localSet(`project:${p.id}`, p));
+        return all.filter(p => p.productoraId === productoraId);
+      } catch {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('project:'));
+        return keys.map(k => JSON.parse(localStorage.getItem(k))).filter(Boolean)
+          .filter(p => p.productoraId === productoraId);
+      }
     },
-    // Obtener UN proyecto específico por id
     async getProject(id) {
-      const ref = doc(db, 'projects', id);
-      const snap = await getDoc(ref);
-      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      try {
+        const p = await apiCall('data', 'GET', null, { store: 'projects', key: id });
+        localSet(`project:${id}`, p);
+        return p;
+      } catch {
+        return localGet(`project:${id}`);
+      }
     },
     onProject(id, cb) {
-      const ref = doc(db, 'projects', id);
-      return onSnapshot(ref, snap => {
-        cb(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-      });
+      window._fb.getProject(id).then(p => cb(p));
+      const key = `project:${id}`;
+      if (!listeners[key]) listeners[key] = [];
+      listeners[key].push(cb);
+      return () => { listeners[key] = listeners[key].filter(c => c !== cb); };
     },
-    // Proyectos (legacy — ya no se usa para listar todos)
     async getProjects() {
-      const snap = await getDocs(collection(db, 'projects'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'projects', list: 'true' });
+        const all = res.items || [];
+        all.forEach(p => localSet(`project:${p.id}`, p));
+        return all;
+      } catch {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('project:'));
+        return keys.map(k => JSON.parse(localStorage.getItem(k))).filter(Boolean);
+      }
     },
     async saveProject(proj) {
-      await setDoc(doc(db, 'projects', proj.id), proj);
+      localSet(`project:${proj.id}`, proj);
+      try { await apiCall('data', 'POST', { store: 'projects', key: proj.id, data: proj }); }
+      catch(e) { console.warn('Save project offline:', e.message); }
+      notify(`project:${proj.id}`, proj);
+      notify(`projects:${proj.productoraId}`, null);
     },
     onProjects(cb) {
-      return onSnapshot(collection(db, 'projects'), snap => {
-        cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      window._fb.getProjects().then(p => cb(p));
+      if (!listeners['allprojects']) listeners['allprojects'] = [];
+      listeners['allprojects'].push(cb);
+      return () => { listeners['allprojects'] = listeners['allprojects'].filter(c => c !== cb); };
     },
-    // Datos de departamento (gastos, citas, checklist, etc.)
+
+    // ── Dept data ──
     async getDeptData(projectId, deptKey, section) {
-      const ref = doc(db, 'projects', projectId, 'depts', `${deptKey}_${section}`);
-      const snap = await getDoc(ref);
-      return snap.exists() ? snap.data().items : null;
+      const storeKey = `${projectId}_${deptKey}_${section}`;
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'depts', key: storeKey });
+        localSet(`dept:${storeKey}`, res);
+        return res ? res.items : null;
+      } catch {
+        const d = localGet(`dept:${storeKey}`);
+        return d ? d.items : null;
+      }
     },
     async saveDeptData(projectId, deptKey, section, items) {
-      const ref = doc(db, 'projects', projectId, 'depts', `${deptKey}_${section}`);
-      await setDoc(ref, { items, updatedAt: serverTimestamp() });
+      const storeKey = `${projectId}_${deptKey}_${section}`;
+      const data = { items, updatedAt: new Date().toISOString() };
+      localSet(`dept:${storeKey}`, data);
+      try { await apiCall('data', 'POST', { store: 'depts', key: storeKey, data }); }
+      catch(e) { console.warn('Save dept offline:', e.message); }
+      notify(`dept:${storeKey}`, items);
     },
     onDeptData(projectId, deptKey, section, cb) {
-      const ref = doc(db, 'projects', projectId, 'depts', `${deptKey}_${section}`);
-      return onSnapshot(ref, snap => {
-        cb(snap.exists() ? snap.data().items : null);
-      });
+      window._fb.getDeptData(projectId, deptKey, section).then(d => cb(d));
+      const storeKey = `dept:${projectId}_${deptKey}_${section}`;
+      if (!listeners[storeKey]) listeners[storeKey] = [];
+      listeners[storeKey].push(cb);
+      return () => { listeners[storeKey] = listeners[storeKey].filter(c => c !== cb); };
     },
-    // Mensaje activo
+
+    // ── Mensajes ──
     async getMsg(projectId) {
-      const snap = await getDoc(doc(db, 'projects', projectId, 'meta', 'message'));
-      return snap.exists() ? snap.data() : null;
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'messages', key: projectId });
+        localSet(`msg:${projectId}`, res);
+        return res;
+      } catch {
+        return localGet(`msg:${projectId}`);
+      }
     },
     async saveMsg(projectId, msg) {
-      await setDoc(doc(db, 'projects', projectId, 'meta', 'message'), msg || { deleted: true });
+      const data = msg || { deleted: true };
+      localSet(`msg:${projectId}`, data);
+      try { await apiCall('data', 'POST', { store: 'messages', key: projectId, data }); } catch {}
+      notify(`msg:${projectId}`, data.deleted ? null : data);
     },
     onMsg(projectId, cb) {
-      return onSnapshot(doc(db, 'projects', projectId, 'meta', 'message'), snap => {
-        const d = snap.exists() ? snap.data() : null;
-        cb(d && !d.deleted ? d : null);
-      });
+      window._fb.getMsg(projectId).then(d => cb(d && !d.deleted ? d : null));
+      const key = `msg:${projectId}`;
+      if (!listeners[key]) listeners[key] = [];
+      listeners[key].push(cb);
+      return () => { listeners[key] = listeners[key].filter(c => c !== cb); };
     },
-    // Borrar proyecto — borra doc principal + subcolecciones
+
+    // ── Borrar proyecto ──
     async deleteProject(projectId) {
       try {
-        const deptsSnap = await getDocs(collection(db, 'projects', projectId, 'depts'));
-        for (const d of deptsSnap.docs) { await deleteDoc(d.ref); }
-        const metaSnap = await getDocs(collection(db, 'projects', projectId, 'meta'));
-        for (const d of metaSnap.docs) { await deleteDoc(d.ref); }
-        await deleteDoc(doc(db, 'projects', projectId));
+        localDel(`project:${projectId}`);
+        // Limpiar dept data y mensajes locales
+        Object.keys(localStorage).filter(k => k.includes(projectId)).forEach(k => localStorage.removeItem(k));
+        await apiCall('data', 'POST', { store: 'projects', key: projectId, delete: true });
         return true;
       } catch(e) {
         console.error('deleteProject error:', e);
         return false;
       }
     },
+
+    // ── Archivo de mensajes ──
     async getMsgArchive(projectId) {
-      const snap = await getDoc(doc(db, 'projects', projectId, 'meta', 'msgArchive'));
-      return snap.exists() ? (snap.data().items || []) : [];
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'msgarchive', key: projectId });
+        localSet(`msgarchive:${projectId}`, res);
+        return res ? (res.items || []) : [];
+      } catch {
+        const d = localGet(`msgarchive:${projectId}`);
+        return d ? (d.items || []) : [];
+      }
     },
     async saveMsgArchive(projectId, items) {
-      await setDoc(doc(db, 'projects', projectId, 'meta', 'msgArchive'), { items });
+      const data = { items };
+      localSet(`msgarchive:${projectId}`, data);
+      try { await apiCall('data', 'POST', { store: 'msgarchive', key: projectId, data }); } catch {}
     },
   };
 
