@@ -1,0 +1,12 @@
+[build]
+  command = "npm install"
+  functions = "functions"
+
+[dev]
+  command = "npm install && netlify dev"
+  framework = "#custom"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
