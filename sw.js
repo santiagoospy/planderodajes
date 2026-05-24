@@ -1,10 +1,7 @@
 const CACHE_NAME = 'planderodajes-v1';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
-  'https://unpkg.com/react@18/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'
+  '/index.html'
 ];
 
 // Instalar y cachear assets
@@ -40,44 +37,41 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // No cachear solicitudes a las funciones serverless (siempre network)
+  // No cachear solicitudes a las funciones serverless
   if (url.pathname.includes('/.netlify/functions/')) {
-    return event.respondWith(
+    event.respondWith(
+      fetch(request).catch(() => 
+        new Response('Offline - no cached response available', { status: 503 })
+      )
+    );
+    return;
+  }
+
+  // Para GET requests: network first
+  if (request.method === 'GET') {
+    event.respondWith(
       fetch(request)
-        .catch(() => new Response('Offline - no cached response available', { status: 503 }))
+        .then((response) => {
+          // Si es 200, cachear
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
+    return;
   }
 
-  // Para todo lo demás: network first, fallback a cache
+  // Para POST/PUT/DELETE: solo network
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Cachear respuestas GET exitosas
-        if (request.method === 'GET' && response.status === 200) {
-          const cache = caches.open(CACHE_NAME);
-          cache.then((c) => c.put(request, response.clone()));
-        }
-        return response;
-      })
-      .catch(() => {
-        // Si falla, intenta caché
-        return caches.match(request);
-      })
+    fetch(request).catch(() =>
+      new Response('Offline - cannot process request', { status: 503 })
+    )
   );
-});
-
-// Sincronización en background
-self.addEventListener('sync', (event) => {
-  console.log('[SW] Sincronización:', event.tag);
-  if (event.tag === 'sync-data') {
-    event.waitUntil(
-      self.clients.matchAll().then((clients) => {
-        clients.forEach((client) => {
-          client.postMessage({ type: 'SYNC_AVAILABLE' });
-        });
-      })
-    );
-  }
 });
 
 console.log('[SW] Service Worker listo');

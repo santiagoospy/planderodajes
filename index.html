@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#1a1714">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Plan de Rodajes">
   <meta name="description" content="Gestión de rodajes audiovisuales">
@@ -25,7 +26,7 @@
       --text-primary: #1a1714;
       --text-secondary: #555555;
       --color-primary: #0052CC;
-      --color-success: #CCFF00;
+      --color-success: #0fa87e;
       --color-danger: #FF0080;
     }
 
@@ -50,13 +51,14 @@
 
     header {
       background: var(--bg-secondary);
-      padding: 20px;
+      padding: 30px;
       border-radius: 8px;
       margin-bottom: 30px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    h1 { margin: 0; font-size: 32px; }
+    h1 { margin: 0; font-size: 32px; font-weight: 800; }
+    p { margin: 10px 0 0 0; color: var(--text-secondary); }
     
     .btn {
       background: var(--color-primary);
@@ -68,14 +70,11 @@
       font-weight: 600;
       cursor: pointer;
       transition: opacity 0.2s;
+      font-family: inherit;
     }
 
     .btn:hover { opacity: 0.9; }
-    
-    .btn-secondary {
-      background: var(--text-secondary);
-      margin-left: 10px;
-    }
+    .btn-secondary { background: var(--text-secondary); margin-left: 10px; }
 
     .projects-grid {
       display: grid;
@@ -98,7 +97,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .project-card h3 { margin: 0 0 10px 0; }
+    .project-card h3 { margin: 0 0 10px 0; font-size: 18px; }
     .project-card p { margin: 5px 0; font-size: 14px; color: var(--text-secondary); }
 
     .sync-status {
@@ -108,12 +107,48 @@
       background: var(--bg-secondary);
       padding: 12px 16px;
       border-radius: 6px;
-      font-size: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      font-weight: 500;
     }
 
-    .sync-status.online { color: #0fa87e; }
+    .sync-status.online { color: var(--color-success); }
     .sync-status.offline { color: #ff5722; }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-top: 3px solid var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .form-group {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
 
     @media (max-width: 768px) {
       .container { padding: 16px; }
@@ -125,50 +160,20 @@
 <body>
   <div id="root"></div>
 
-  <!-- React -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
   <script>
     // ════════════════════════════════════════════════════════════════
-    // STORAGE & SYNC SYSTEM
+    // DATA STORE (localStorage + Sync)
     // ════════════════════════════════════════════════════════════════
     
     class DataStore {
       constructor() {
-        this.db = null;
         this.isOnline = navigator.onLine;
         this.syncQueue = [];
         this.listeners = new Set();
-        this.initDB();
         this.setupSync();
-      }
-
-      initDB() {
-        // IndexedDB para mejor rendimiento que localStorage
-        const request = indexedDB.open('PlanDeRodajes', 1);
-        
-        request.onerror = () => {
-          console.warn('IndexedDB no disponible, usando localStorage');
-          this.useLocalStorage = true;
-        };
-
-        request.onsuccess = (event) => {
-          this.db = event.target.result;
-          
-          // Intentar sincronizar si estamos online
-          if (this.isOnline) this.syncAllProjects();
-        };
-
-        request.onupgradeneeded = (event) => {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains('projects')) {
-            db.createObjectStore('projects', { keyPath: 'id' });
-          }
-          if (!db.objectStoreNames.contains('productoras')) {
-            db.createObjectStore('productoras', { keyPath: 'id' });
-          }
-        };
       }
 
       setupSync() {
@@ -187,21 +192,29 @@
       }
 
       async saveProject(project) {
-        // Guardar localmente
-        await this.saveLocal('projects', project);
+        // Guardar localmente SIEMPRE
+        localStorage.setItem(`project:${project.id}`, JSON.stringify(project));
 
-        // Si estamos online, sincronizar con servidor
+        // Si online, intentar sincronizar
         if (this.isOnline) {
           try {
-            await fetch('/.netlify/functions/save-project', {
+            const res = await fetch('/.netlify/functions/save-project', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(project)
             });
-            console.log('✅ Proyecto sincronizado con servidor');
+            
+            if (res.ok) {
+              console.log('✅ Proyecto sincronizado');
+              this.syncQueue = this.syncQueue.filter(p => p.id !== project.id);
+            } else {
+              throw new Error('Server error');
+            }
           } catch (err) {
-            console.warn('⚠️ No se pudo sincronizar, guardado localmente:', err);
-            this.syncQueue.push(project);
+            console.warn('⚠️ No se pudo sincronizar:', err.message);
+            if (!this.syncQueue.find(p => p.id === project.id)) {
+              this.syncQueue.push(project);
+            }
           }
         } else {
           this.syncQueue.push(project);
@@ -211,105 +224,66 @@
       }
 
       async loadProject(id) {
-        // Intentar cargar del servidor primero si estamos online
+        // Intentar servidor primero si online
         if (this.isOnline) {
           try {
             const res = await fetch(`/.netlify/functions/load-project?id=${id}`);
             if (res.ok) {
               const project = await res.json();
-              await this.saveLocal('projects', project);
+              localStorage.setItem(`project:${project.id}`, JSON.stringify(project));
               return project;
             }
           } catch (err) {
-            console.warn('⚠️ No se pudo cargar del servidor:', err);
+            console.warn('⚠️ No se pudo cargar del servidor');
           }
         }
 
         // Cargar del almacenamiento local
-        return await this.loadLocal('projects', id);
+        const data = localStorage.getItem(`project:${id}`);
+        return data ? JSON.parse(data) : null;
       }
 
-      async listProjects(productoraId = null) {
+      async listProjects() {
+        let projects = [];
+
+        // Intentar servidor si online
         if (this.isOnline) {
           try {
-            const url = productoraId 
-              ? `/.netlify/functions/list-projects?productora_id=${productoraId}`
-              : '/.netlify/functions/list-projects';
-            const res = await fetch(url);
+            const res = await fetch('/.netlify/functions/list-projects');
             if (res.ok) {
-              const { projects } = await res.json();
-              // Guardar lista localmente
-              for (const p of projects) {
-                await this.saveLocal('projects', p);
-              }
-              return projects;
+              const { projects: serverProjects } = await res.json();
+              // Guardar localmente
+              serverProjects.forEach(p => {
+                localStorage.setItem(`project:${p.id}`, JSON.stringify(p));
+              });
+              return serverProjects;
             }
           } catch (err) {
-            console.warn('⚠️ No se pudo cargar lista:', err);
+            console.warn('⚠️ No se pudo cargar lista del servidor');
           }
         }
 
-        return await this.getAllLocal('projects');
+        // Cargar todos los locales
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('project:'));
+        return keys.map(k => JSON.parse(localStorage.getItem(k)));
       }
 
       async syncAllProjects() {
         for (const project of this.syncQueue) {
           try {
-            await fetch('/.netlify/functions/save-project', {
+            const res = await fetch('/.netlify/functions/save-project', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(project)
             });
-            this.syncQueue = this.syncQueue.filter(p => p.id !== project.id);
+            
+            if (res.ok) {
+              this.syncQueue = this.syncQueue.filter(p => p.id !== project.id);
+            }
           } catch (err) {
             console.warn('⚠️ Sync fallido para:', project.id);
           }
         }
-      }
-
-      async saveLocal(store, data) {
-        if (this.useLocalStorage) {
-          localStorage.setItem(`${store}:${data.id}`, JSON.stringify(data));
-          return;
-        }
-
-        return new Promise((resolve, reject) => {
-          const tx = this.db.transaction([store], 'readwrite');
-          const objStore = tx.objectStore(store);
-          const req = objStore.put(data);
-          req.onerror = () => reject(req.error);
-          req.onsuccess = () => resolve();
-        });
-      }
-
-      async loadLocal(store, id) {
-        if (this.useLocalStorage) {
-          const data = localStorage.getItem(`${store}:${id}`);
-          return data ? JSON.parse(data) : null;
-        }
-
-        return new Promise((resolve, reject) => {
-          const tx = this.db.transaction([store], 'readonly');
-          const objStore = tx.objectStore(store);
-          const req = objStore.get(id);
-          req.onerror = () => reject(req.error);
-          req.onsuccess = () => resolve(req.result);
-        });
-      }
-
-      async getAllLocal(store) {
-        if (this.useLocalStorage) {
-          const keys = Object.keys(localStorage).filter(k => k.startsWith(store + ':'));
-          return keys.map(k => JSON.parse(localStorage.getItem(k)));
-        }
-
-        return new Promise((resolve, reject) => {
-          const tx = this.db.transaction([store], 'readonly');
-          const objStore = tx.objectStore(store);
-          const req = objStore.getAll();
-          req.onerror = () => reject(req.error);
-          req.onsuccess = () => resolve(req.result);
-        });
       }
 
       subscribe(callback) {
@@ -336,18 +310,18 @@
       const [showForm, setShowForm] = useState(false);
       const [newProjectName, setNewProjectName] = useState('');
       const [loading, setLoading] = useState(true);
+      const [syncCount, setSyncCount] = useState(0);
 
       useEffect(() => {
-        // Cargar proyectos al iniciar
         (async () => {
           const loaded = await store.listProjects();
           setProjects(loaded || []);
           setLoading(false);
         })();
 
-        // Suscribirse a cambios de sincronización
-        const unsubscribe = store.subscribe(({ isOnline }) => {
+        const unsubscribe = store.subscribe(({ isOnline, queue }) => {
           setIsOnline(isOnline);
+          setSyncCount(queue);
         });
 
         return unsubscribe;
@@ -374,9 +348,9 @@
         setShowForm(false);
       };
 
-      const handleDeleteProject = async (id) => {
+      const handleDeleteProject = (id) => {
         setProjects(projects.filter(p => p.id !== id));
-        // TODO: Implementar función de eliminación en servidor
+        localStorage.removeItem(`project:${id}`);
       };
 
       if (loading) {
@@ -384,7 +358,10 @@
           <div className="container">
             <header>
               <h1>Plan de Rodaje</h1>
-              <p style={{ margin: '10px 0 0 0', color: 'var(--text-secondary)' }}>Cargando...</p>
+              <div className="loading">
+                <div className="spinner"></div>
+                <p>Cargando proyectos...</p>
+              </div>
             </header>
           </div>
         );
@@ -396,64 +373,64 @@
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h1>Plan de Rodaje</h1>
-                <p style={{ margin: '10px 0 0 0', color: 'var(--text-secondary)' }}>
-                  {projects.length} proyecto{projects.length !== 1 ? 's' : ''}
-                </p>
+                <p>{projects.length} proyecto{projects.length !== 1 ? 's' : ''}</p>
               </div>
               <button className="btn" onClick={() => setShowForm(!showForm)}>
-                {showForm ? '✕ Cancelar' : '+ Nuevo Proyecto'}
+                {showForm ? '✕ Cancelar' : '+ Nuevo'}
               </button>
             </div>
 
             {showForm && (
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <div className="form-group">
                 <input
                   type="text"
                   placeholder="Nombre del proyecto..."
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateProject()}
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit'
-                  }}
+                  autoFocus
                 />
                 <button className="btn" onClick={handleCreateProject}>Crear</button>
               </div>
             )}
           </header>
 
-          <div className="projects-grid">
-            {projects.map(project => (
-              <div key={project.id} className="project-card">
-                <h3>{project.name}</h3>
-                <p>📅 {new Date(project.created_at).toLocaleDateString('es-ES')}</p>
-                <p>🎬 ID: {project.id.substring(0, 8)}...</p>
-                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                  <button 
-                    className="btn"
-                    style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
-                  >
-                    Abrir
-                  </button>
-                  <button 
-                    className="btn btn-secondary"
-                    style={{ padding: '8px 12px', fontSize: '13px' }}
-                    onClick={() => handleDeleteProject(project.id)}
-                  >
-                    Eliminar
-                  </button>
+          {projects.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+              <p style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                📁 No hay proyectos. ¡Crea uno para empezar!
+              </p>
+            </div>
+          ) : (
+            <div className="projects-grid">
+              {projects.map(project => (
+                <div key={project.id} className="project-card">
+                  <h3>{project.name}</h3>
+                  <p>📅 {new Date(project.created_at).toLocaleDateString('es-ES')}</p>
+                  <p>🎬 {project.id.substring(0, 12)}...</p>
+                  <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                    <button 
+                      className="btn"
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
+                    >
+                      Abrir
+                    </button>
+                    <button 
+                      className="btn btn-secondary"
+                      style={{ padding: '8px 12px', fontSize: '13px' }}
+                      onClick={() => handleDeleteProject(project.id)}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className={`sync-status ${isOnline ? 'online' : 'offline'}`}>
-            {isOnline ? '🟢 Online' : '🔴 Offline'} - Datos guardados localmente y en la nube
+            {isOnline ? '🟢 Online' : '🔴 Offline'}
+            {syncCount > 0 && ` (${syncCount} pendientes)`}
           </div>
         </div>
       );
@@ -462,14 +439,14 @@
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 
     // ════════════════════════════════════════════════════════════════
-    // SERVICE WORKER
+    // SERVICE WORKER REGISTRATION
     // ════════════════════════════════════════════════════════════════
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
           const reg = await navigator.serviceWorker.register('/sw.js');
-          console.log('✅ Service Worker registrado:', reg.scope);
+          console.log('✅ SW registrado:', reg.scope);
         } catch (err) {
           console.log('⚠️ SW error:', err.message);
         }
