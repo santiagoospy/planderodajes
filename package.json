@@ -1,14 +1,9 @@
 {
   "name": "planderodajes",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Gestión de rodajes audiovisuales",
   "type": "module",
-  "scripts": {
-    "dev": "netlify dev",
-    "build": "echo 'No build needed'",
-    "deploy": "git add . && git commit -m 'Deploy' && git push"
-  },
   "dependencies": {
-    "@netlify/database": "^1.0.0"
+    "@netlify/blobs": "^10.7.8"
   }
 }

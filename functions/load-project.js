@@ -1,6 +1,6 @@
-import { getDatabase } from "@netlify/database";
+import { getStore } from "@netlify/blobs";
 
-export default async (req, context) => {
+export default async (req) => {
   if (req.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
   }
@@ -12,35 +12,26 @@ export default async (req, context) => {
     if (!projectId) {
       return new Response(
         JSON.stringify({ error: "Project ID required" }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const db = getDatabase();
+    const store = getStore("projects");
+    const project = await store.get(projectId, { type: "json" });
 
-    const result = await db.sql`
-      SELECT id, productora_id, name, data, created_at, updated_at
-      FROM projects
-      WHERE id = ${projectId}
-    `;
-
-    if (result.length === 0) {
+    if (!project) {
       return new Response(
         JSON.stringify({ error: "Project not found" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const project = result[0];
     return new Response(
-      JSON.stringify({
-        ...project,
-        data: typeof project.data === "string" ? JSON.parse(project.data) : project.data
-      }),
+      JSON.stringify(project),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error loading project:", error);
+    console.error("Error loading:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
