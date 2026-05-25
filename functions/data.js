@@ -1,61 +1,54 @@
+// functions/data.js
 import { getStore } from "@netlify/blobs";
 
-export default async (req) => {
+export default async (req, context) => {
   const url = new URL(req.url);
-  const storeName = url.searchParams.get("store") || "projects";
-  const key = url.searchParams.get("key");
-  const list = url.searchParams.get("list");
+  const storeName = url.searchParams.get("store");
+  const key       = url.searchParams.get("key");
+  const isList    = url.searchParams.get("list") === "true";
 
-  const store = getStore(storeName);
+  if (!storeName) {
+    return new Response("Missing store", { status: 400 });
+  }
 
-  // GET: leer o listar
+  const store = getStore({ name: storeName, consistency: "strong" });
+
+  // ── GET ──────────────────────────────────────────────────────
   if (req.method === "GET") {
+    if (isList) {
+      const { blobs } = await store.list();
+      const items = await Promise.all(
+        blobs.map(async ({ key: k }) => {
+          try { return await store.get(k, { type: "json" }); }
+          catch { return null; }
+        })
+      );
+      return Response.json({ items: items.filter(Boolean) });
+    }
+    if (!key) return new Response("Missing key", { status: 400 });
     try {
-      if (list === "true") {
-        const { blobs } = await store.list();
-        const items = [];
-        for (const blob of blobs) {
-          const item = await store.get(blob.key, { type: "json" });
-          if (item) items.push(item);
-        }
-        return Response.json({ items });
-      }
-
-      if (!key) {
-        return Response.json({ error: "key required" }, { status: 400 });
-      }
-
-      const data = await store.get(key, { type: "json" });
-      if (!data) {
-        return Response.json({ error: "not found" }, { status: 404 });
-      }
-      return Response.json(data);
-    } catch (error) {
-      console.error("GET error:", error);
-      return Response.json({ error: error.message }, { status: 500 });
+      const val = await store.get(key, { type: "json" });
+      if (val === null) return new Response("Not found", { status: 404 });
+      return Response.json(val);
+    } catch {
+      return new Response("Not found", { status: 404 });
     }
   }
 
-  // POST: guardar o borrar
+  // ── POST ─────────────────────────────────────────────────────
   if (req.method === "POST") {
-    try {
-      const body = await req.json();
+    const body = await req.json();
+    // body = { store, key, data } o { store, key, delete: true }
+    const itemKey = body.key;
+    if (!itemKey) return new Response("Missing key", { status: 400 });
 
-      if (body.delete && body.key) {
-        await store.delete(body.key);
-        return Response.json({ success: true, deleted: body.key });
-      }
-
-      if (!body.key || !body.data) {
-        return Response.json({ error: "key and data required" }, { status: 400 });
-      }
-
-      await store.setJSON(body.key, body.data);
-      return Response.json({ success: true, key: body.key });
-    } catch (error) {
-      console.error("POST error:", error);
-      return Response.json({ error: error.message }, { status: 500 });
+    if (body.delete) {
+      await store.delete(itemKey);
+      return Response.json({ ok: true });
     }
+
+    await store.set(itemKey, JSON.stringify(body.data));
+    return Response.json({ ok: true });
   }
 
   return new Response("Method not allowed", { status: 405 });
