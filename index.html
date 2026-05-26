@@ -86,22 +86,22 @@
 
   /* TEMA OSCURO */
   [data-theme="dark"] {
-    --bg-primary: #1a1714;
-    --bg-secondary: #2a2420;
-    --bg-tertiary: #333028;
-    --bg-header: #2a2420;
-    --bg-hover: #3a3430;
-    --bg-accent: #3a3430;
+    --bg-primary: #002a38;
+    --bg-secondary: #003d52;
+    --bg-tertiary: #004a62;
+    --bg-header: #002030;
+    --bg-hover: #004060;
+    --bg-accent: #005070;
     --bg-success: #0fa87e15;
     --bg-error: #d94f2b15;
-    --bg-card-dark: #404038;      /* Gris oscuro para tarjetas en tema oscuro */
-    --bg-card-dark-secondary: #4a4844; /* Gris más claro para tema oscuro */
+    --bg-card-dark: #003345;
+    --bg-card-dark-secondary: #004055;
     
-    --text-primary: #f5f2ed;
-    --text-secondary: #d0ccca;
-    --text-tertiary: #a8a49f;
-    --text-light: #8a8682;
-    --text-muted: #6b6762;
+    --text-primary: #e8f6ff;
+    --text-secondary: #8cc5d8;
+    --text-tertiary: #5a9ab0;
+    --text-light: #4a8aa0;
+    --text-muted: #3a7a90;
     --text-pale: #5a5652;
     --text-on-dark-bg: #f5f2ed;   /* Texto claro sobre fondo oscuro */
     
@@ -6141,12 +6141,12 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
+    <div style={{ minHeight:'100vh', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', display:'flex', flexDirection:'column' }} className="slide-r">
       <div style={{ flex:1, overflowY:'auto' }}>
-        {/* Header */}
-        <div style={{ background:'var(--bg-secondary)', padding:'16px 20px 20px 20px', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <h1 style={{ fontSize:24, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', margin:0 }}>
+        {/* Header Clear */}
+        <div style={{ padding:'52px 20px 20px', position:'sticky', top:0, zIndex:10, background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+            <h1 style={{ fontSize:26, fontWeight:800, color:'#fff', fontFamily:'inherit', margin:0, letterSpacing:'-0.5px' }}>
               {editingProjectName ? (
                 <input 
                   type="text" 
@@ -6157,36 +6157,35 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                     onUpdateProject({ ...project, name: newProjectName }); 
                   }} 
                   autoFocus 
-                  style={{ fontFamily:'inherit', fontSize:24, fontWeight:700, border:'1px solid var(--color-secondary)', borderRadius:8, padding:'4px 8px', background:'var(--bg-primary)' }} 
+                  style={{ fontFamily:'inherit', fontSize:22, fontWeight:800, border:'none', borderBottom:'2px solid rgba(255,255,255,0.5)', borderRadius:0, padding:'4px 0', background:'transparent', color:'#fff', outline:'none', width:'100%' }} 
                 /> 
               ) : (
                 <span onClick={() => setEditingProjectName(true)} style={{ cursor:'pointer' }}>{project.name}</span>
               )}
             </h1>
-            <div style={{ display:'flex', gap:8 }}>
-              <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:0 }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
+            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+              <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:16, cursor:'pointer', padding:'6px 8px', borderRadius:8 }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
                 {isAdmin ? '🔓' : '🔒'}
               </button>
-              <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} className="tap" style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', padding:0 }}>{theme === 'light' ? '🌙' : '☀️'}</button>
               {project.productoraId && (
-                <button onClick={() => window.location.href = `/?pid=${project.productoraId}`} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', padding:'4px 8px', borderRadius:6, border:'1px solid var(--border-light)' }} title="Volver a productora">
+                <button onClick={() => window.location.href = `/?pid=${project.productoraId}`} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:12, color:'rgba(255,255,255,0.85)', cursor:'pointer', fontFamily:'inherit', padding:'6px 10px', borderRadius:8 }} title="Volver a productora">
                   ← Productora
                 </button>
               )}
-              <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', padding:'4px 8px', borderRadius:6, border:'1px solid var(--border-light)' }} title="Volver a inicio">
-                🏠 Inicio
+              <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:14, cursor:'pointer', padding:'6px 8px', borderRadius:8 }} title="Inicio">
+                🏠
               </button>
             </div>
           </div>
-          <div style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit' }}>{project.days.length} días · {project.days.reduce((s, d) => s + d.scenes.length, 0)} escenas</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', fontFamily:'inherit' }}>{project.client||''}{project.client?' · ':''}{project.days.length} días · {project.days.reduce((s, d) => s + d.scenes.length, 0)} escenas</div>
         </div>
 
         {/* Contenido principal */}
-        <div style={{ padding:'20px 16px 32px' }}>
+        <div style={{ padding:'16px 16px 48px' }}>
 
           {/* 📸 FOTO DE PORTADA */}
           {project.logo ? (
-            <div style={{ position:'relative', width:'100%', marginBottom:20, height:200, overflow:'hidden', borderRadius:12, boxShadow:'4px 4px 0px rgba(0,0,0,0.15)' }}>
+            <div style={{ position:'relative', width:'100%', marginBottom:20, height:200, overflow:'hidden', borderRadius:14 }}>
               <img src={project.logo} alt="Portada" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
               {isAdmin && (
                 <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ position:'absolute', top:8, right:8, width:28, height:28, borderRadius:'50%', background:'rgba(0,0,0,0.7)', border:'none', color:'#fff', fontSize:14, cursor:'pointer', fontWeight:700 }}>✕</button>
@@ -6197,22 +6196,20 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               display:'flex', 
               alignItems:'center', 
               justifyContent:'center', 
-              gap:6, 
-              background:'#1FB955',
-              backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-              border:'none', 
-              borderRadius:0, 
-              padding:'40px 20px', 
+              gap:8, 
+              background:'rgba(255,255,255,0.12)',
+              border:'1.5px dashed rgba(255,255,255,0.3)', 
+              borderRadius:14, 
+              padding:'32px 20px', 
               cursor:'pointer', 
               fontFamily:'Inter, sans-serif', 
               fontSize:14, 
-              fontWeight:900,
-              color:'#0a0a0a', 
+              fontWeight:600,
+              color:'rgba(255,255,255,0.8)', 
               width:'100%', 
-              marginBottom:20, 
-              minHeight:120,
-              boxShadow:'4px 4px 0px rgba(0,0,0,0.3)',
-              letterSpacing:'0.05em'
+              marginBottom:16, 
+              minHeight:100,
+              boxSizing:'border-box'
             }}>
               📸 SUBIR FOTO DE PORTADA
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
@@ -6230,114 +6227,73 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </label>
           ))}
 
-          {/* 📊 CINTA VERDE - PROGRESO DE GRABACIÓN */}
-          <div style={{ 
-            background:'#16A34A',
-            backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-            padding:'18px 20px',
-            marginBottom:20,
-            boxShadow:'4px 4px 0px rgba(0,0,0,0.3)'
-          }}>
+          {/* PROGRESO - Clear style */}
+          <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
             <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-              <div style={{ position:'relative', width:60, height:60, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <ProgressRing pct={pct} size={60} stroke={6} color='#0a0a0a'/>
+              <div style={{ position:'relative', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <ProgressRing pct={pct} size={52} stroke={5} color='rgba(255,255,255,0.9)'/>
                 <div style={{ position:'absolute', textAlign:'center' }}>
-                  <div style={{ fontSize:14, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', lineHeight:1 }}>{doneAll}</div>
-                  <div style={{ fontSize:8, color:'#0a0a0a', fontFamily:'Inter, sans-serif', opacity:0.7 }}>/{allScenes.length}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:'#fff', lineHeight:1 }}>{doneAll}</div>
+                  <div style={{ fontSize:7, color:'rgba(255,255,255,0.6)' }}>/{allScenes.length}</div>
                 </div>
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:11, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.05em', fontWeight:700, marginBottom:6 }}>GRABACIÓN COMPLETADA</div>
-                <div style={{ display:'flex', alignItems:'baseline', gap:12 }}>
-                  <div style={{ fontSize:32, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', lineHeight:1 }}>{Math.round(pct*100)}%</div>
-                  <div style={{ fontSize:16, fontWeight:700, color:'#0a0a0a', fontFamily:'inherit' }}>{project.name}</div>
-                </div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', letterSpacing:'0.08em', fontWeight:600, marginBottom:3 }}>GRABACIÓN COMPLETADA</div>
+                <div style={{ fontSize:28, fontWeight:800, color:'#fff', lineHeight:1 }}>{Math.round(pct*100)}%</div>
               </div>
             </div>
           </div>
 
-          {/* 💬 CINTA VERDE OSCURO - MENSAJES */}
+          {/* MENSAJE GENERAL - Clear style */}
           {msg ? (
-            <div style={{ 
-              background:'#15803D',
-              backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-              padding:'14px 16px',
-              marginBottom:20,
-              boxShadow:'4px 4px 0px rgba(0,0,0,0.3)'
-            }}>
-              <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
-                <span style={{ fontSize:20 }}>📢</span>
+            <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
+              <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:10 }}>
+                <span style={{ fontSize:18 }}>📢</span>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:10, color:'#0a0a0a', letterSpacing:'0.08em', fontFamily:'Inter, sans-serif', marginBottom:4, fontWeight:700 }}>MENSAJE GENERAL</div>
-                  <div style={{ fontSize:13, color:'#0a0a0a', fontFamily:'Inter, sans-serif', lineHeight:1.5 }}>{msg.text}</div>
-                  <div style={{ fontSize:10, color:'#0a0a0a', fontFamily:'Inter, sans-serif', marginTop:4, opacity:0.7 }}>{new Date(msg.ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', fontFamily:'Inter, sans-serif', marginBottom:3, fontWeight:600 }}>MENSAJE GENERAL</div>
+                  <div style={{ fontSize:13, color:'#fff', fontFamily:'Inter, sans-serif', lineHeight:1.5 }}>{msg.text}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', fontFamily:'Inter, sans-serif', marginTop:4 }}>{new Date(msg.ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}</div>
                 </div>
-                {isAdmin && <button onClick={archiveMsg} style={{ background:'none', border:'none', color:'#0a0a0a', fontSize:16, cursor:'pointer', padding:0, fontWeight:700 }} title="Archivar mensaje">✕</button>}
+                {isAdmin && <button onClick={archiveMsg} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:16, cursor:'pointer', padding:0 }} title="Archivar">✕</button>}
               </div>
-
-              {/* ACUSES DE LECTURA POR DEPARTAMENTO */}
               {Object.keys(project.depts).length > 0 && (
-                <div style={{ borderTop:'1px solid rgba(0,0,0,0.2)', paddingTop:10 }}>
-                  <div style={{ fontSize:10, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.06em', marginBottom:8, fontWeight:700, opacity:0.8 }}>ACUSE DE LECTURA</div>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                <div style={{ borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:10 }}>
+                  <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', letterSpacing:'0.08em', marginBottom:7, fontWeight:600 }}>ACUSE DE LECTURA</div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
                     {Object.entries(project.depts).map(([k,m]) => {
                       const acked = msg.acks.includes(k);
                       return (
-                        <button 
-                          key={k} 
-                          onClick={() => ackMsg(k)} 
-                          style={{ 
-                            display:'flex', 
-                            alignItems:'center', 
-                            gap:4,
-                            fontFamily:'Inter, sans-serif', 
-                            fontSize:10, 
-                            fontWeight:900, 
-                            padding:'5px 10px', 
-                            cursor:'pointer', 
-                            border:'2px solid #0a0a0a',
-                            background: acked ? '#0a0a0a' : 'rgba(255,255,255,0.4)', 
-                            color: acked ? '#1FB955' : '#0a0a0a',
-                            letterSpacing:'0.04em'
-                          }}>
-                          {acked ? '✓ ' : ''}{m.label.toUpperCase()}
+                        <button key={k} onClick={() => ackMsg(k)}
+                          style={{ fontFamily:'Inter, sans-serif', fontSize:10, fontWeight:700, padding:'4px 10px', cursor:'pointer',
+                            border:'none', borderRadius:20,
+                            background: acked ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)',
+                            color: acked ? '#005a72' : 'rgba(255,255,255,0.7)' }}>
+                          {acked ? '✓ ' : ''}{m.label}
                         </button>
                       );
                     })}
                   </div>
-                  <div style={{ fontSize:10, color:'#0a0a0a', fontFamily:'Inter, sans-serif', marginTop:8, opacity:0.7 }}>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginTop:7 }}>
                     {msg.acks.length}/{Object.keys(project.depts).length} departamentos confirmaron
                   </div>
                 </div>
               )}
             </div>
           ) : (isAdmin && !showMsgForm && (
-            <button onClick={() => setShowMsgForm(true)} style={{ 
-              width:'100%', 
-              fontFamily:'Inter, sans-serif', 
-              fontSize:13, 
-              fontWeight:900,
-              color:'#0a0a0a', 
-              background:'#15803D',
-              backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-              border:'none', 
-              padding:'14px 16px', 
-              cursor:'pointer', 
-              marginBottom:20,
-              boxShadow:'4px 4px 0px rgba(0,0,0,0.3)',
-              letterSpacing:'0.05em',
-              textAlign:'left'
-            }}>
-              📢 ESCRIBIR MENSAJE GENERAL
+            <button onClick={() => setShowMsgForm(true)}
+              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.7)',
+                background:'rgba(0,0,0,0.12)', border:'1px dashed rgba(255,255,255,0.2)', borderRadius:14,
+                padding:'13px 16px', cursor:'pointer', marginBottom:16, textAlign:'left' }}>
+              📢 Escribir mensaje general
             </button>
           ))}
           {isAdmin && showMsgForm && (
-            <div style={{ background:'#15803D', padding:16, marginBottom:20, boxShadow:'4px 4px 0px rgba(0,0,0,0.3)' }}>
+            <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:14, padding:16, marginBottom:16 }}>
               <textarea value={msgDraft} onChange={e => setMsgDraft(e.target.value)} placeholder="Mensaje para el equipo..." rows={3} autoFocus
-                style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, background:'#fff', border:'2px solid #0a0a0a', padding:'10px 12px', color:'#0a0a0a', outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
+                style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'10px 12px', color:'#fff', outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={() => { setShowMsgForm(false); setMsgDraft(''); }} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background:'#0a0a0a', color:'#fff', border:'none', padding:'10px', cursor:'pointer' }}>CANCELAR</button>
-                <button onClick={postMsg} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:900, background:'#0a0a0a', color:'#1FB955', border:'none', padding:'10px', cursor:'pointer' }}>PUBLICAR</button>
+                <button onClick={() => { setShowMsgForm(false); setMsgDraft(''); }} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:600, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.6)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
+                <button onClick={postMsg} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#005a72', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Publicar</button>
               </div>
             </div>
           )}
@@ -6347,38 +6303,31 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             <WeatherWidget project={project} isAdmin={isAdmin} onUpdateProject={onUpdateProject}/>
           </div>
 
-          {/* Sección de Departamentos - CARPETAS MINIMALISTAS */}
+          {/* DEPARTAMENTOS - Clear style, carpetas color por dept + borde blanco */}
           {Object.keys(project.depts).length > 0 && (
-            <div style={{ marginBottom:24 }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-                <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:500 }}>DEPARTAMENTOS</div>
-                {isAdmin && <button onClick={() => setShowAddDept(true)} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:'var(--color-primary)', background:'none', border:'1px solid #d94f2b44', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:700 }}>+ Agregar</button>}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:600 }}>DEPARTAMENTOS</div>
+                {isAdmin && <button onClick={() => setShowAddDept(true)} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:'rgba(255,255,255,0.7)', background:'rgba(0,0,0,0.15)', border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>+ Agregar</button>}
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(75px, 1fr))', gap:'24px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(72px, 1fr))', gap:'16px' }}>
                 {Object.entries(project.depts).map(([k,m]) => {
-                  // Orden específico de departamentos
                   const order = ['produccion', 'direccion', 'locaciones', 'arte', 'fotografia', 'camara', 'drone', 'sonido'];
                   const idx = order.indexOf(k);
                   const sortIdx = idx >= 0 ? idx : 999 + Object.keys(project.depts).indexOf(k);
                   return { key: k, meta: m, sortIdx };
                 }).sort((a, b) => a.sortIdx - b.sortIdx).map(({ key: k, meta: m }) => {
-                  // Color de carpeta según departamento
-                  const folderColor = k === 'produccion' ? '#F97316' : '#FCD34D';
-                  const textColor = document.documentElement.getAttribute('data-theme') === 'dark' ? '#d0ccca' : '#4a4a4a';
-                  
+                  const folderColor = m.color || '#F97316';
                   return (
                     <div key={k} style={{ cursor:'pointer', position:'relative' }}>
-                      <svg viewBox="0 0 120 100" style={{ height:'67.5px', width:'100%', filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.15))', marginBottom:'6px' }} onClick={() => onSelectDept(k)}>
-                        {/* Tab izquierdo (pestañita) */}
-                        <path d="M 10 30 L 35 30 L 40 18 L 10 18 Z" fill={folderColor} stroke="none"/>
-                        {/* Cuerpo principal de la carpeta */}
-                        <path d="M 10 28 L 10 85 Q 10 90 15 90 L 105 90 Q 110 90 110 85 L 110 35 Q 110 30 105 30 L 40 30 L 35 18 Q 35 15 30 15 L 15 15 Q 10 15 10 18 Z" fill={folderColor} stroke="none"/>
-                        {/* Brillo/luz en la carpeta */}
-                        <path d="M 15 35 L 100 35 Q 105 35 105 40 L 105 50 Q 100 45 50 45 Q 20 45 15 50 Z" fill="rgba(255,255,255,0.3)" stroke="none"/>
+                      <svg viewBox="0 0 120 100" style={{ height:'60px', width:'100%', marginBottom:'5px' }} onClick={() => onSelectDept(k)}>
+                        <path d="M 10 30 L 35 30 L 40 18 L 10 18 Z" fill={folderColor} stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
+                        <path d="M 10 28 L 10 85 Q 10 90 15 90 L 105 90 Q 110 90 110 85 L 110 35 Q 110 30 105 30 L 40 30 L 35 18 Q 35 15 30 15 L 15 15 Q 10 15 10 18 Z" fill={folderColor} stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
+                        <path d="M 10 30 L 110 30 L 110 38 Q 60 44 10 38 Z" fill="rgba(255,255,255,0.15)" stroke="none"/>
+                        <text x="60" y="68" textAnchor="middle" fontSize="26" fill="rgba(255,255,255,0.9)">{m.icon}</text>
                       </svg>
-                      {/* Texto debajo */}
-                      <div style={{ fontSize:'9px', fontWeight:900, color:textColor, textAlign:'center', letterSpacing:'0.02em', lineHeight:1.2 }}>{m.label.toUpperCase()}</div>
-                      {isAdmin && <button onClick={() => removeDept(k)} style={{ position:'absolute', top:-8, right:-8, width:24, height:24, borderRadius:'50%', background:'#0a0a0a', border:'2px solid #fff', color:'#ff6b6b', fontSize:12, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>✕</button>}
+                      <div style={{ fontSize:'9px', fontWeight:700, color:'rgba(255,255,255,0.85)', textAlign:'center', letterSpacing:'0.01em', lineHeight:1.2 }}>{m.label}</div>
+                      {isAdmin && <button onClick={() => removeDept(k)} style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>✕</button>}
                     </div>
                   );
                 })}
@@ -6386,12 +6335,12 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </div>
           )}
 
-          {/* Sección de Días - CINTAS VERDES EN DEGRADÉ */}
+          {/* DÍAS DE RODAJE - Clear style */}
           {project.days.length > 0 && (
-            <div style={{ marginBottom:24 }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.12em', fontFamily:'Inter, sans-serif' }}>DÍAS DE RODAJE</div>
-                {isAdmin && <button onClick={addDay} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:'var(--color-primary)', background:'none', border:`1px solid var(--color-primary)44`, borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:700 }}>+ Agregar día</button>}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:600 }}>DÍAS DE RODAJE</div>
+                {isAdmin && <button onClick={addDay} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:'rgba(255,255,255,0.7)', background:'rgba(0,0,0,0.15)', border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>+ Agregar día</button>}
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {project.days.map((day, i) => {
@@ -6423,7 +6372,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                         />
                         <div style={{ display:'flex', gap:8 }}>
                           <button onClick={cancelEditDay} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark-secondary)', color:'var(--text-tertiary)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer', fontWeight:700 }}>Cancelar</button>
-                          <button onClick={saveEditDay} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:bgColor, color:'#0a0a0a', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Guardar</button>
+                          <button onClick={saveEditDay} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#005a72', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Guardar</button>
                         </div>
                       </div>
                     );
@@ -6437,42 +6386,41 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                         style={{ 
                           display:'flex', 
                           alignItems:'center', 
-                          gap:14, 
-                          background:bgColor,
-                          backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-                          padding:'16px 18px', 
+                          gap:12,
+                          background:'rgba(0,0,0,0.15)',
+                          padding:'13px 14px', 
                           border:'none',
+                          borderBottom:'1px solid rgba(255,255,255,0.08)',
                           cursor:'pointer', 
                           fontFamily:'Inter, sans-serif', 
                           textAlign:'left', 
-                          width:widthVar,
-                          boxShadow:'4px 4px 0px rgba(0,0,0,0.3)'
+                          width:'100%',
+                          borderRadius: i===0 ? '12px 12px 0 0' : (i===project.days.length-1 ? '0 0 12px 12px' : '0'),
                         }}>
-                        <div style={{ width:44, height:44, background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                          <span style={{ fontSize:20, fontWeight:900, color:bgColor, fontFamily:'Inter, sans-serif' }}>{i+1}</span>
+                        <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(0,0,0,0.25)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                          <span style={{ fontSize:15, fontWeight:700, color:'#fff', fontFamily:'Inter, sans-serif' }}>{i+1}</span>
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:15, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.05em' }}>{day.label.toUpperCase()}</div>
-                          <div style={{ fontSize:11, color:'#0a0a0a', fontFamily:'Inter, sans-serif', marginBottom:6, opacity:0.8 }}>{day.date} · {day.scenes.length} ESCENAS</div>
-                          <div style={{ background:'rgba(0,0,0,0.2)', height:4, position:'relative' }}>
-                            <div style={{ background:'#0a0a0a', height:'100%', width:`${p*100}%` }}/>
+                          <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:'Inter, sans-serif' }}>{day.label}</div>
+                          <div style={{ fontSize:11, color:'rgba(255,255,255,0.55)', fontFamily:'Inter, sans-serif', marginBottom:5 }}>{day.date} · {day.scenes.length} escenas</div>
+                          <div style={{ background:'rgba(255,255,255,0.15)', height:3, borderRadius:3, overflow:'hidden' }}>
+                            <div style={{ background:'rgba(255,255,255,0.85)', height:'100%', width:`${p*100}%`, borderRadius:3 }}/>
                           </div>
-                          <div style={{ fontSize:9, color:'#0a0a0a', marginTop:3, fontFamily:'Inter, sans-serif', opacity:0.8 }}>{d} DE {day.scenes.length} COMPLETADAS</div>
                         </div>
-                        <span style={{ fontSize:20, color:'#0a0a0a', fontWeight:900 }}>›</span>
+                        <span style={{ fontSize:18, color:'rgba(255,255,255,0.35)', fontWeight:300 }}>›</span>
                       </button>
                       {isAdmin && (
                         <div style={{ position:'absolute', top:-6, right:-6, display:'flex', gap:4, zIndex:5 }}>
                           <button 
                             onClick={() => startEditDay(day)}
                             title="Editar día"
-                            style={{ width:22, height:22, borderRadius:'50%', background:'#0a0a0a', border:'2px solid #fff', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                             ✎
                           </button>
                           <button 
                             onClick={() => deleteDay(day.id)}
                             title="Borrar día"
-                            style={{ width:22, height:22, borderRadius:'50%', background:'#0a0a0a', border:'2px solid #fff', color:'#ff6b6b', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                             ✕
                           </button>
                         </div>
@@ -6484,72 +6432,55 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </div>
           )}
 
-          {/* Botones de acciones */}
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {/* ACCIONES - Clear style */}
+          <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, overflow:'hidden', marginBottom:8 }}>
+            <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🕐</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Citaciones</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Horarios de todos los departamentos</div>
+              </div>
+              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            </button>
+
+            <button onClick={onOpenMessages} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✉️</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Mensajes</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Archivo de comunicaciones</div>
+              </div>
+              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            </button>
+
+            <button onClick={onOpenScouting} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom: isAdmin ? '1px solid rgba(255,255,255,0.08)' : 'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🗺️</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Scouting</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Locaciones y fotos</div>
+              </div>
+              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            </button>
+
             {isAdmin && (
               <>
-                <button onClick={onExport} className="tap" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg-secondary)', borderRadius:14, padding:'16px', border:'1px solid #e5e2dd', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-                  <span style={{ fontSize:22 }}>📄</span>
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>Exportar como PDF</div>
-                    <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit' }}>Resumen completo del proyecto</div>
+                <button onClick={onExport} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>📄</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Exportar PDF</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Resumen completo del proyecto</div>
                   </div>
-                  <div style={{ marginLeft:'auto', fontSize:18, color:'#ccc' }}>›</div>
+                  <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
                 </button>
-                <button onClick={onNewProject} className="tap" style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg-secondary)', borderRadius:14, padding:'16px', border:'1px solid #e5e2dd', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-                  <span style={{ fontSize:22 }}>🎬</span>
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>Nuevo Proyecto</div>
-                    <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit' }}>Crear un nuevo rodaje</div>
+                <button onClick={onNewProject} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🎬</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Nuevo proyecto</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Crear un nuevo rodaje</div>
                   </div>
-                  <div style={{ marginLeft:'auto', fontSize:18, color:'#ccc' }}>›</div>
+                  <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
                 </button>
               </>
             )}
-
-            <button onClick={onOpenCitaciones} className="tap" style={{ 
-              display:'flex', 
-              alignItems:'center', 
-              gap:14, 
-              background:'#1E40AF',
-              backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-              padding:'14px 18px', 
-              border:'none',
-              cursor:'pointer', 
-              fontFamily:'Inter, sans-serif', 
-              textAlign:'left', 
-              width:'97%',
-              boxShadow:'4px 4px 0px rgba(0,0,0,0.3)'
-            }}>
-              <span style={{ fontSize:22 }}>🕐</span>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:15, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.05em' }}>CITACIONES</div>
-                <div style={{ fontSize:10, color:'#0a0a0a', fontFamily:'Inter, sans-serif', opacity:0.8, marginTop:2 }}>HORARIOS DE TODOS LOS DEPARTAMENTOS</div>
-              </div>
-              <span style={{ fontSize:18, color:'#0a0a0a', fontWeight:900 }}>›</span>
-            </button>
-
-            <button onClick={onOpenMessages} className="tap" style={{ 
-              display:'flex', 
-              alignItems:'center', 
-              gap:14, 
-              background:'#3B82F6',
-              backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-              padding:'14px 18px', 
-              border:'none',
-              cursor:'pointer', 
-              fontFamily:'Inter, sans-serif', 
-              textAlign:'left', 
-              width:'94%',
-              boxShadow:'4px 4px 0px rgba(0,0,0,0.3)'
-            }}>
-              <span style={{ fontSize:22 }}>✉️</span>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:15, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.05em' }}>MENSAJES</div>
-                <div style={{ fontSize:10, color:'#0a0a0a', fontFamily:'Inter, sans-serif', opacity:0.8, marginTop:2 }}>ARCHIVO DE COMUNICACIONES</div>
-              </div>
-              <span style={{ fontSize:18, color:'#0a0a0a', fontWeight:900 }}>›</span>
-            </button>
           </div>
         </div>
       </div>
@@ -8214,206 +8145,145 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
     onEnterProductora(cleanId);
   };
 
-  // ── Sin modo elegido: pantalla inicial cintas gaffer ──
+  // ── CLEAR STYLE: pantalla inicial ──
+  const clearRowStyle = {
+    display:'flex', alignItems:'center', gap:14,
+    padding:'15px 20px',
+    borderBottom:'1px solid rgba(255,255,255,0.1)',
+    cursor:'pointer', background:'none', border:'none', width:'100%',
+    fontFamily:'Inter, sans-serif', textAlign:'left',
+  };
+  const clearIconBox = (bg) => ({
+    width:36, height:36, borderRadius:10, background:bg,
+    display:'flex', alignItems:'center', justifyContent:'center',
+    fontSize:16, flexShrink:0,
+  });
+
+  const LANDING_THEMES = {
+    celeste:  'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)',
+    naranja:  'linear-gradient(165deg, #C44A00 0%, #E06010 50%, #F5830A 100%)',
+    amarillo: 'linear-gradient(165deg, #7A6000 0%, #B89000 50%, #E0B800 100%)',
+    gris:     'linear-gradient(165deg, #2A2A3A 0%, #3A3A4A 50%, #4A4A5A 100%)',
+  };
+  const [landingTheme, setLandingTheme] = React.useState(() => localStorage.getItem('landing-theme') || 'celeste');
+  const landingGrad = LANDING_THEMES[landingTheme];
+
   if (!modo) return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'#0a0a0a', fontFamily:'Inter, sans-serif' }}>
-      <div style={{ flex:1, padding:'40px 24px', maxWidth:'480px', margin:'0 auto', width:'100%' }}>
-        
-        {/* Cinta PLAN DE RODAJE - Azul */}
-        <div style={{ marginBottom:40, marginTop:20 }}>
-          <div style={{ 
-            background:'#4A5FD9', 
-            backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-            padding:'18px 28px', 
-            display:'inline-block',
-            boxShadow:'4px 4px 0px rgba(0,0,0,0.4)',
-            maxWidth:'85%'
-          }}>
-            <div style={{ fontSize:22, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.02em' }}>PLAN DE RODAJE</div>
-          </div>
-          <div style={{ fontSize:14, color:'#666', fontFamily:'Inter, sans-serif', marginTop:32, paddingLeft:4 }}>
-            Organiza y gestiona tus rodajes.
-          </div>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:landingGrad, fontFamily:'Inter, sans-serif', transition:'background 0.4s ease' }}>
+      <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', display:'flex', flexDirection:'column' }}>
+        <div style={{ padding:'64px 24px 32px' }}>
+          <div style={{ fontSize:32, fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>Plan de Rodaje</div>
+          <div style={{ fontSize:15, color:'rgba(255,255,255,0.5)', marginTop:8 }}>Organizá tus producciones</div>
         </div>
-
-        {/* Stack de Botones - como cintas gaffer pegadas */}
-        <div style={{ position:'relative', marginBottom:60, minHeight:140 }}>
-          
-          {/* Caja naranja LOGIN (arriba a la izquierda) */}
-          <button onClick={()=>setModo('complejo')} className="tap" style={{ 
-            position:'absolute',
-            top:0,
-            left:0,
-            width:'45%',
-            background:'#E84A1A', 
-            backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-            color:'#0a0a0a', 
-            border:'none', 
-            padding:'16px 20px', 
-            cursor:'pointer', 
-            fontFamily:'Inter, sans-serif', 
-            fontSize:20,
-            fontWeight:900,
-            letterSpacing:'0.02em',
-            textAlign:'left',
-            zIndex:3
-          }}>
-            LOGIN
-          </button>
-
-          {/* Caja verde CREAR ESPACIO (debajo del LOGIN, extendiéndose a la derecha) */}
-          <button onClick={onCreateProductora} className="tap" style={{ 
-            position:'absolute',
-            top:54,
-            left:0,
-            width:'100%',
-            background:'#1FB955', 
-            backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-            color:'#0a0a0a', 
-            border:'none', 
-            padding:'22px 20px', 
-            cursor:'pointer', 
-            fontFamily:'Inter, sans-serif', 
-            fontSize:20,
-            fontWeight:900,
-            letterSpacing:'0.02em',
-            textAlign:'left',
-            boxShadow:'4px 4px 0px rgba(0,0,0,0.4)',
-            zIndex:2
-          }}>
-            CREAR ESPACIO DE TRABAJO
-          </button>
-
-        </div>
-
-        {/* Descripciones */}
-        <div style={{ marginTop:40 }}>
-          <div style={{ marginBottom:28 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#888', fontFamily:'Inter, sans-serif', marginBottom:10, letterSpacing:'0.02em' }}>LOGIN</div>
-            <div style={{ fontSize:13, color:'#666', fontFamily:'Inter, sans-serif', lineHeight:1.6, paddingLeft:4 }}>
-              Accedé a tus planes de rodaje.
+        <div style={{ display:'flex', flexDirection:'column', padding:'0 20px', gap:0 }}>
+          <button onClick={()=>setModo('complejo')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔑</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Ingresar</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Accedé a tu espacio existente</div>
             </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize:13, fontWeight:700, color:'#888', fontFamily:'Inter, sans-serif', marginBottom:10, letterSpacing:'0.02em' }}>CREAR ESPACIO DE TRABAJO</div>
-            <div style={{ fontSize:13, color:'#666', fontFamily:'Inter, sans-serif', lineHeight:1.6, paddingLeft:4 }}>
-              Registrate con tu nombre de freelance o productora y creá nuevos proyectos. Desde rodajes sencillos hasta producciones complejas.
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+          </button>
+          <button onClick={onCreateProductora} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>✦</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Crear espacio de trabajo</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Freelance o productora</div>
             </div>
-          </div>
-
-          {/* Link VER DEMO - texto centrado */}
-          <div style={{ textAlign:'center', marginTop:40 }}>
-            <button onClick={onOpenDemo} className="tap" style={{ 
-              background:'none', 
-              border:'none', 
-              color:'#888', 
-              fontSize:12, 
-              fontFamily:'Inter, sans-serif', 
-              fontWeight:700, 
-              letterSpacing:'0.08em', 
-              cursor:'pointer', 
-              padding:'8px 12px',
-              textDecoration:'underline',
-              textUnderlineOffset:'4px'
-            }}>
-              VER DEMO (PROYECTO CERO) →
-            </button>
-          </div>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+          </button>
+          <button onClick={onOpenDemo} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'none', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>▶</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Ver demo</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Explorar el Proyecto Cero</div>
+            </div>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+          </button>
         </div>
       </div>
-      
-      {/* Footer */}
-      <div style={{ padding:'20px', textAlign:'center', fontSize:10, color:'#666' }}>
-        <p style={{ margin:0 }}>Hecho en Asunción, Paraguay 🇵🇾</p>
-        <button onClick={() => setShowAdminPassword(!showAdminPassword)} title="Panel de admin" style={{ background:'none', border:'none', color:'#666', cursor:'pointer', fontSize:9, marginTop:8, textDecoration:'underline' }}>
-          ⚙️ Panel de admin
-        </button>
+      <div style={{ padding:'20px 24px 28px', maxWidth:'480px', margin:'0 auto', width:'100%' }}>
+        {/* Color picker */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:20 }}>
+          {Object.entries(LANDING_THEMES).map(([key, grad]) => (
+            <button key={key} onClick={() => { setLandingTheme(key); localStorage.setItem('landing-theme', key); }}
+              style={{ width: landingTheme===key ? 32 : 22, height: landingTheme===key ? 32 : 22,
+                borderRadius:'50%', background: grad, border: landingTheme===key ? '3px solid #fff' : '2px solid rgba(255,255,255,0.3)',
+                cursor:'pointer', transition:'all 0.2s ease', flexShrink:0, padding:0, outline:'none',
+                boxShadow: landingTheme===key ? '0 0 0 2px rgba(0,0,0,0.3)' : 'none' }}
+              title={key.charAt(0).toUpperCase()+key.slice(1)}/>
+          ))}
+        </div>
+        <p style={{ margin:0, fontSize:11, color:'rgba(255,255,255,0.3)', textAlign:'center' }}>Hecho en Asunción, Paraguay 🇵🇾</p>
+        <div style={{ textAlign:'center' }}>
+          <button onClick={() => setShowAdminPassword(!showAdminPassword)} title="Panel de admin"
+            style={{ background:'none', border:'none', color:'rgba(255,255,255,0.2)', cursor:'pointer', fontSize:10, marginTop:8, textDecoration:'underline', fontFamily:'Inter, sans-serif' }}>
+            ⚙️ Panel de admin
+          </button>
+        </div>
       </div>
-      
-      {/* Modal de Contraseña Admin */}
       {showAdminPassword && (
-        <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-          <div style={{ background:'var(--bg-primary)', borderRadius:16, padding:24, maxWidth:300, width:'100%' }}>
+        <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.6)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#2a1200', borderRadius:20, padding:28, maxWidth:300, width:'100%', border:'1px solid rgba(255,255,255,0.12)' }}>
             <div style={{ textAlign:'center', marginBottom:20 }}>
-              <div style={{ fontSize:32, marginBottom:12 }}>🔐</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', marginBottom:4 }}>Panel de Admin</div>
-              <div style={{ fontSize:12, color:'var(--text-secondary)' }}>Ingresá la contraseña</div>
+              <div style={{ fontSize:28, marginBottom:10 }}>🔐</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff', marginBottom:4 }}>Panel de Admin</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>Ingresá la contraseña</div>
             </div>
-            
             <div style={{ marginBottom:16 }}>
-              <input 
-                type="password" 
-                value={adminPassword}
+              <input type="password" value={adminPassword}
                 onChange={(e) => { setAdminPassword(e.target.value); setAdminError(''); }}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
-                placeholder="Contraseña"
-                autoFocus
-                style={{ width:'100%', fontFamily:'inherit', fontSize:15, background:'var(--bg-secondary)', border:`2px solid ${adminError?'#d94f2b':'#e5e2dd'}`, borderRadius:12, padding:'12px 14px', color:'var(--text-primary)', outline:'none', textAlign:'center', letterSpacing:'0.2em', marginBottom:8, boxSizing:'border-box' }}
-              />
-              {adminError && <div style={{ fontSize:11, color:'var(--color-primary)', textAlign:'center' }}>{adminError}</div>}
+                placeholder="Contraseña" autoFocus
+                style={{ width:'100%', fontFamily:'inherit', fontSize:15, background:'rgba(255,255,255,0.08)', border:`1.5px solid ${adminError?'rgba(255,200,160,0.8)':'rgba(255,255,255,0.15)'}`, borderRadius:12, padding:'12px 14px', color:'#fff', outline:'none', textAlign:'center', letterSpacing:'0.2em', marginBottom:8, boxSizing:'border-box' }}/>
+              {adminError && <div style={{ fontSize:11, color:'rgba(255,200,160,0.9)', textAlign:'center' }}>{adminError}</div>}
             </div>
-
             <div style={{ display:'flex', gap:8 }}>
-              <button onClick={() => { setShowAdminPassword(false); setAdminPassword(''); setAdminError(''); }} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark)', color:'var(--text-tertiary)', border:'none', borderRadius:12, padding:'10px', cursor:'pointer' }}>
+              <button onClick={() => { setShowAdminPassword(false); setAdminPassword(''); setAdminError(''); }}
+                style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', border:'none', borderRadius:12, padding:'10px', cursor:'pointer' }}>
                 Cancelar
               </button>
-              <button onClick={handleAdminLogin} disabled={!adminPassword} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background: adminPassword ? '#d94f2b' : '#e5e2dd', color: adminPassword ? '#fff' : '#bbb', border:'none', borderRadius:12, padding:'10px', cursor: adminPassword ? 'pointer' : 'not-allowed' }}>
+              <button onClick={handleAdminLogin} disabled={!adminPassword}
+                style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background: adminPassword?'#fff':'rgba(255,255,255,0.08)', color: adminPassword?'#7a3200':'rgba(255,255,255,0.3)', border:'none', borderRadius:12, padding:'10px', cursor: adminPassword?'pointer':'not-allowed' }}>
                 Acceder →
               </button>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Panel de Admin */}
       {showAdmin && <AdminAllProjectsPanel onClose={() => { setShowAdmin(false); setAdminPassword(''); }} />}
     </div>
   );
 
-  // ── Rodaje complejo - Login directo ──
+  // ── CLEAR STYLE: Login / Ingresar ──
   if (modo === 'complejo') return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'#0a0a0a', fontFamily:'Inter, sans-serif' }}>
-      <div style={{ flex:1, padding:'40px 24px', maxWidth:'480px', margin:'0 auto', width:'100%' }}>
-        <button onClick={()=>setModo(null)} style={{ alignSelf:'flex-start', background:'none', border:'none', color:'#888', fontSize:13, cursor:'pointer', padding:'0 0 20px', fontFamily:'Inter, sans-serif' }}>‹ Volver</button>
-        
-        {/* Título */}
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', fontFamily:'Inter, sans-serif' }}>
+      <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', padding:'48px 20px 32px', display:'flex', flexDirection:'column' }}>
+        <button onClick={()=>setModo(null)}
+          style={{ alignSelf:'flex-start', background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:14, cursor:'pointer', padding:'0 0 28px', fontFamily:'Inter, sans-serif' }}>
+          ‹ Volver
+        </button>
         <div style={{ marginBottom:32 }}>
-          <div style={{ fontSize:14, color:'#e8e8e8', fontFamily:'Inter, sans-serif', lineHeight:1.6, fontWeight:600 }}>
-            Accedé a tu espacio existente con múltiples proyectos
-          </div>
+          <div style={{ fontSize:28, fontWeight:800, color:'#fff', letterSpacing:'-0.5px' }}>Ingresar</div>
+          <div style={{ fontSize:14, color:'rgba(255,255,255,0.5)', marginTop:6 }}>Nombre de tu espacio o productora</div>
         </div>
-
-        <form onSubmit={handleEnter} style={{ width:'100%', display:'flex', flexDirection:'column', gap:12 }}>
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.08em', marginBottom:2, fontFamily:'Inter, sans-serif', fontWeight:500 }}>NOMBRE DEL ESPACIO O PRODUCTORA</div>
+        <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:16, padding:'20px', marginBottom:16 }}>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', fontWeight:700, marginBottom:10 }}>ESPACIO O PRODUCTORA</div>
           <input value={codigo} onChange={e=>setCodigo(e.target.value)} autoFocus
-            placeholder="ej: mi-carpeta"
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'#1a1a1a', border:'2px solid #E84A1A', padding:'14px 16px', color:'#e8e8e8', outline:'none', boxSizing:'border-box' }}/>
-          <div style={{ fontSize:11, color:'#888', marginBottom:6, fontFamily:'Inter, sans-serif' }}>Pedile el nombre del espacio al responsable</div>
-          <button type="submit" disabled={!codigo.trim()}
-            style={{ 
-              width:'100%', 
-              fontFamily:'Inter, sans-serif', 
-              fontSize:14, 
-              fontWeight:900, 
-              background: codigo.trim() ? '#E84A1A' : '#333',
-              backgroundImage: codigo.trim() ? 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)' : 'none',
-              color: codigo.trim() ? '#0a0a0a' : '#666', 
-              border:'none', 
-              padding:'14px', 
-              cursor: codigo.trim() ? 'pointer' : 'not-allowed',
-              letterSpacing:'0.05em',
-              boxShadow: codigo.trim() ? '4px 4px 0px rgba(0,0,0,0.4)' : 'none'
-            }}>
-            CONTINUAR →
-          </button>
-          <button type="button" onClick={()=>setModo(null)}
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:12, color:'#888', background:'none', border:'none', padding:'8px', cursor:'pointer', marginTop:4 }}>
-            ‹ Volver
-          </button>
-        </form>
+            placeholder="ej: mi-productora"
+            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:16, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'13px 14px', color:'#fff', outline:'none', boxSizing:'border-box' }}/>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginTop:8 }}>Pedile el nombre al responsable</div>
+        </div>
+        <button onClick={handleEnter} disabled={!codigo.trim()}
+          style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, fontWeight:700,
+            background: codigo.trim()?'#fff':'rgba(255,255,255,0.15)',
+            color: codigo.trim()?'#7a3200':'rgba(255,255,255,0.3)',
+            border:'none', borderRadius:12, padding:'15px', cursor: codigo.trim()?'pointer':'not-allowed',
+            letterSpacing:'0.02em' }}>
+          Continuar →
+        </button>
       </div>
-      <div style={{ padding:'20px', textAlign:'center', fontSize:10, color:'#666', fontFamily:'Inter, sans-serif' }}>Hecho en Asunción, Paraguay 🇵🇾</div>
+      <div style={{ padding:'20px', textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.25)', fontFamily:'Inter, sans-serif' }}>Hecho en Asunción, Paraguay 🇵🇾</div>
     </div>
   );
 }
@@ -8466,11 +8336,11 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
 
   if (notFound) {
     return (
-      <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0a0a0a', gap:14, padding:32, fontFamily:'Inter, sans-serif' }}>
+      <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', gap:14, padding:32, fontFamily:'Inter, sans-serif' }}>
         <div style={{ fontSize:48 }}>🔍</div>
-        <div style={{ fontSize:20, fontWeight:900, color:'#fff', textAlign:'center' }}>Productora no encontrada</div>
-        <div style={{ fontSize:13, color:'#888', textAlign:'center', lineHeight:1.6, maxWidth:300 }}>
-          No existe ninguna productora con el nombre <strong style={{ color:'#E84A1A' }}>"{productoraId}"</strong>.<br/>
+        <div style={{ fontSize:20, fontWeight:800, color:'#fff', textAlign:'center' }}>Productora no encontrada</div>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', textAlign:'center', lineHeight:1.6, maxWidth:300 }}>
+          No existe ninguna productora con el nombre <strong style={{ color:'rgba(255,200,160,0.9)' }}>"{productoraId}"</strong>.<br/>
           Verificá que esté bien escrito.
         </div>
         <button onClick={onBack} style={{ 
@@ -8479,8 +8349,8 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
           fontSize:13, 
           fontWeight:900, 
           letterSpacing:'0.02em',
-          background:'#E84A1A',
-          backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
+          background:'rgba(255,255,255,0.9)',
+          backgroundImage: 'none',
           color:'#0a0a0a', 
           border:'none', 
           borderRadius:0, 
@@ -8493,20 +8363,20 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#0a0a0a', padding:32, fontFamily:'Inter, sans-serif' }}>
-      <button onClick={onBack} style={{ position:'absolute', top:20, left:20, background:'none', border:'none', fontSize:13, color:'#888', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>‹ Inicio</button>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', padding:32, fontFamily:'Inter, sans-serif' }}>
+      <button onClick={onBack} style={{ position:'absolute', top:20, left:20, background:'none', border:'none', fontSize:13, color:'rgba(255,255,255,0.55)', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>‹ Inicio</button>
       <div style={{ width:'100%', maxWidth:340 }}>
         <div style={{ textAlign:'center', marginBottom:32 }}>
           <div style={{ fontSize:42, marginBottom:10 }}>🔒</div>
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.1em', marginBottom:8, fontWeight:600 }}>PRODUCTORA</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', marginBottom:8, fontWeight:600 }}>PRODUCTORA</div>
           <div style={{ fontSize:24, fontWeight:900, color:'#fff', marginBottom:6, letterSpacing:'-0.02em' }}>{productora.name}</div>
           <div style={{ fontSize:13, color:'#888' }}>Ingresá la contraseña para continuar</div>
         </div>
         <form onSubmit={submit}>
           <input type="password" value={pin} onChange={e=>{ setPin(e.target.value); setError(''); }} autoFocus
             placeholder="Contraseña"
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:16, background:'#1a1a1a', border:`2px solid ${error?'#E84A1A':'#333'}`, padding:'14px 18px', color:'#fff', outline:'none', marginBottom:10, textAlign:'center', letterSpacing:'0.2em', boxSizing:'border-box' }}/>
-          {error && <div style={{ fontSize:12, color:'#E84A1A', textAlign:'center', marginBottom:10, fontWeight:600 }}>{error} {tries >= 3 ? `(${tries} intentos)` : ''}</div>}
+            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:16, background:'rgba(255,255,255,0.1)', border:`1.5px solid ${error?'rgba(255,180,150,0.8)':'rgba(255,255,255,0.2)'}`, padding:'14px 18px', color:'#fff', outline:'none', marginBottom:10, textAlign:'center', letterSpacing:'0.2em', boxSizing:'border-box' }}/>
+          {error && <div style={{ fontSize:12, color:'rgba(255,200,160,0.9)', textAlign:'center', marginBottom:10, fontWeight:600 }}>{error} {tries >= 3 ? `(${tries} intentos)` : ''}</div>}
           <button type="submit" disabled={!pin}
             style={{ 
               width:'100%', 
@@ -8514,9 +8384,8 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
               fontSize:14, 
               fontWeight:900, 
               letterSpacing:'0.02em',
-              background: pin ? '#E84A1A' : '#333', 
-              backgroundImage: pin ? 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)' : 'none',
-              color: pin ? '#0a0a0a' : '#666', 
+              background: pin ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.12)', 
+              color: pin ? '#005a72' : 'rgba(255,255,255,0.3)', 
               border:'none', 
               borderRadius:0, 
               padding:'14px', 
@@ -8581,47 +8450,47 @@ function NewProductoraView({ onCreated, onCancel }) {
   const baseUrl = window.location.origin + window.location.pathname;
 
   return (
-    <div style={{ minHeight:'100vh', background:'#0a0a0a', padding:'30px 20px', fontFamily:'Inter, sans-serif' }}>
-      <div style={{ maxWidth:'480px', margin:'0 auto' }}>
-        <button onClick={onCancel} style={{ background:'none', border:'none', fontSize:13, color:'#888', cursor:'pointer', fontFamily:'Inter, sans-serif', marginBottom:20 }}>✕ Cancelar</button>
-        <div style={{ fontSize:24, fontWeight:900, color:'#fff', marginBottom:8, letterSpacing:'-0.02em' }}>Crea el nombre de la carpeta o productora</div>
-        <div style={{ fontSize:13, color:'#888', marginBottom:28, lineHeight:1.6 }}>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', padding:'0 20px 40px', fontFamily:'Inter, sans-serif' }}>
+      <div style={{ maxWidth:'480px', margin:'0 auto', paddingTop:52 }}>
+        <button onClick={onCancel} style={{ background:'none', border:'none', fontSize:13, color:'rgba(255,255,255,0.55)', cursor:'pointer', fontFamily:'Inter, sans-serif', marginBottom:20 }}>✕ Cancelar</button>
+        <div style={{ fontSize:26, fontWeight:800, color:'#fff', marginBottom:8, letterSpacing:'-0.5px' }}>Crea el nombre de la carpeta o productora</div>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:28, lineHeight:1.6 }}>
           Creá un espacio privado para tu trabajo. Solo quienes tengan la contraseña podrán ver tus proyectos.
         </div>
 
-        <div style={{ background:'#1a1a1a', borderRadius:12, padding:'22px', border:'1px solid #2a2a2a' }}>
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>TU NOMBRE O TU PRODUCTORA *</div>
+        <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:14, padding:'22px', border:'1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>TU NOMBRE O TU PRODUCTORA *</div>
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="Ej: Juan García, Mi Productora"
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'#0a0a0a', border:'1px solid #333', borderRadius:8, padding:'12px 14px', color:'#fff', outline:'none', marginBottom:18, boxSizing:'border-box' }}/>
+            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8, padding:'12px 14px', color:'#fff', outline:'none', marginBottom:18, boxSizing:'border-box' }}/>
 
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>URL GENERAL PARA ENTRAR DIRECTAMENTE *</div>
-          <div style={{ display:'flex', alignItems:'center', background:'#0a0a0a', border:'1px solid #333', borderRadius:8, overflow:'hidden', marginBottom:6 }}>
-            <span style={{ padding:'12px 0 12px 14px', fontSize:13, color:'#666' }}>?p=</span>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>URL GENERAL PARA ENTRAR DIRECTAMENTE *</div>
+          <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8, overflow:'hidden', marginBottom:6 }}>
+            <span style={{ padding:'12px 0 12px 14px', fontSize:13, color:'rgba(255,255,255,0.35)' }}>?p=</span>
             <input value={slug} onChange={e=>{ setSlug(productoraSlug(e.target.value)); setSlugManual(true); }}
               placeholder="mi-carpeta"
               style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:15, fontWeight:700, background:'transparent', border:'none', padding:'12px 14px 12px 0', color:'#fff', outline:'none' }}/>
           </div>
-          <div style={{ fontSize:10, color:'#666', marginBottom:18, wordBreak:'break-all' }}>{baseUrl}?p={slug || '...'}</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', marginBottom:18, wordBreak:'break-all' }}>{baseUrl}?p={slug || '...'}</div>
 
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>CONTRASEÑA *</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>CONTRASEÑA *</div>
           <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 4 caracteres"
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'#0a0a0a', border:'1px solid #333', borderRadius:8, padding:'12px 14px', color:'#fff', outline:'none', marginBottom:12, boxSizing:'border-box' }}/>
+            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8, padding:'12px 14px', color:'#fff', outline:'none', marginBottom:12, boxSizing:'border-box' }}/>
 
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>REPETIR CONTRASEÑA *</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', letterSpacing:'0.08em', marginBottom:6, fontWeight:600 }}>REPETIR CONTRASEÑA *</div>
           <input type="password" value={password2} onChange={e=>setPassword2(e.target.value)} placeholder="Confirmar"
             onKeyDown={e=>{ if(e.key==='Enter') submit(); }}
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'#0a0a0a', border:'1px solid #333', borderRadius:8, padding:'12px 14px', color:'#fff', outline:'none', marginBottom:6, boxSizing:'border-box' }}/>
+            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'12px 14px', color:'#fff', outline:'none', marginBottom:6, boxSizing:'border-box' }}/>
 
           <div style={{ fontSize:11, color:'#F59E0B', background:'#1a1410', padding:'12px 14px', borderRadius:8, border:'1px solid #3a2a14', marginTop:16, lineHeight:1.5 }}>
             ⚠️ Guardá esta contraseña: si la perdés no podrás recuperarla.<br/>
             Compartila solo con tu equipo de confianza.
           </div>
 
-          {error && <div style={{ fontSize:12, color:'#E84A1A', marginTop:12, textAlign:'center', fontWeight:600 }}>{error}</div>}
+          {error && <div style={{ fontSize:12, color:'rgba(255,200,160,0.9)', marginTop:12, textAlign:'center', fontWeight:600 }}>{error}</div>}
 
           <div style={{ display:'flex', gap:8, marginTop:22 }}>
             <button onClick={onCancel} disabled={creating}
-              style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:600, background:'#2a2a2a', color:'#888', border:'none', borderRadius:8, padding:'14px', cursor:'pointer' }}>
+              style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:600, background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.55)', border:'none', borderRadius:10, padding:'14px', cursor:'pointer' }}>
               Cancelar
             </button>
             <button onClick={submit} disabled={creating}
@@ -8631,9 +8500,8 @@ function NewProductoraView({ onCreated, onCancel }) {
                 fontSize:14, 
                 fontWeight:900, 
                 letterSpacing:'0.02em',
-                background: creating ? '#444' : '#E84A1A', 
-                backgroundImage: creating ? 'none' : 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-                color: creating ? '#888' : '#0a0a0a', 
+                background: creating ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.9)', 
+                color: creating ? 'rgba(255,255,255,0.4)' : '#005a72', 
                 border:'none', 
                 borderRadius:0, 
                 padding:'14px', 
@@ -8691,72 +8559,64 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
   };
 
   return (
-    <div style={{ minHeight:'100vh', background:'#0a0a0a', fontFamily:'Inter, sans-serif' }}>
-      <div style={{ maxWidth:'480px', margin:'0 auto', padding:'30px 20px 40px' }}>
-        {/* Header */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-          <div style={{ fontSize:11, color:'#888', letterSpacing:'0.1em', fontWeight:600 }}>PRODUCTORA</div>
-          <button onClick={handleLogout} style={{ background:'none', border:'none', fontSize:12, color:'#888', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>Cerrar sesión</button>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', fontFamily:'Inter, sans-serif' }}>
+      <div style={{ maxWidth:'480px', margin:'0 auto', padding:'56px 20px 48px' }}>
+        {/* Header Clear */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', letterSpacing:'0.12em', fontWeight:600 }}>PRODUCTORA</div>
+          <button onClick={handleLogout} style={{ background:'rgba(255,255,255,0.08)', border:'none', fontSize:12, color:'rgba(255,255,255,0.5)', cursor:'pointer', fontFamily:'Inter, sans-serif', padding:'5px 12px', borderRadius:20 }}>Cerrar sesión</button>
         </div>
-        <div style={{ fontSize:28, fontWeight:900, color:'#fff', marginBottom:6, letterSpacing:'-0.02em' }}>{productora.name}</div>
-        <div style={{ fontSize:12, color:'#888', marginBottom:24 }}>{projects.length} proyecto{projects.length!==1?'s':''}</div>
+        <div style={{ fontSize:28, fontWeight:800, color:'#fff', marginBottom:4, letterSpacing:'-0.5px' }}>{productora.name}</div>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.45)', marginBottom:28 }}>{projects.length} proyecto{projects.length!==1?'s':''}</div>
 
-        {/* Compartir productora */}
-        <div style={{ background:'#1a1a1a', borderRadius:12, padding:'14px 16px', border:'1px solid #2a2a2a', marginBottom:24 }}>
+        {/* Link productora */}
+        <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:14, padding:'14px 16px', border:'1px solid rgba(255,255,255,0.08)', marginBottom:24 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:10, color:'#888', letterSpacing:'0.08em', marginBottom:4, fontWeight:600 }}>LINK DE LA PRODUCTORA</div>
-              <div style={{ fontSize:11, color:'#aaa', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:'Inter, sans-serif' }}>{productoraUrl}</div>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,0.35)', letterSpacing:'0.1em', marginBottom:4, fontWeight:600 }}>LINK DE LA PRODUCTORA</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{productoraUrl}</div>
             </div>
-            <button onClick={copyProductoraLink} style={{ 
-              fontFamily:'Inter, sans-serif', 
-              fontSize:12, 
-              fontWeight:700, 
-              background: copied==='productora'?'#1FB955':'#fff', 
-              color: copied==='productora'?'#0a0a0a':'#0a0a0a', 
-              border:'none', 
-              borderRadius:8, 
-              padding:'8px 14px', 
-              cursor:'pointer', 
-              whiteSpace:'nowrap' 
-            }}>
+            <button onClick={copyProductoraLink} style={{ fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700,
+              background: copied==='productora'?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.12)',
+              color: copied==='productora'?'#7a3200':'rgba(255,255,255,0.7)',
+              border:'none', borderRadius:10, padding:'8px 14px', cursor:'pointer', whiteSpace:'nowrap' }}>
               {copied==='productora' ? '✓ Copiado' : 'Copiar'}
             </button>
           </div>
-          <div style={{ fontSize:10, color:'#666', marginTop:8 }}>Compartilo con tu equipo (junto con la contraseña)</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:8 }}>Compartilo con tu equipo (junto con la contraseña)</div>
         </div>
 
         {/* Lista de proyectos */}
         {projects.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'40px 20px', color:'#666', fontSize:13, fontStyle:'italic' }}>
+          <div style={{ textAlign:'center', padding:'40px 20px', color:'rgba(255,255,255,0.3)', fontSize:13 }}>
             Todavía no hay proyectos en esta productora
           </div>
         ) : (
-          <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
-            {projects.map(p => (
-              <div key={p.id} style={{ background:'#1a1a1a', borderRadius:12, padding:'14px 16px', border:'1px solid #2a2a2a' }}>
+          <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:14, overflow:'hidden', border:'1px solid rgba(255,255,255,0.08)', marginBottom:20 }}>
+            {projects.map((p, idx) => (
+              <div key={p.id} style={{ borderBottom: idx < projects.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
                 {confirmDelete === p.id ? (
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#E84A1A', marginBottom:6 }}>¿Borrar "{p.title}"?</div>
-                    <div style={{ fontSize:11, color:'#888', marginBottom:10 }}>Se borrará todo. Esta acción no se puede deshacer.</div>
+                  <div style={{ padding:'14px 16px' }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'rgba(255,200,160,0.9)', marginBottom:6 }}>¿Borrar "{p.title}"?</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:10 }}>Esta acción no se puede deshacer.</div>
                     <div style={{ display:'flex', gap:6 }}>
-                      <button onClick={()=>setConfirmDelete(null)} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, background:'#2a2a2a', color:'#888', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>Cancelar</button>
-                      <button onClick={()=>handleDelete(p.id)} disabled={deleting===p.id} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background: deleting===p.id?'#444':'#E84A1A', color:'#fff', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>
+                      <button onClick={()=>setConfirmDelete(null)} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>Cancelar</button>
+                      <button onClick={()=>handleDelete(p.id)} disabled={deleting===p.id} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background: deleting===p.id?'rgba(255,255,255,0.2)':'rgba(255,80,60,0.8)', color:'#fff', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>
                         {deleting===p.id ? 'Borrando…' : 'Sí, borrar'}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 16px' }}>
                     <div onClick={()=>onOpenProject(p.id)} style={{ flex:1, cursor:'pointer', minWidth:0 }}>
                       <div style={{ fontSize:15, fontWeight:700, color:'#fff' }}>{p.title}</div>
-                      <div style={{ fontSize:11, color:'#888', marginTop:2 }}>{p.client||'—'} · {p.dates||'sin fechas'}</div>
-                      <div style={{ fontSize:10, color:'#666', marginTop:3 }}>{(p.days||[]).length} día{(p.days||[]).length!==1?'s':''} · {(p.days||[]).reduce((sum,d)=>sum+(d.scenes||[]).length,0)} escenas</div>
+                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{p.client||'—'} · {p.dates||'sin fechas'}</div>
+                      <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:2 }}>{(p.days||[]).length} día{(p.days||[]).length!==1?'s':''} · {(p.days||[]).reduce((sum,d)=>sum+(d.scenes||[]).length,0)} escenas</div>
                     </div>
-                    <button onClick={()=>copyLink(p.id)} style={{ background: copied===p.id?'#1FB955':'#2a2a2a', border:'none', borderRadius:8, color: copied===p.id?'#0a0a0a':'#888', fontSize:13, cursor:'pointer', padding:'8px 12px', fontFamily:'Inter, sans-serif', whiteSpace:'nowrap' }}>
+                    <button onClick={()=>copyLink(p.id)} style={{ background: copied===p.id?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.08)', border:'none', borderRadius:8, color: copied===p.id?'#0f3460':'rgba(255,255,255,0.5)', fontSize:13, cursor:'pointer', padding:'8px 12px', fontFamily:'Inter, sans-serif' }}>
                       {copied===p.id ? '✓' : '🔗'}
                     </button>
-                    <button onClick={()=>setConfirmDelete(p.id)} style={{ background:'#2a1410', border:'none', borderRadius:8, color:'#E84A1A', fontSize:13, cursor:'pointer', padding:'8px 10px' }}>✕</button>
+                    <button onClick={()=>setConfirmDelete(p.id)} style={{ background:'rgba(255,80,60,0.15)', border:'none', borderRadius:8, color:'rgba(255,160,140,0.9)', fontSize:13, cursor:'pointer', padding:'8px 10px' }}>✕</button>
                   </div>
                 )}
               </div>
@@ -8764,25 +8624,12 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
           </div>
         )}
 
-        {/* Crear nuevo proyecto - CINTA NARANJA GAFFER */}
+        {/* Crear nuevo proyecto - Clear style */}
         <button onClick={onCreateProject} className="tap"
-          style={{ 
-            width:'100%', 
-            fontFamily:'Inter, sans-serif', 
-            fontSize:16, 
-            fontWeight:900,
-            letterSpacing:'0.02em',
-            background:'#E84A1A',
-            backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
-            color:'#0a0a0a', 
-            border:'none', 
-            borderRadius:0, 
-            padding:'18px 20px', 
-            cursor:'pointer',
-            boxShadow:'4px 4px 0px rgba(0,0,0,0.4)',
-            textAlign:'left'
-          }}>
-          ＋ CREAR NUEVO PROYECTO
+          style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:15, fontWeight:700,
+            background:'rgba(255,255,255,0.9)', color:'#7a3200',
+            border:'none', borderRadius:14, padding:'16px 20px', cursor:'pointer', letterSpacing:'0.01em' }}>
+          + Crear nuevo proyecto
         </button>
       </div>
     </div>
@@ -8888,8 +8735,8 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
           display:'flex', 
           alignItems:'center', 
           gap:14, 
-          background:'#E84A1A',
-          backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px)',
+          background:'rgba(255,255,255,0.9)',
+          backgroundImage: 'none',
           borderRadius:0, 
           padding:'18px 20px', 
           border:'none', 
@@ -8899,10 +8746,10 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
           width:'100%',
           boxShadow:'4px 4px 0px rgba(0,0,0,0.4)'
         }}>
-          <div style={{ width:44, height:44, background:'#0a0a0a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:900, color:'#E84A1A', flexShrink:0 }}>+</div>
+          <div style={{ width:44, height:44, background:'rgba(0,82,114,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:700, color:'#005a72', flexShrink:0, borderRadius:10 }}>+</div>
           <div>
-            <div style={{ fontSize:16, fontWeight:900, color:'#0a0a0a', fontFamily:'Inter, sans-serif', letterSpacing:'0.02em' }}>NUEVO PROYECTO</div>
-            <div style={{ fontSize:11, color:'#0a0a0a', fontFamily:'Inter, sans-serif', marginTop:2, opacity:0.8 }}>Crear y obtener link para compartir</div>
+            <div style={{ fontSize:16, fontWeight:700, color:'#005a72', fontFamily:'Inter, sans-serif' }}>NUEVO PROYECTO</div>
+            <div style={{ fontSize:11, color:'rgba(0,82,114,0.7)', fontFamily:'Inter, sans-serif', marginTop:2 }}>Crear y obtener link para compartir</div>
           </div>
         </button>
       </div>
@@ -9296,7 +9143,6 @@ function ProjectAppShell({ project, save, view, setView, activeDayId, setActiveD
 
   return (
     <div style={{ maxWidth:'var(--app-max-width)', margin:'0 auto', minHeight:'100vh', background:'var(--bg-primary)', position:'relative' }}>
-      <GafferTape colors={['#FF0080', '#2A2A2A', '#FF5722', '#0052CC', '#CCFF00']} />
       {view==='home' && project && (
         <HomeView
           project={project} isAdmin={isAdmin} theme={theme} setTheme={setTheme}
@@ -9370,7 +9216,7 @@ if ('serviceWorker' in navigator) {
             banner.innerHTML = `
               <div style="
                 position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-                background:#1FB955; color:#0a0a0a; 
+                background:rgba(255,255,255,0.9); color:#005a72; 
                 padding:12px 20px; 
                 font-family:'Inter',sans-serif; font-size:13px; font-weight:700;
                 box-shadow: 4px 4px 0px rgba(0,0,0,0.4);
@@ -9379,7 +9225,7 @@ if ('serviceWorker' in navigator) {
               ">
                 ✦ NUEVA VERSIÓN DISPONIBLE
                 <button onclick="window.location.reload()" style="
-                  background:#0a0a0a; color:#1FB955; border:none;
+                  background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); border:none;
                   padding:6px 14px; font-family:'Inter',sans-serif;
                   font-size:12px; font-weight:900; cursor:pointer;
                   letter-spacing:0.05em;
