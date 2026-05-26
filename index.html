@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="planderodajes.com">
 <meta name="description" content="Gestión de rodajes audiovisuales">
-<link rel="manifest" href="data:application/json,{%22name%22:%22planderodajes.com%22,%22short_name%22:%22planderodajes.com%22,%22description%22:%22Gestión de rodajes audiovisuales%22,%22start_url%22:%22/%22,%22scope%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%231a1714%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a1714' width='192' height='192'/><text x='50%' y='55%' font-size='100' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>PA</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22},{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a1714' width='512' height='512'/><text x='50%' y='55%' font-size='280' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>PA</text></svg>%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]}">
+<link rel="manifest" href="data:application/json,{%22name%22:%22planderodajes.com%22,%22short_name%22:%22planderodajes.com%22,%22description%22:%22Gestión de rodajes audiovisuales%22,%22start_url%22:%22/%22,%22scope%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%231a1714%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a1714' width='192' height='192'/><text x='50%' y='55%' font-size='100' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>PR</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22},{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a1714' width='512' height='512'/><text x='50%' y='55%' font-size='280' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>PR</text></svg>%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]}">
 <title>Plan de Rodaje</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0a0a0a">
@@ -894,8 +894,11 @@ function InfoTab({ color, deptKey, projectId }) {
 function DeptMuralTab({ color, deptKey, projectId }) {
   const [mensajes, setMensajesRaw] = useState([]);
   const [autor, setAutor]   = useState('');
-  const [adjunto, setAdjunto] = useState(null); // { tipo, nombre, data }
+  const [adjunto, setAdjunto] = useState(null); // { tipo, nombre, data } o { tipo:'link', nombre, url, linkIcon }
   const [uploading, setUploading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkName, setLinkName] = useState('');
 
   useEffect(() => {
     if (!window._fb) return;
@@ -915,7 +918,6 @@ function DeptMuralTab({ color, deptKey, projectId }) {
       if (isImg) {
         data = await window.compressImage(file, 1200, 0.80);
       } else {
-        // Para videos/docs/planillas: base64
         data = await new Promise((res, rej) => {
           const r = new FileReader();
           r.onload = ev => res(ev.target.result);
@@ -927,6 +929,20 @@ function DeptMuralTab({ color, deptKey, projectId }) {
       setAdjunto({ tipo, nombre: file.name, data });
     } catch { alert('Error al subir archivo'); }
     setUploading(false);
+  };
+
+  const handleAddLink = () => {
+    if (!linkUrl.trim()) return;
+    let url = linkUrl.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    const nombre = linkName.trim() || url;
+    let linkIcon = '🔗';
+    if (/youtube\.com|youtu\.be/i.test(url)) linkIcon = '▶️';
+    else if (/drive\.google\.com/i.test(url)) linkIcon = '📁';
+    else if (/dropbox\.com/i.test(url)) linkIcon = '📦';
+    else if (/vimeo\.com/i.test(url)) linkIcon = '🎬';
+    setAdjunto({ tipo: 'link', nombre, url, linkIcon });
+    setLinkUrl(''); setLinkName(''); setShowLinkForm(false);
   };
 
   const publish = () => {
@@ -955,15 +971,42 @@ function DeptMuralTab({ color, deptKey, projectId }) {
                 <span style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit' }}>{adjunto.nombre}</span>
               </div>
             )}
+            {adjunto.tipo==='link' && (
+              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 4px' }}>
+                <span style={{ fontSize:24 }}>{adjunto.linkIcon}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color, fontFamily:'inherit', marginBottom:2 }}>{adjunto.nombre}</div>
+                  <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{adjunto.url}</div>
+                </div>
+              </div>
+            )}
             <button onClick={()=>setAdjunto(null)} style={{ position:'absolute', top:6, right:6, width:24, height:24, borderRadius:'50%', background:'rgba(0,0,0,0.5)', border:'none', color:'#fff', fontSize:12, cursor:'pointer' }}>✕</button>
           </div>
         )}
 
+        {/* Form para agregar link */}
+        {showLinkForm && (
+          <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px', border:`1px solid ${color}33`, marginBottom:10 }}>
+            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>🔗 PEGAR LINK</div>
+            <input value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} placeholder="URL (YouTube, Google Drive, Vimeo...)" autoFocus
+              style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid #e5e2dd', borderRadius:8, padding:'9px 10px', color:'var(--text-primary)', outline:'none', marginBottom:6, boxSizing:'border-box' }}/>
+            <input value={linkName} onChange={e=>setLinkName(e.target.value)} placeholder="Nombre del link (opcional)"
+              style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid #e5e2dd', borderRadius:8, padding:'9px 10px', color:'var(--text-primary)', outline:'none', marginBottom:8, boxSizing:'border-box' }}/>
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={()=>{setShowLinkForm(false);setLinkUrl('');setLinkName('');}} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark-secondary)', color:'var(--text-tertiary)', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>Cancelar</button>
+              <button onClick={handleAddLink} style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>Agregar link</button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display:'flex', gap:8 }}>
-          <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, flex:1, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'14px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'var(--text-tertiary)' }}>
-            {uploading ? '⏳ Subiendo...' : '📎 Seleccionar imagen, video o archivo'}
+          <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, flex:1, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'12px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'var(--text-tertiary)' }}>
+            {uploading ? '⏳ Subiendo...' : '📎 Archivo'}
             <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={handleFile} style={{ display:'none' }}/>
           </label>
+          <button onClick={()=>setShowLinkForm(!showLinkForm)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card-dark)', border:`1px dashed ${color}66`, borderRadius:10, padding:'12px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color, fontWeight:600 }}>
+            🔗 Link
+          </button>
           {adjunto && (
             <button onClick={publish} style={{ fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px 18px', cursor:'pointer' }}>
               Publicar
@@ -1002,6 +1045,16 @@ function DeptMuralTab({ color, deptKey, projectId }) {
               <span style={{ fontSize:20 }}>📄</span>
               <span style={{ flex:1 }}>{m.adjunto.nombre}</span>
               <span style={{ color, fontWeight:700 }}>↓ Descargar</span>
+            </a>
+          )}
+          {m.adjunto && m.adjunto.tipo==='link' && (
+            <a href={m.adjunto.url} target="_blank" rel="noopener noreferrer" style={{ display:'flex', alignItems:'center', gap:10, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', border:`1px solid ${color}22` }}>
+              <span style={{ fontSize:22, flexShrink:0 }}>{m.adjunto.linkIcon||'🔗'}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12, fontWeight:700, color, fontFamily:'inherit', marginBottom:2 }}>{m.adjunto.nombre}</div>
+                <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.adjunto.url}</div>
+              </div>
+              <span style={{ fontSize:12, color, fontWeight:700, flexShrink:0 }}>→ Abrir</span>
             </a>
           )}
           {/* Compat: mensajes viejos con texto */}
@@ -2284,7 +2337,7 @@ function CastingPrincipales({ color, projectId, project }) {
   const [actores, setActores] = useFirestoreList(projectId, 'casting', 'principales', []);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId]     = useState(null);
-  const [form, setForm] = useState({ nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[] });
+  const [form, setForm] = useState({ nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'' });
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
 
   // Lista de escenas del proyecto
@@ -2306,12 +2359,12 @@ function CastingPrincipales({ color, projectId, project }) {
 
   const openAdd = () => {
     setEditId(null);
-    setForm({ nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[] });
+    setForm({ nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'' });
     setShowForm(true);
   };
   const openEdit = (a) => {
     setEditId(a.id);
-    setForm({ nombre:a.nombre||'', personaje:a.personaje||'', altura:a.altura||'', talla:a.talla||'', telefono:a.telefono||'', correo:a.correo||'', notas:a.notas||'', foto:a.foto||'', escenas:a.escenas||[] });
+    setForm({ nombre:a.nombre||'', personaje:a.personaje||'', altura:a.altura||'', talla:a.talla||'', telefono:a.telefono||'', correo:a.correo||'', notas:a.notas||'', foto:a.foto||'', escenas:a.escenas||[], citacion:a.citacion||'' });
     setShowForm(true);
   };
   const save = () => {
@@ -2343,6 +2396,7 @@ function CastingPrincipales({ color, projectId, project }) {
               {a.altura    && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>📏 {a.altura}</div>}
               {a.talla     && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>👕 {a.talla}</div>}
               {a.telefono  && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>📱 {a.telefono}</div>}
+              {a.citacion  && <div style={{ fontSize:11, color:color, fontFamily:'inherit', marginTop:4 }}>🕐 {a.citacion}</div>}
               {(a.escenas||[]).length > 0 && (
                 <div style={{ marginTop:6 }}>
                   <div style={{ fontSize:9, color:'var(--text-muted)', fontFamily:'inherit', marginBottom:3 }}>ESCENAS</div>
@@ -2384,6 +2438,11 @@ function CastingPrincipales({ color, projectId, project }) {
               <input key={k} value={form[k]} onChange={e=>set(k,e.target.value)} placeholder={ph}
                 style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
             ))}
+            <div style={{ marginBottom:10 }}>
+              <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>🕐 CITACIÓN (CALL TIME INDIVIDUAL)</div>
+              <input value={form.citacion} onChange={e=>set('citacion',e.target.value)} placeholder="Ej: 08:30hs - Locación principal"
+                style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
+            </div>
             {/* Selección de escenas */}
             {todasEscenas.length > 0 && (
               <div style={{ marginTop:4, marginBottom:10 }}>
@@ -2432,7 +2491,7 @@ function CastingExtras({ color, projectId, project }) {
 
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId]     = useState(null);
-  const [form, setForm] = useState({ nombre:'', foto:'', notas:'', escenas:[] });
+  const [form, setForm] = useState({ nombre:'', foto:'', notas:'', escenas:[], citacion:'' });
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
 
   const todasEscenas = project
@@ -2453,12 +2512,12 @@ function CastingExtras({ color, projectId, project }) {
 
   const openAdd = () => {
     setEditId(null);
-    setForm({ nombre:'', foto:'', notas:'', escenas:[] });
+    setForm({ nombre:'', foto:'', notas:'', escenas:[], citacion:'' });
     setShowForm(true);
   };
   const openEdit = (e) => {
     setEditId(e.id);
-    setForm({ nombre:e.nombre||'', foto:e.foto||'', notas:e.notas||'', escenas:e.escenas||[] });
+    setForm({ nombre:e.nombre||'', foto:e.foto||'', notas:e.notas||'', escenas:e.escenas||[], citacion:e.citacion||'' });
     setShowForm(true);
   };
   const save = () => {
@@ -2495,6 +2554,7 @@ function CastingExtras({ color, projectId, project }) {
               <div style={{ padding:'8px' }}>
                 <div style={{ fontSize:11, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{e.nombre}</div>
                 {e.notas && <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>{e.notas}</div>}
+                {e.citacion && <div style={{ fontSize:10, color, fontFamily:'inherit', marginTop:2 }}>🕐 {e.citacion}</div>}
                 {escenaLabels.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:4 }}>
                     {escenaLabels.map((lb,i)=>(
@@ -2532,7 +2592,12 @@ function CastingExtras({ color, projectId, project }) {
             <input value={form.nombre} onChange={e=>set('nombre',e.target.value)} placeholder="Nombre *"
               style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
             <input value={form.notas} onChange={e=>set('notas',e.target.value)} placeholder="Notas adicionales"
-              style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:10 }}/>
+              style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
+            <div style={{ marginBottom:10 }}>
+              <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>🕐 CITACIÓN (CALL TIME INDIVIDUAL)</div>
+              <input value={form.citacion} onChange={e=>set('citacion',e.target.value)} placeholder="Ej: 09:00hs - Entrada del set"
+                style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
+            </div>
             {/* Escenas */}
             {todasEscenas.length > 0 && (
               <div style={{ marginBottom:12 }}>
@@ -3237,7 +3302,7 @@ function DeptDetailView({ deptKey, deptMeta, isAdmin, onBack, projectId, project
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
-      <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
           <DeptAvatar
@@ -4455,6 +4520,8 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
   const [editPlano, setEditPlano]             = useState(null);
   const [section, setSection]                 = useState('planos');
   const [locaciones, setLocacionesRaw]        = useState([]);
+  const [editingNum, setEditingNum]           = useState(false);
+  const [numDraft, setNumDraft]               = useState('');
 
   // Modo día/noche — guardado en la escena
 
@@ -4554,7 +4621,28 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
         </div>
         <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:12 }}>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:11, letterSpacing:'0.1em', color:'var(--text-tertiary)', fontFamily:'inherit', marginBottom:2 }}>{scene.num}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+              {editingNum ? (
+                <input
+                  value={numDraft}
+                  onChange={e=>setNumDraft(e.target.value)}
+                  onBlur={() => { if (numDraft.trim()) onUpdateScene({...scene, num: numDraft.trim()}); setEditingNum(false); }}
+                  onKeyDown={e => {
+                    if (e.key==='Enter') { if (numDraft.trim()) onUpdateScene({...scene, num: numDraft.trim()}); setEditingNum(false); }
+                    if (e.key==='Escape') setEditingNum(false);
+                  }}
+                  autoFocus
+                  style={{ fontSize:12, letterSpacing:'0.08em', color:'var(--text-tertiary)', fontFamily:'inherit', fontWeight:700, border:'1.5px solid var(--color-primary)', background:'var(--bg-primary)', borderRadius:6, padding:'3px 8px', outline:'none', maxWidth:160 }}
+                />
+              ) : (
+                <span style={{ fontSize:11, letterSpacing:'0.1em', color:'var(--text-tertiary)', fontFamily:'inherit' }}>{scene.num}</span>
+              )}
+              <button
+                onClick={() => { setNumDraft(scene.num); setEditingNum(true); }}
+                title="Editar nombre de escena"
+                style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:12, padding:'2px 4px', lineHeight:1, borderRadius:4, opacity:0.6 }}
+              >✎</button>
+            </div>
             <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.3 }}>{scene.title}</div>
             <div style={{ fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', marginTop:3 }}>
               {planos.length > 0 && <span>{donePlanos}/{planos.length} planos</span>}
@@ -4750,6 +4838,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
   const pct   = day.scenes.length ? done/day.scenes.length : 0;
   const color = DAY_COLORS[dayIndex % DAY_COLORS.length];
   const [addTitle, setAddTitle] = useState('');
+  const [addNum, setAddNum]     = useState('');
   const [addMomento, setAddMomento] = useState('mañana');
   const [showAdd, setShowAdd]   = useState(false);
   const [editingSceneId, setEditingSceneId] = useState(null);
@@ -4757,8 +4846,8 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
 
   const submitAdd = () => {
     if (!addTitle.trim()) return;
-    onAddScene(day.id, addTitle.trim(), addMomento);
-    setAddTitle(''); setShowAdd(false);
+    onAddScene(day.id, addTitle.trim(), addMomento, addNum.trim() || null);
+    setAddTitle(''); setAddNum(''); setShowAdd(false);
   };
 
   // Agrupar escenas por momento del día
@@ -4819,7 +4908,8 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
     return (
     <div style={{ display:'flex', alignItems:'stretch', background:cardBg, borderRadius:14, border:`1px solid ${cardBord}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.05)', opacity:scene.done?0.6:1 }}>
       <div style={{ width:4, alignSelf:'stretch', background:scene.done?'#e0ddd8':color, flexShrink:0 }}/>
-      <div onClick={()=>onSelectScene(scene)} className="tap" style={{ flex:1, padding:'12px 14px', cursor:'pointer' }}>
+      <div style={{ flex:1, padding:'12px 14px', cursor:'pointer', display:'flex', flexDirection:'column' }}>
+        {/* Fila superior: nombre editable + botón editar + tiempo — NO abre escena */}
         <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
           {editingSceneId === scene.id ? (
             <input 
@@ -4839,65 +4929,63 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
                   }
                   setEditingSceneId(null);
                 }
+                if (e.key === 'Escape') setEditingSceneId(null);
               }}
               autoFocus
+              onClick={e => e.stopPropagation()}
               style={{
-                fontSize:10,
-                letterSpacing:'0.1em',
+                fontSize:11,
+                letterSpacing:'0.08em',
                 color: color,
                 fontFamily:'inherit',
                 fontWeight:700,
-                border:`1px solid ${color}`,
+                border:`1.5px solid ${color}`,
                 background:'var(--bg-primary)',
-                borderRadius:4,
-                padding:'2px 4px',
-                maxWidth:'120px'
+                borderRadius:6,
+                padding:'3px 8px',
+                maxWidth:'150px',
+                outline:'none',
               }}
             />
           ) : (
-            <span 
-              onClick={() => {
-                setEditingSceneId(scene.id);
-                setEditingSceneName(scene.num);
-              }}
-              style={{ 
-                fontSize:10, 
-                letterSpacing:'0.1em', 
-                color:scene.done?'var(--text-muted)':color, 
-                fontFamily:'inherit', 
-                fontWeight:700,
-                cursor:'pointer',
-                padding:'2px 4px',
-                borderRadius:4
-              }} 
-              title="Click para editar nombre"
-            >
+            <span style={{ fontSize:10, letterSpacing:'0.1em', color:scene.done?'var(--text-muted)':color, fontFamily:'inherit', fontWeight:700 }}>
               {scene.num}
             </span>
           )}
+          {/* Botón ✎ para editar nombre — toque directo, no abre escena */}
+          {editingSceneId !== scene.id && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setEditingSceneId(scene.id); setEditingSceneName(scene.num); }}
+              title="Editar nombre de escena"
+              style={{ background:'none', border:'none', cursor:'pointer', color:color, fontSize:12, padding:'2px 4px', lineHeight:1, borderRadius:4, opacity:0.6 }}
+            >✎</button>
+          )}
           {tiempoStr && <span style={{ fontSize:10, color:'var(--text-on-dark-bg)', fontFamily:'inherit', opacity:0.7 }}>· ⏱ {tiempoStr}</span>}
         </div>
-        <div style={{ fontSize:14, color:titleCol, fontFamily:'inherit', lineHeight:1.4, textDecoration:scene.done?'line-through':'none' }}>{scene.title}</div>
-        {scene.descripcion && <div style={{ fontSize:13.75, color:'var(--text-secondary)', fontFamily:'inherit', marginTop:3, lineHeight:1.4 }}>{scene.descripcion.slice(0,60)}{scene.descripcion.length>60?'…':''}</div>}
-        {/* Traslado a próxima escena */}
-        {trasladoInfo && (
-          <div style={{ fontSize:10, color:'var(--color-secondary)', fontFamily:'inherit', marginTop:5, padding:'4px 8px', background:'var(--bg-accent)', borderRadius:6, border:`1px solid var(--border-accent)` }}>
-            🚗 Traslado: {trasladoInfo.km} km (~{trasladoInfo.minutos} min)
-          </div>
-        )}
-        {/* Deptos con nombre */}
-        {(scene.depts||[]).filter(k=>depts[k]).length > 0 && (
-          <div style={{ display:'flex', gap:5, marginTop:8, flexWrap:'wrap' }}>
-            {(scene.depts||[]).filter(k=>depts[k]).map(dk=>{
-              const m = depts[dk];
-              return (
-                <span key={dk} style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:scene.done?'var(--bg-card-dark-secondary)':m.color+'14', color:scene.done?'var(--text-muted)':m.color, border:`1px solid ${scene.done?'var(--border-light)':m.color+'33'}`, fontFamily:'inherit', display:'flex', alignItems:'center', gap:3 }}>
-                  {m.icon} {m.label}
-                </span>
-              );
-            })}
-          </div>
-        )}
+        {/* Cuerpo de la card — toque abre la escena */}
+        <div onClick={()=>onSelectScene(scene)} className="tap" style={{ cursor:'pointer' }}>
+          <div style={{ fontSize:14, color:titleCol, fontFamily:'inherit', lineHeight:1.4, textDecoration:scene.done?'line-through':'none' }}>{scene.title}</div>
+          {scene.descripcion && <div style={{ fontSize:13.75, color:'var(--text-secondary)', fontFamily:'inherit', marginTop:3, lineHeight:1.4 }}>{scene.descripcion.slice(0,60)}{scene.descripcion.length>60?'…':''}</div>}
+          {/* Traslado a próxima escena */}
+          {trasladoInfo && (
+            <div style={{ fontSize:10, color:'var(--color-secondary)', fontFamily:'inherit', marginTop:5, padding:'4px 8px', background:'var(--bg-accent)', borderRadius:6, border:`1px solid var(--border-accent)` }}>
+              🚗 Traslado: {trasladoInfo.km} km (~{trasladoInfo.minutos} min)
+            </div>
+          )}
+          {/* Deptos con nombre */}
+          {(scene.depts||[]).filter(k=>depts[k]).length > 0 && (
+            <div style={{ display:'flex', gap:5, marginTop:8, flexWrap:'wrap' }}>
+              {(scene.depts||[]).filter(k=>depts[k]).map(dk=>{
+                const m = depts[dk];
+                return (
+                  <span key={dk} style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:scene.done?'var(--bg-card-dark-secondary)':m.color+'14', color:scene.done?'var(--text-muted)':m.color, border:`1px solid ${scene.done?'var(--border-light)':m.color+'33'}`, fontFamily:'inherit', display:'flex', alignItems:'center', gap:3 }}>
+                    {m.icon} {m.label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
       {isAdmin && <button onClick={()=>onDeleteScene(day.id, scene.id)} style={{ width:36, alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-error)', border:'none', borderLeft:'1px solid #ffe0e0', cursor:'pointer', color:'#ffb3b3', fontSize:14 }}>✕</button>}
       <div onClick={()=>onToggleScene(scene.id)} className="tap" style={{ width:50, alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center', background:scene.done?'#f5f3f0':'rgba(255,255,255,0.5)', borderLeft:'1px solid #f0ede8', cursor:'pointer', flexShrink:0, fontSize:20, color:scene.done?'#0fa87e':'#ddd' }}>
@@ -4909,7 +4997,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
-      <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>‹ Proyectos</button>
         <div style={{ display:'flex', alignItems:'center', gap:16 }}>
           <div>
@@ -4954,8 +5042,13 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
         )}
         {isAdmin && showAdd && (
           <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30`, marginTop:4 }}>
-            <input value={addTitle} onChange={e=>setAddTitle(e.target.value)} placeholder="Descripción de la escena..." autoFocus
-              style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:10 }}/>
+            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:10, fontFamily:'inherit' }}>NUEVA ESCENA</div>
+            <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+              <input value={addNum} onChange={e=>setAddNum(e.target.value)} placeholder="Nombre (ej: ESC 01)"
+                style={{ width:'38%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1.5px solid ${color}55`, borderRadius:10, padding:'10px 10px', color:'var(--text-primary)', outline:'none' }}/>
+              <input value={addTitle} onChange={e=>setAddTitle(e.target.value)} placeholder="Descripción de la escena..." autoFocus
+                style={{ flex:1, fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
+            </div>
             <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>MOMENTO DEL DÍA</div>
             <div style={{ display:'flex', gap:6, marginBottom:12 }}>
               {[['mañana','🌅'],['tarde','🌤️'],['noche','🌙']].map(([m,ic])=>(
@@ -5132,6 +5225,9 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
 // ── Componente: archivos genéricos (para tab Archivos de escena/depto local) ──
 function FilesUploader({ files, setFiles, color, label='Archivos' }) {
   const [uploading, setUploading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkName, setLinkName] = useState('');
 
   const handle = async (e) => {
     const list = Array.from(e.target.files || []);
@@ -5155,6 +5251,21 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
     e.target.value = '';
   };
 
+  const addLink = () => {
+    if (!linkUrl.trim()) return;
+    let url = linkUrl.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    const nombre = linkName.trim() || url;
+    // Detectar tipo de link para icono
+    let linkIcon = '🔗';
+    if (/youtube\.com|youtu\.be/i.test(url)) linkIcon = '▶️';
+    else if (/drive\.google\.com/i.test(url)) linkIcon = '📁';
+    else if (/dropbox\.com/i.test(url)) linkIcon = '📦';
+    else if (/vimeo\.com/i.test(url)) linkIcon = '🎬';
+    setFiles([...files, { id: Date.now()+Math.random(), url, nombre, tipo: 'link', linkIcon }]);
+    setLinkUrl(''); setLinkName(''); setShowLinkForm(false);
+  };
+
   const eliminar = (id) => setFiles(files.filter(f=>f.id!==id));
 
   return (
@@ -5168,20 +5279,41 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
             <div key={f.id} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card-dark)', borderRadius:8, padding:'8px 10px', border:'1px solid var(--border-light)' }}>
               {f.tipo === 'imagen'
                 ? <img src={f.data} alt={f.nombre} style={{ width:36, height:36, borderRadius:6, objectFit:'cover', flexShrink:0 }}/>
-                : <span style={{ fontSize:20 }}>📄</span>
+                : f.tipo === 'link'
+                  ? <span style={{ fontSize:20, flexShrink:0 }}>{f.linkIcon||'🔗'}</span>
+                  : <span style={{ fontSize:20 }}>📄</span>
               }
-              <a href={f.data} download={f.nombre} style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {f.nombre}
-              </a>
+              {f.tipo === 'link'
+                ? <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ flex:1, minWidth:0, fontSize:11, color:color||'var(--text-secondary)', fontFamily:'inherit', textDecoration:'underline', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}</a>
+                : <a href={f.data} download={f.nombre} style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}</a>
+              }
               <button onClick={()=>eliminar(f.id)} style={{ background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:11, cursor:'pointer', padding:'3px 6px' }}>✕</button>
             </div>
           ))}
         </div>
       )}
-      <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color }}>
-        {uploading ? '⏳ Subiendo…' : '+ Subir archivos'}
-        <input type="file" multiple onChange={handle} disabled={uploading} style={{ display:'none' }}/>
-      </label>
+      {showLinkForm && (
+        <div style={{ background:'var(--bg-secondary)', borderRadius:10, padding:'12px 14px', border:`1px solid ${color}33`, marginBottom:8 }}>
+          <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>🔗 AGREGAR LINK</div>
+          <input value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} placeholder="URL (YouTube, Drive, Vimeo...)" autoFocus
+            style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:8, padding:'9px 10px', color:'var(--text-primary)', outline:'none', marginBottom:6 }}/>
+          <input value={linkName} onChange={e=>setLinkName(e.target.value)} placeholder="Nombre del link (opcional)"
+            style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:8, padding:'9px 10px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
+          <div style={{ display:'flex', gap:6 }}>
+            <button onClick={()=>{setShowLinkForm(false);setLinkUrl('');setLinkName('');}} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark-secondary)', color:'var(--text-tertiary)', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>Cancelar</button>
+            <button onClick={addLink} style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:8, padding:'8px', cursor:'pointer' }}>Agregar link</button>
+          </div>
+        </div>
+      )}
+      <div style={{ display:'flex', gap:6 }}>
+        <label style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color }}>
+          {uploading ? '⏳ Subiendo…' : '📎 Archivo'}
+          <input type="file" multiple onChange={handle} disabled={uploading} style={{ display:'none' }}/>
+        </label>
+        <button onClick={()=>setShowLinkForm(true)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color }}>
+          🔗 Link
+        </button>
+      </div>
     </div>
   );
 }
@@ -5689,7 +5821,7 @@ function ScoutingSceneView({ project, scene, onBack, onUpdateMeta }) {
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
-      <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>‹ Volver a Scouting</button>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
           <div style={{ width:48, height:48, borderRadius:14, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>🔍</div>
@@ -5813,7 +5945,7 @@ function ScoutingView({ project, onBack }) {
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
-      <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <div style={{ width:48, height:48, borderRadius:14, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>🔍</div>
@@ -6382,7 +6514,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
   if (showAddDept) {
     return (
       <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }}>
-        <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
           <button onClick={() => setShowAddDept(false)} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>‹ Volver</button>
           <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>Crear espacio de trabajo</div>
         </div>
@@ -6869,7 +7001,7 @@ function CitacionesGlobalesView({ project, onBack }) {
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
-      <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ fontSize:24 }}>🕐</span>
@@ -7009,7 +7141,7 @@ function MessagesView({ project, onBack }) {
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
-      <div style={{ background:'var(--bg-secondary)', padding:'14px 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ fontSize:24 }}>✉️</span>
@@ -8182,11 +8314,11 @@ function RodajeSencilloShell({ project, save, view, setView, activeDayId, setAct
   const activeDay   = project?.days?.find(d=>d.id===activeDayId);
   const activeScene = activeDay?.scenes.find(s=>s.id===activeSceneId);
 
-  const addScene = (dayId, title, momento='sin definir') => {
+  const addScene = (dayId, title, momento='sin definir', customNum=null) => {
     // Calcular número global de escena (suma todas las escenas de todos los días)
     const totalScenes = project.days.reduce((sum, d) => sum + d.scenes.length, 0);
     const sceneNum = totalScenes + 1;
-    const num = `esc ${String(sceneNum).padStart(2,'0')}`;
+    const num = customNum || `esc ${String(sceneNum).padStart(2,'0')}`;
     const scene = { id:'s_'+uid(), num, title, done:false, depts:[], notes:'', momento };
     save({ ...project, days: project.days.map(d=>d.id!==dayId?d:{...d,scenes:[...d.scenes,scene]})});
   };
@@ -8426,10 +8558,169 @@ function AdminAllProjectsPanel({ onClose }) {
 // ═══════════════════════════════════════════════════════════
 //  LANDING VIEW — pantalla raíz pública (sin URL params)
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  MARKETPLACE VIEW
+// ═══════════════════════════════════════════════════════════
+function MarketplaceView({ onBack }) {
+  const STORE_KEY = 'marketplace_items';
+  const [items, setItems] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [form, setForm] = useState({ titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[] });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  useEffect(() => {
+    try { const s = localStorage.getItem(STORE_KEY); if (s) setItems(JSON.parse(s)); } catch {}
+  }, []);
+
+  const saveItems = (newItems) => {
+    setItems(newItems);
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(newItems)); } catch {}
+  };
+
+  const handleFotos = async (e) => {
+    const list = Array.from(e.target.files||[]).slice(0,5);
+    if (!list.length) return;
+    setUploading(true);
+    const nuevas = [];
+    for (const f of list) {
+      try { nuevas.push(await window.compressImage(f, 900, 0.75)); } catch {}
+    }
+    set('fotos', [...(form.fotos||[]), ...nuevas].slice(0,5));
+    setUploading(false);
+    e.target.value = '';
+  };
+
+  const CATEGORIAS = ['Equipos','Cámaras','Lentes','Iluminación','Sonido','Props & Arte','Transporte','Vestuario','Servicios','Otros'];
+
+  const submit = () => {
+    if (!form.titulo || !form.contacto) return;
+    const newItem = { id: Date.now(), ...form, createdAt: new Date().toLocaleDateString('es') };
+    saveItems([newItem, ...items]);
+    setForm({ titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[] });
+    setShowForm(false);
+  };
+
+  const del = (id) => saveItems(items.filter(i=>i.id!==id));
+
+  const filtered = items.filter(i =>
+    !search || (i.titulo+i.descripcion+i.categoria+i.nombre).toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#f7f5f2', fontFamily:'Inter, sans-serif', display:'flex', flexDirection:'column' }}>
+      {/* Header */}
+      <div style={{ background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', padding:'calc(env(safe-area-inset-top,0px) + 16px) 20px 20px', position:'sticky', top:0, zIndex:10 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.7)', fontSize:14, cursor:'pointer', padding:'0 0 12px', fontFamily:'Inter, sans-serif' }}>‹ Volver</button>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+          <div>
+            <div style={{ fontSize:24, fontWeight:800, color:'#fff' }}>🛒 Marketplace</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginTop:2 }}>Equipos, props y servicios para producción</div>
+          </div>
+          <button onClick={()=>setShowForm(true)} style={{ background:'rgba(255,255,255,0.95)', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, color:'#005a72', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>+ Publicar</button>
+        </div>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍  Buscar equipos, props, servicios..."
+          style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.25)', borderRadius:12, padding:'11px 14px', color:'#fff', outline:'none', boxSizing:'border-box' }}/>
+      </div>
+
+      {/* Form modal */}
+      {showForm && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:500, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowForm(false)}>
+          <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', padding:'20px 20px calc(env(safe-area-inset-bottom,0px)+24px)', maxHeight:'90vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><div style={{ width:36, height:4, background:'#e0ddd8', borderRadius:2 }}/></div>
+            <div style={{ fontSize:16, fontWeight:700, color:'#1a1714', marginBottom:16 }}>Publicar ítem</div>
+
+            {/* Fotos */}
+            <div style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:8 }}>
+                {(form.fotos||[]).map((src, i) => (
+                  <div key={i} style={{ position:'relative', flexShrink:0 }}>
+                    <img src={src} alt="" style={{ width:72, height:72, borderRadius:10, objectFit:'cover' }}/>
+                    <button onClick={()=>set('fotos',(form.fotos||[]).filter((_,j)=>j!==i))} style={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', background:'rgba(200,0,0,0.7)', border:'none', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                  </div>
+                ))}
+                {(form.fotos||[]).length < 5 && (
+                  <label style={{ width:72, height:72, borderRadius:10, border:'1.5px dashed #ccc', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:22, color:'#bbb' }}>
+                    {uploading ? '⏳' : '📷'}
+                    <input type="file" accept="image/*" multiple onChange={handleFotos} style={{ display:'none' }}/>
+                  </label>
+                )}
+              </div>
+              <div style={{ fontSize:10, color:'#aaa' }}>Máximo 5 fotos</div>
+            </div>
+
+            <input value={form.titulo} onChange={e=>set('titulo',e.target.value)} placeholder="Título del ítem *"
+              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', marginBottom:8, boxSizing:'border-box' }}/>
+            <textarea value={form.descripcion} onChange={e=>set('descripcion',e.target.value)} placeholder="Descripción (estado, características, etc.)" rows={3}
+              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', marginBottom:8, resize:'none', boxSizing:'border-box' }}/>
+
+            <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+              <input value={form.precio} onChange={e=>set('precio',e.target.value)} placeholder="Precio (ej: $500)"
+                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+              <select value={form.categoria} onChange={e=>set('categoria',e.target.value)}
+                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 10px', color:'#1a1714', outline:'none' }}>
+                {CATEGORIAS.map(c=><option key={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+              <input value={form.nombre} onChange={e=>set('nombre',e.target.value)} placeholder="Tu nombre"
+                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+              <input value={form.contacto} onChange={e=>set('contacto',e.target.value)} placeholder="Teléfono / WhatsApp *"
+                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1.5px solid #0092B8', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+            </div>
+
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={()=>setShowForm(false)} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>Cancelar</button>
+              <button onClick={submit} disabled={!form.titulo||!form.contacto} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:form.titulo&&form.contacto?'#0092B8':'#ccc', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:form.titulo&&form.contacto?'pointer':'not-allowed' }}>Publicar ítem</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Items grid */}
+      <div style={{ flex:1, padding:'16px', paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 24px)' }}>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'#bbb' }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>🛒</div>
+            <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>{search ? 'Sin resultados' : 'El marketplace está vacío'}</div>
+            <div style={{ fontSize:13 }}>{search ? 'Probá con otra búsqueda' : 'Sé el primero en publicar un ítem'}</div>
+          </div>
+        ) : (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            {filtered.map(item => (
+              <div key={item.id} style={{ background:'#fff', borderRadius:14, overflow:'hidden', border:'1px solid #ede9e3', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                {(item.fotos||[]).length > 0 ? (
+                  <img src={item.fotos[0]} alt={item.titulo} style={{ width:'100%', aspectRatio:'4/3', objectFit:'cover' }}/>
+                ) : (
+                  <div style={{ width:'100%', aspectRatio:'4/3', background:'#f0ede8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:36 }}>📦</div>
+                )}
+                <div style={{ padding:'10px 10px 12px' }}>
+                  <div style={{ fontSize:10, background:'#0092B815', color:'#0092B8', borderRadius:6, padding:'2px 7px', display:'inline-block', marginBottom:6 }}>{item.categoria}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#1a1714', marginBottom:3, lineHeight:1.3 }}>{item.titulo}</div>
+                  {item.descripcion && <div style={{ fontSize:11, color:'#888', marginBottom:6, lineHeight:1.4 }}>{item.descripcion.slice(0,60)}{item.descripcion.length>60?'…':''}</div>}
+                  {item.precio && <div style={{ fontSize:14, fontWeight:700, color:'#0092B8', marginBottom:4 }}>{item.precio}</div>}
+                  <div style={{ fontSize:11, color:'#aaa', marginBottom:8 }}>📞 {item.contacto}{item.nombre?' · '+item.nombre:''}</div>
+                  <a href={`https://wa.me/${item.contacto.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
+                    style={{ display:'block', textAlign:'center', background:'#25D366', color:'#fff', borderRadius:8, padding:'7px', fontSize:12, fontWeight:700, textDecoration:'none', fontFamily:'Inter, sans-serif' }}>
+                    💬 WhatsApp
+                  </a>
+                  <button onClick={()=>del(item.id)} style={{ width:'100%', marginTop:5, background:'none', border:'none', fontSize:11, color:'#ccc', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>Eliminar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   const [codigo, setCodigo] = useState('');
   const [showEnter, setShowEnter] = useState(false);
-  const [modo, setModo] = useState(null); // null | 'complejo'
+  const [modo, setModo] = useState(null); // null | 'complejo' | 'marketplace'
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -8502,6 +8793,14 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
             </div>
             <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
           </button>
+          <button onClick={()=>setModo('marketplace')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🛒</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Marketplace</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Equipos, props y servicios</div>
+            </div>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+          </button>
           <button onClick={onOpenDemo} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'none', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>▶</div>
             <div style={{ flex:1 }}>
@@ -8566,6 +8865,8 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   );
 
   // ── CLEAR STYLE: Login / Ingresar ──
+  if (modo === 'marketplace') return <MarketplaceView onBack={()=>setModo(null)}/>;
+
   if (modo === 'complejo') return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', fontFamily:'Inter, sans-serif' }}>
       <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', padding:'48px 20px 32px', display:'flex', flexDirection:'column' }}>
@@ -9465,11 +9766,11 @@ function ProjectAppShell({ project, save, view, setView, activeDayId, setActiveD
     })});
   };
 
-  const addScene = (dayId, title, momento='sin definir') => {
+  const addScene = (dayId, title, momento='sin definir', customNum=null) => {
     // Calcular número global de escena (suma todas las escenas de todos los días)
     const totalScenes = project.days.reduce((sum, d) => sum + d.scenes.length, 0);
     const sceneNum = totalScenes + 1;
-    const num = `esc ${String(sceneNum).padStart(2,'0')}`;
+    const num = customNum || `esc ${String(sceneNum).padStart(2,'0')}`;
     const scene = { id:'s_'+uid(), num, title, done:false, depts:[], notes:'', momento };
     save({ ...project, days: project.days.map(d=>d.id!==dayId?d:{...d,scenes:[...d.scenes,scene]})});
   };
