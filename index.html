@@ -547,6 +547,31 @@
       localSet(`msgarchive:${projectId}`, data);
       try { await apiCall('data', 'POST', { store: 'msgarchive', key: projectId, data }); } catch {}
     },
+
+    // ── Chat conversacional ──
+    async getChat(projectId) {
+      try {
+        const res = await apiCall('data', 'GET', null, { store: 'chat', key: projectId });
+        localSet(`chat:${projectId}`, res);
+        return res ? (res.messages || []) : [];
+      } catch {
+        const d = localGet(`chat:${projectId}`);
+        return d ? (d.messages || []) : [];
+      }
+    },
+    async saveChat(projectId, messages) {
+      const data = { messages };
+      localSet(`chat:${projectId}`, data);
+      try { await apiCall('data', 'POST', { store: 'chat', key: projectId, data }); } catch {}
+      notify(`chat:${projectId}`, messages);
+    },
+    onChat(projectId, cb) {
+      window._fb.getChat(projectId).then(msgs => cb(msgs || []));
+      const key = `chat:${projectId}`;
+      if (!listeners[key]) listeners[key] = [];
+      listeners[key].push(cb);
+      return () => { listeners[key] = listeners[key].filter(c => c !== cb); };
+    },
   };
 
   window.dispatchEvent(new Event('firebase-ready'));
@@ -6363,6 +6388,212 @@ function WeatherWidget({ project, isAdmin, onUpdateProject }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  IMESSAGE CHAT — chat conversacional en HomeView
+// ═══════════════════════════════════════════════════════════
+function IMessageChat({ project, isAdmin }) {
+  const [messages, setMessages]   = useState([]);
+  const [draft, setDraft]         = useState('');
+  const [author, setAuthor]       = useState('');
+  const [showAuthorPick, setShowAuthorPick] = useState(false);
+  const [deleteId, setDeleteId]   = useState(null);
+  const endRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Cargar mensajes desde el backend
+  useEffect(() => {
+    if (!window._fb) return;
+    const unsub = fb().onChat(project.id, setMessages);
+    return unsub;
+  }, [project.id]);
+
+  // Scroll al último mensaje
+  useEffect(() => {
+    if (endRef.current) endRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Participantes disponibles: depts + "Producción" si no está
+  const participants = [
+    { key: 'produccion', label: 'Producción', icon: '🎬' },
+    ...Object.entries(project.depts || {})
+      .filter(([k]) => k !== 'produccion')
+      .map(([k, m]) => ({ key: k, label: m.label, icon: m.icon || '👤' }))
+  ];
+
+  // Color por participante (asignar colores distintos)
+  const COLORS = ['#0A84FF','#30D158','#FF9F0A','#FF375F','#BF5AF2','#32ADE6','#FF6961','#FFCC00'];
+  const colorMap = {};
+  participants.forEach((p, i) => { colorMap[p.key] = COLORS[i % COLORS.length]; });
+
+  const sendMsg = () => {
+    if (!draft.trim() || !author) return;
+    const newMsg = {
+      id: 'cm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      authorKey: author,
+      authorLabel: participants.find(p => p.key === author)?.label || author,
+      authorIcon: participants.find(p => p.key === author)?.icon || '👤',
+      text: draft.trim(),
+      ts: Date.now(),
+    };
+    const updated = [...messages, newMsg];
+    setMessages(updated);
+    if (window._fb) fb().saveChat(project.id, updated);
+    setDraft('');
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const deleteMsg = (id) => {
+    const updated = messages.filter(m => m.id !== id);
+    setMessages(updated);
+    if (window._fb) fb().saveChat(project.id, updated);
+    setDeleteId(null);
+  };
+
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString('es-AR',{ hour:'2-digit', minute:'2-digit' });
+  const fmtDay  = (ts) => new Date(ts).toLocaleDateString('es-AR',{ weekday:'short', day:'numeric', month:'short' });
+
+  // Agrupar mensajes por día para mostrar separadores
+  const grouped = [];
+  let lastDay = '';
+  messages.forEach(m => {
+    const day = fmtDay(m.ts);
+    if (day !== lastDay) { grouped.push({ type:'day', label: day }); lastDay = day; }
+    grouped.push({ type:'msg', ...m });
+  });
+
+  const selectedAuthorObj = participants.find(p => p.key === author);
+
+  return (
+    <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:18, overflow:'hidden', marginBottom:16 }}>
+      {/* Header del chat */}
+      <div style={{ padding:'10px 14px 8px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:15 }}>💬</span>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.55)', letterSpacing:'0.1em' }}>CHAT DEL EQUIPO</div>
+        </div>
+        <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontWeight:500 }}>{messages.length} msg</div>
+      </div>
+
+      {/* Burbuja de mensajes */}
+      <div style={{
+        maxHeight: 260,
+        overflowY: 'auto',
+        padding: '10px 12px 6px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+      }}>
+        {grouped.length === 0 && (
+          <div style={{ textAlign:'center', padding:'24px 0', color:'rgba(255,255,255,0.28)', fontSize:12, fontStyle:'italic' }}>
+            Nadie habló todavía. ¡Rompan el hielo! 🎬
+          </div>
+        )}
+        {grouped.map((item, idx) => {
+          if (item.type === 'day') {
+            return (
+              <div key={`day-${idx}`} style={{ textAlign:'center', margin:'8px 0 4px' }}>
+                <span style={{ fontSize:10, color:'rgba(255,255,255,0.3)', background:'rgba(0,0,0,0.2)', borderRadius:20, padding:'2px 10px' }}>{item.label}</span>
+              </div>
+            );
+          }
+          const color = colorMap[item.authorKey] || '#0A84FF';
+          const isMe = item.authorKey === author;
+          return (
+            <div key={item.id} style={{ display:'flex', flexDirection: isMe ? 'row-reverse' : 'row', alignItems:'flex-end', gap:6, marginBottom:2 }}
+              onLongPress={() => isAdmin && setDeleteId(item.id)}
+            >
+              {/* Avatar */}
+              {!isMe && (
+                <div style={{ width:26, height:26, borderRadius:'50%', background: color + '33', border:`1.5px solid ${color}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, flexShrink:0, marginBottom:2 }}>
+                  {item.authorIcon}
+                </div>
+              )}
+              <div style={{ maxWidth:'72%', display:'flex', flexDirection:'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                {/* Nombre (solo si no es yo y el anterior era diferente) */}
+                {!isMe && (
+                  <div style={{ fontSize:9, color: color, fontWeight:700, marginBottom:2, paddingLeft:2, letterSpacing:'0.04em' }}>
+                    {item.authorLabel}
+                  </div>
+                )}
+                {/* Burbuja */}
+                <div
+                  onClick={() => (isAdmin || isMe) && setDeleteId(deleteId === item.id ? null : item.id)}
+                  style={{
+                    background: isMe ? color : 'rgba(255,255,255,0.12)',
+                    color: isMe ? '#fff' : 'rgba(255,255,255,0.9)',
+                    borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                    padding: '7px 12px',
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                    cursor: (isAdmin || isMe) ? 'pointer' : 'default',
+                    wordBreak: 'break-word',
+                    boxShadow: isMe ? `0 2px 8px ${color}55` : '0 1px 3px rgba(0,0,0,0.2)',
+                  }}>
+                  {item.text}
+                </div>
+                {/* Hora */}
+                <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', marginTop:2, paddingLeft:2, paddingRight:2 }}>{fmtTime(item.ts)}</div>
+                {/* Botón eliminar */}
+                {deleteId === item.id && (isAdmin || isMe) && (
+                  <button onClick={() => deleteMsg(item.id)}
+                    style={{ fontSize:10, color:'#FF375F', background:'rgba(255,55,95,0.12)', border:'1px solid rgba(255,55,95,0.3)', borderRadius:10, padding:'2px 8px', cursor:'pointer', marginTop:2, fontFamily:'inherit', fontWeight:600 }}>
+                    🗑 Eliminar
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div ref={endRef}/>
+      </div>
+
+      {/* Input area */}
+      <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', padding:'8px 10px 10px' }}>
+        {/* Selector de participante */}
+        {!author ? (
+          <div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:7, letterSpacing:'0.06em', fontWeight:600 }}>¿QUIÉN SOS?</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+              {participants.map(p => (
+                <button key={p.key} onClick={() => setAuthor(p.key)}
+                  style={{ fontFamily:'inherit', fontSize:11, fontWeight:600, padding:'5px 12px', borderRadius:20, cursor:'pointer',
+                    background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.8)', border:'1px solid rgba(255,255,255,0.2)' }}>
+                  {p.icon} {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {/* Cambiar autor */}
+            <button onClick={() => setAuthor('')} title="Cambiar"
+              style={{ width:30, height:30, borderRadius:'50%', background: colorMap[author] + '33', border:`1.5px solid ${colorMap[author]}`, color:'#fff', fontSize:14, cursor:'pointer', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {selectedAuthorObj?.icon || '👤'}
+            </button>
+            {/* Campo de texto */}
+            <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', borderRadius:22, border:'1px solid rgba(255,255,255,0.18)', padding:'0 4px 0 12px', gap:4 }}>
+              <input
+                ref={inputRef}
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } }}
+                placeholder="Escribí un mensaje..."
+                style={{ flex:1, background:'transparent', border:'none', outline:'none', fontSize:13, color:'rgba(255,255,255,0.9)', fontFamily:'inherit', padding:'8px 0', minWidth:0 }}
+              />
+              <button onClick={sendMsg} disabled={!draft.trim()}
+                style={{ width:30, height:30, borderRadius:'50%', background: draft.trim() ? colorMap[author] : 'rgba(255,255,255,0.1)', border:'none', cursor: draft.trim() ? 'pointer' : 'default', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0, transition:'background 0.2s' }}>
+                ↑
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 //  HOME VIEW
 // ═══════════════════════════════════════════════════════════
 function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, onLock, onExport, onNewProject, onUpdateProject, onSelectDept, onOpenMessages, onOpenCitaciones, onOpenScouting }) {
@@ -6655,6 +6886,9 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               </div>
             </div>
           </div>
+
+          {/* 💬 CHAT DEL EQUIPO */}
+          <IMessageChat project={project} isAdmin={isAdmin} />
 
           {/* MENSAJE GENERAL - Clear style */}
           {msg ? (
