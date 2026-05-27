@@ -6715,138 +6715,159 @@ function SunARView({ project, onBack }) {
   useEffect(() => {
     const draw = () => {
       const canvas = canvasRef.current;
-      const video  = videoRef.current;
       if (!canvas) { rafRef.current = requestAnimationFrame(draw); return; }
 
-      const W = canvas.offsetWidth;
-      const H = canvas.offsetHeight;
+      const W = canvas.offsetWidth  || window.innerWidth;
+      const H = canvas.offsetHeight || window.innerHeight;
       if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
 
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, W, H);
 
-      const SC  = window.SunCalc;
+      // Esperar SunCalc
+      const SC = window.SunCalc;
       if (!SC) { rafRef.current = requestAnimationFrame(draw); return; }
 
-      const loc  = locationRef.current || { lat:-25.2867, lng:-57.6470 };
-      const date = new Date();
-      const times = SC.getTimes(date, loc.lat, loc.lng);
+      // Usar ubicación disponible (GPS o fallback inmediato)
+      const loc = locationRef.current || { lat: -25.2867, lng: -57.6470 };
 
-      const HFOV = 65; // campo visual horizontal en grados
-      const VFOV = 50; // campo visual vertical en grados
+      const date  = new Date();
+      let times;
+      try { times = SC.getTimes(date, loc.lat, loc.lng); }
+      catch(e) { rafRef.current = requestAnimationFrame(draw); return; }
+
+      if (!times.sunrise || isNaN(times.sunrise)) { rafRef.current = requestAnimationFrame(draw); return; }
+
+      const HFOV = 62;
+      const VFOV = 48;
       const hdg  = headingRef.current;
-      const pch  = pitchRef.current; // beta: 0=horizontal, 90=apuntando al cielo
+      const pch  = pitchRef.current;
 
-      // Convertir azimut/altitud → píxeles en pantalla
+      // azimut/altitud → píxel en pantalla
       const toScreen = (azDeg, altDeg) => {
-        const azDiff = ((azDeg - hdg) + 540) % 360 - 180;
-        // pitch=90 → mirando al cielo (altitud alta arriba)
-        // pitch=0  → horizontal
-        const altOffset = altDeg - (90 - pch); // ajuste por inclinación
-        const sx = W/2 + (azDiff / HFOV) * W;
-        const sy = H/2 - (altOffset / VFOV) * H;
-        return { x:sx, y:sy };
+        const azDiff   = ((azDeg - hdg) + 540) % 360 - 180;
+        const altOffset = altDeg - (90 - pch);
+        return {
+          x: W/2 + (azDiff / HFOV) * W,
+          y: H/2 - (altOffset / VFOV) * H
+        };
       };
 
-      // Calcular posición del sol cada 5 min durante el día
-      const srMin = times.sunrise;
-      const ssMin = times.sunset;
-      const arcPoints = [];
-      const step = 5; // minutos
-      const totalMin = (ssMin - srMin) / 60000;
-      for (let m = 0; m <= totalMin; m += step) {
-        const t = new Date(srMin.getTime() + m * 60000);
+      // ── Arco completo de la trayectoria ───────────────────
+      const sr = times.sunrise.getTime();
+      const ss = times.sunset.getTime();
+      const totalMin = (ss - sr) / 60000;
+      const arcPts = [];
+      for (let m = 0; m <= totalMin; m += 4) {
+        const t   = new Date(sr + m * 60000);
         const pos = SC.getPosition(t, loc.lat, loc.lng);
         const az  = ((pos.azimuth * 180/Math.PI) + 180 + 360) % 360;
         const alt = pos.altitude * 180/Math.PI;
-        arcPoints.push({ t, az, alt, screen: toScreen(az, alt) });
+        arcPts.push({ az, alt });
       }
 
-      // ── Dibujar arco amarillo ──────────────────────────────
-      if (arcPoints.length > 1) {
-        ctx.beginPath();
+      // Dibujar arco — solo segmentos dentro del FOV extendido
+      if (arcPts.length > 1) {
         ctx.strokeStyle = '#FFD050';
-        ctx.lineWidth   = 3;
-        ctx.shadowColor = 'rgba(255,208,80,0.6)';
-        ctx.shadowBlur  = 8;
-        let started = false;
-        for (const p of arcPoints) {
-          // Solo dibujar si está cerca del FOV (extendido para continuidad)
+        ctx.lineWidth   = 3.5;
+        ctx.shadowColor = 'rgba(255, 208, 80, 0.7)';
+        ctx.shadowBlur  = 10;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.beginPath();
+        let penDown = false;
+        for (const p of arcPts) {
           const azDiff = ((p.az - hdg) + 540) % 360 - 180;
-          if (Math.abs(azDiff) > HFOV * 2) { started = false; continue; }
-          if (!started) { ctx.moveTo(p.screen.x, p.screen.y); started = true; }
-          else          { ctx.lineTo(p.screen.x, p.screen.y); }
+          const sp = toScreen(p.az, p.alt);
+          // Extender FOV para continuidad de línea
+          if (Math.abs(azDiff) > HFOV * 1.8) { penDown = false; continue; }
+          if (!penDown) { ctx.moveTo(sp.x, sp.y); penDown = true; }
+          else          { ctx.lineTo(sp.x, sp.y); }
         }
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
 
-      // ── Sol actual ─────────────────────────────────────────
-      const sunPos = SC.getPosition(date, loc.lat, loc.lng);
-      const sunAz  = ((sunPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
-      const sunAlt = sunPos.altitude * 180/Math.PI;
-      const sunAzDiff = ((sunAz - hdg) + 540) % 360 - 180;
-      if (Math.abs(sunAzDiff) < HFOV * 1.5 && sunAlt > -5) {
-        const sp = toScreen(sunAz, sunAlt);
-        if (sunAlt > 0) {
-          // Glow
-          const grad = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, 36);
-          grad.addColorStop(0, 'rgba(255,208,80,0.5)');
-          grad.addColorStop(1, 'rgba(255,208,80,0)');
-          ctx.beginPath(); ctx.arc(sp.x, sp.y, 36, 0, Math.PI*2);
-          ctx.fillStyle = grad; ctx.fill();
-          // Círculo del sol
-          ctx.beginPath(); ctx.arc(sp.x, sp.y, 18, 0, Math.PI*2);
-          ctx.fillStyle = '#FFD050';
-          ctx.shadowColor = 'rgba(255,208,80,0.9)'; ctx.shadowBlur = 20;
-          ctx.fill(); ctx.shadowBlur = 0;
-        }
+      // ── Sol actual ────────────────────────────────────────
+      const nowPos = SC.getPosition(date, loc.lat, loc.lng);
+      const nowAz  = ((nowPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+      const nowAlt = nowPos.altitude * 180/Math.PI;
+      const nowAzDiff = ((nowAz - hdg) + 540) % 360 - 180;
+      if (Math.abs(nowAzDiff) < HFOV * 1.5 && nowAlt > 0) {
+        const sp = toScreen(nowAz, nowAlt);
+        // Glow exterior
+        const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, 40);
+        g.addColorStop(0, 'rgba(255,220,80,0.45)');
+        g.addColorStop(1, 'rgba(255,220,80,0)');
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 40, 0, Math.PI*2);
+        ctx.fillStyle = g; ctx.fill();
+        // Círculo sólido
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 16, 0, Math.PI*2);
+        ctx.fillStyle = '#FFD050';
+        ctx.shadowColor = 'rgba(255,208,80,1)'; ctx.shadowBlur = 22;
+        ctx.fill(); ctx.shadowBlur = 0;
       }
 
-      // ── Marcador Salida ────────────────────────────────────
-      const srPos = SC.getPosition(times.sunrise, loc.lat, loc.lng);
-      const srAz  = ((srPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+      // ── Marcador Salida ───────────────────────────────────
+      const srPos    = SC.getPosition(times.sunrise, loc.lat, loc.lng);
+      const srAz     = ((srPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
       const srAzDiff = ((srAz - hdg) + 540) % 360 - 180;
       if (Math.abs(srAzDiff) < HFOV * 1.5) {
-        const sp = toScreen(srAz, 0);
-        ctx.beginPath(); ctx.arc(sp.x, sp.y, 10, 0, Math.PI*2);
+        const sp = toScreen(srAz, 2);
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 11, 0, Math.PI*2);
         ctx.fillStyle = '#FFD050'; ctx.fill();
-        ctx.fillStyle = 'white'; ctx.font = 'bold 12px Inter,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Salida', sp.x, sp.y - 16);
-        ctx.font = '11px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(`${String(times.sunrise.getHours()).padStart(2,'0')}:${String(times.sunrise.getMinutes()).padStart(2,'0')}`, sp.x, sp.y - 4);
+        ctx.fillStyle = 'white'; ctx.textAlign = 'center';
+        ctx.font = 'bold 13px Inter,sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 6;
+        ctx.fillText('Salida', sp.x, sp.y - 18);
+        ctx.font = '12px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        const srH = String(times.sunrise.getHours()).padStart(2,'0');
+        const srM = String(times.sunrise.getMinutes()).padStart(2,'0');
+        ctx.fillText(`${srH}:${srM}`, sp.x, sp.y - 4);
+        ctx.shadowBlur = 0;
       }
 
-      // ── Marcador Puesta ────────────────────────────────────
-      const ssPos = SC.getPosition(times.sunset, loc.lat, loc.lng);
-      const ssAz  = ((ssPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+      // ── Marcador Puesta ───────────────────────────────────
+      const ssPos    = SC.getPosition(times.sunset, loc.lat, loc.lng);
+      const ssAz     = ((ssPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
       const ssAzDiff = ((ssAz - hdg) + 540) % 360 - 180;
       if (Math.abs(ssAzDiff) < HFOV * 1.5) {
-        const sp = toScreen(ssAz, 0);
-        ctx.beginPath(); ctx.arc(sp.x, sp.y, 10, 0, Math.PI*2);
+        const sp = toScreen(ssAz, 2);
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 11, 0, Math.PI*2);
         ctx.fillStyle = '#FF8C00'; ctx.fill();
-        ctx.fillStyle = 'white'; ctx.font = 'bold 12px Inter,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Puesta', sp.x, sp.y - 16);
-        ctx.font = '11px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(`${String(times.sunset.getHours()).padStart(2,'0')}:${String(times.sunset.getMinutes()).padStart(2,'0')}`, sp.x, sp.y - 4);
+        ctx.fillStyle = 'white'; ctx.textAlign = 'center';
+        ctx.font = 'bold 13px Inter,sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 6;
+        ctx.fillText('Puesta', sp.x, sp.y - 18);
+        ctx.font = '12px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        const ssH = String(times.sunset.getHours()).padStart(2,'0');
+        const ssM = String(times.sunset.getMinutes()).padStart(2,'0');
+        ctx.fillText(`${ssH}:${ssM}`, sp.x, sp.y - 4);
+        ctx.shadowBlur = 0;
       }
+
+      // ── Debug info (quitar después) ───────────────────────
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`HDG: ${Math.round(hdg)}° | PITCH: ${Math.round(pch)}° | GPS: ${loc.lat.toFixed(2)},${loc.lng.toFixed(2)}`, 12, H - 12);
 
       rafRef.current = requestAnimationFrame(draw);
     };
 
+    // Arrancar inmediatamente con fallback GPS
+    if (!locationRef.current) locationRef.current = { lat: -25.2867, lng: -57.6470 };
     rafRef.current = requestAnimationFrame(draw);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, []);
 
-  // Datos para panel inferior
-  const SC2 = window.SunCalc;
+  // Datos panel inferior — usar fallback inmediato
+  const SC2  = window.SunCalc;
   const loc2 = location || { lat:-25.2867, lng:-57.6470 };
-  const times2 = SC2 ? SC2.getTimes(now, loc2.lat, loc2.lng) : null;
-  const fmtT = (d) => d && !isNaN(d) ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '--:--';
-  const srT = times2 ? times2.sunrise : null;
-  const ssT = times2 ? times2.sunset  : null;
+  const times2 = SC2 ? (() => { try { return SC2.getTimes(now, loc2.lat, loc2.lng); } catch { return null; } })() : null;
+  const fmtT = (d) => (d && !isNaN(d.getTime())) ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '--:--';
+  const srT  = times2 ? times2.sunrise : null;
+  const ssT  = times2 ? times2.sunset  : null;
   const ghRS = fmtT(srT);
   const ghRE = srT ? fmtT(new Date(srT.getTime() + 3600000)) : '--:--';
   const ghSS = ssT ? fmtT(new Date(ssT.getTime() - 3600000)) : '--:--';
@@ -7016,27 +7037,29 @@ function ColorTempView({ project, onBack }) {
         </div>
       </div>
 
-      {/* Temperatura — centrada exacta en la pantalla */}
-      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10, userSelect:'none' }}>
-        {isMeasuring ? (
-          <div style={{ width:52, height:52, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
-        ) : currentTemp ? (
-          <>
-            <div style={{ fontSize:88, fontWeight:200, color:'white', letterSpacing:'-4px', lineHeight:1, fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif', textShadow:'0 2px 24px rgba(0,0,0,0.6)' }}>
-              {Math.round(currentTemp)}<span style={{ fontSize:48, fontWeight:200, opacity:0.7 }}> K</span>
-            </div>
-            <div style={{ marginTop:16, fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>{light?.name}</div>
-            <div style={{ marginTop:5, fontSize:12, color:'rgba(255,255,255,0.38)', fontFamily:'inherit' }}>{light?.desc}</div>
-          </>
-        ) : (
-          <div style={{ fontSize:14, color:'rgba(255,255,255,0.38)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>Apunta y mide</div>
-        )}
-      </div>
+      {/* Todo centrado — número + botón juntos en el medio */}
+      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10, userSelect:'none', gap:40 }}>
 
-      {/* Botón medir — fijo en la parte inferior con margen de safe area */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 40px)', display:'flex', justifyContent:'center', zIndex:20 }}>
+        {/* Temperatura */}
+        <div style={{ textAlign:'center' }}>
+          {isMeasuring ? (
+            <div style={{ width:52, height:52, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>
+          ) : currentTemp ? (
+            <>
+              <div style={{ fontSize:88, fontWeight:200, color:'white', letterSpacing:'-4px', lineHeight:1, fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif', textShadow:'0 2px 24px rgba(0,0,0,0.6)' }}>
+                {Math.round(currentTemp)}<span style={{ fontSize:48, fontWeight:200, opacity:0.7 }}> K</span>
+              </div>
+              <div style={{ marginTop:16, fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>{light?.name}</div>
+              <div style={{ marginTop:5, fontSize:12, color:'rgba(255,255,255,0.38)', fontFamily:'inherit' }}>{light?.desc}</div>
+            </>
+          ) : (
+            <div style={{ fontSize:14, color:'rgba(255,255,255,0.38)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>Apunta y mide</div>
+          )}
+        </div>
+
+        {/* Botón medir — justo debajo del número */}
         <button onClick={measureTemp} disabled={isMeasuring} className="tap"
-          style={{ width:72, height:72, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.12)', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.45:1, backdropFilter:'blur(12px)' }}>
+          style={{ width:72, height:72, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.12)', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.45:1, backdropFilter:'blur(12px)', flexShrink:0 }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M20.94 11A8.994 8.994 0 0 0 12 3a8.994 8.994 0 0 0-8.94 8"/>
