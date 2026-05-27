@@ -6594,9 +6594,300 @@ function IMessageChat({ project, isAdmin }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  TOOLS MENU VIEW
+// ═══════════════════════════════════════════════════════════
+function ToolsMenuView({ onBack, onSelectTool }) {
+  return (
+    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column', padding:'52px 20px 20px' }} className="slide-l">
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:32 }}>
+        <button onClick={onBack} className="tap" style={{ background:'var(--bg-secondary)', border:'1px solid var(--border-light)', color:'var(--text-primary)', width:36, height:36, borderRadius:8, fontSize:18, cursor:'pointer', fontFamily:'inherit' }}>←</button>
+        <h1 style={{ fontSize:24, fontWeight:800, color:'var(--text-primary)', margin:0, fontFamily:'inherit' }}>Herramientas</h1>
+      </div>
+
+      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+        <button onClick={() => onSelectTool('sun-ar')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <line x1="12" y1="2" x2="12" y2="4"/>
+              <line x1="12" y1="20" x2="12" y2="22"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="2" y1="12" x2="4" y2="12"/>
+              <line x1="20" y1="12" x2="22" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Sun AR</div>
+            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Trayectoria del sol en tiempo real</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <button onClick={() => onSelectTool('color-temp')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+            </svg>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Color Temperature</div>
+            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Temperatura de color en Kelvin</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SUN AR VIEW — como mockup: arco SVG + brújula + golden hour
+// ═══════════════════════════════════════════════════════════
+function SunARView({ project, onBack }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [heading, setHeading] = useState(180); // grados de la brújula
+
+  useEffect(() => {
+    const handleOrientation = (e) => { if (e.alpha != null) setHeading(Math.round(e.alpha)); };
+    if (typeof DeviceOrientationEvent !== 'undefined') {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(p => { if (p==='granted') window.addEventListener('deviceorientation', handleOrientation); }).catch(()=>{});
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    }
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, []);
+
+  useEffect(() => {
+    if (!isAnimating) return;
+    const id = setInterval(() => {
+      setCurrentDate(d => { const n=new Date(d); n.setMinutes(n.getMinutes()+8); return n; });
+    }, 80);
+    return () => clearInterval(id);
+  }, [isAnimating]);
+
+  const fmt = (d) => String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+
+  // Horarios fijos (en app real vendrían de SunCalc + geoloc)
+  const srH=6, srM=18, ssH=20, ssM=42;
+  const sunriseMin = srH*60+srM;
+  const sunsetMin  = ssH*60+ssM;
+  const curMin     = currentDate.getHours()*60+currentDate.getMinutes();
+  const progress   = Math.max(0, Math.min(1, (curMin-sunriseMin)/(sunsetMin-sunriseMin)));
+
+  // Golden hour: 60 min después de salida, 60 min antes de puesta
+  const ghRiseStart = `${String(srH).padStart(2,'0')}:${String(srM).padStart(2,'0')}`;
+  const ghRiseEnd   = `${String(srH+1).padStart(2,'0')}:${String(srM).padStart(2,'0')}`;
+  const ghSetStart  = `${String(ssH-1).padStart(2,'0')}:${String(ssM).padStart(2,'0')}`;
+  const ghSetEnd    = `${String(ssH).padStart(2,'0')}:${String(ssM).padStart(2,'0')}`;
+
+  // SVG del arco del sol — ancho 320 alto 160
+  const W=320, H=160;
+  const cx=W/2, cy=H+10;
+  const rx=130, ry=145;
+  // Puntos del arco (de -PI a 0 = de izquierda a derecha)
+  const arcPath = `M ${cx-rx} ${cy} A ${rx} ${ry} 0 0 1 ${cx+rx} ${cy}`;
+  // Posición del sol sobre el arco
+  const angle = Math.PI - progress * Math.PI; // PI→0
+  const sunX = cx + rx * Math.cos(angle);
+  const sunY = cy - ry * Math.sin(angle);
+  // Parte ya recorrida (amarilla)
+  const partX = cx + rx * Math.cos(Math.PI);
+  const endAng = Math.PI - progress * Math.PI;
+  const endX = cx + rx * Math.cos(endAng);
+  const endY = cy - ry * Math.sin(endAng);
+  const largeArc = progress > 0.5 ? 1 : 0;
+  const passedPath = progress > 0
+    ? `M ${cx-rx} ${cy} A ${rx} ${ry} 0 ${largeArc} 1 ${endX} ${endY}`
+    : '';
+
+  // Brújula horizontal
+  const compassLabels = [
+    {label:'N', deg:0}, {label:'NE', deg:45}, {label:'E', deg:90}, {label:'SE', deg:135},
+    {label:'S', deg:180}, {label:'SO', deg:225}, {label:'O', deg:270}, {label:'NO', deg:315}
+  ];
+  const compassOffset = -heading;
+
+  return (
+    <div style={{ width:'100%', height:'100vh', position:'relative', overflow:'hidden', background:'linear-gradient(180deg, #1a2a3a 0%, #2a3d52 40%, #3d5a3a 100%)' }} className="slide-l">
+
+      {/* Header */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, padding:'16px 16px 0', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20 }}>
+        <div style={{ color:'rgba(255,255,255,0.8)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.08em' }}>Sun AR</div>
+        <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:'white', width:32, height:32, borderRadius:8, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+      </div>
+
+      {/* Arco SVG del sol — centrado verticalmente */}
+      <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%, -58%)', zIndex:5 }}>
+        <svg width={W} height={H+20} viewBox={`0 0 ${W} ${H+20}`}>
+          {/* Arco restante (blanco punteado) */}
+          <path d={arcPath} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeDasharray="5 5"/>
+          {/* Arco recorrido (amarillo) */}
+          {passedPath && <path d={passedPath} fill="none" stroke="#FFD050" strokeWidth="2" strokeLinecap="round"/>}
+          {/* Marcador Salida */}
+          <circle cx={cx-rx} cy={cy} r="7" fill="#FFD050" stroke="rgba(0,0,0,0.3)" strokeWidth="1"/>
+          <text x={cx-rx+12} y={cy-14} fill="white" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">Salida</text>
+          <text x={cx-rx+12} y={cy-2} fill="rgba(255,255,255,0.7)" fontSize="10" fontFamily="Inter,sans-serif">{ghRiseStart}</text>
+          {/* Marcador Puesta */}
+          <circle cx={cx+rx} cy={cy} r="7" fill="#FF8C00" stroke="rgba(0,0,0,0.3)" strokeWidth="1"/>
+          <text x={cx+rx-52} y={cy-14} fill="white" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">Puesta</text>
+          <text x={cx+rx-52} y={cy-2} fill="rgba(255,255,255,0.7)" fontSize="10" fontFamily="Inter,sans-serif">{ghSetEnd}</text>
+          {/* Sol actual */}
+          {progress > 0 && progress < 1 && (<>
+            <circle cx={sunX} cy={sunY} r="14" fill="rgba(255,208,80,0.2)"/>
+            <circle cx={sunX} cy={sunY} r="9" fill="#FFD050" stroke="white" strokeWidth="1.5"/>
+          </>)}
+          {/* Cruz central */}
+          <line x1={cx-10} y1={cy-40} x2={cx+10} y2={cy-40} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+          <line x1={cx} y1={cy-50} x2={cx} y2={cy-30} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+        </svg>
+      </div>
+
+      {/* Brújula horizontal */}
+      <div style={{ position:'absolute', bottom:200, left:0, right:0, zIndex:10, overflow:'hidden', height:40 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:0, position:'relative', height:'100%' }}>
+          {/* Línea horizontal */}
+          <div style={{ position:'absolute', top:'50%', left:0, right:0, height:1, background:'rgba(255,255,255,0.2)' }}/>
+          {/* Indicador central (flecha arriba) */}
+          <div style={{ position:'absolute', top:2, left:'50%', transform:'translateX(-50%)', color:'white', fontSize:10, zIndex:2 }}>↑</div>
+          {/* Labels dinámicos */}
+          <div style={{ display:'flex', gap:0, transform:`translateX(${(compassOffset/360)*800}px)`, transition:'transform 0.1s linear', whiteSpace:'nowrap' }}>
+            {[-1,0,1].map(rep => compassLabels.map((c,i) => (
+              <div key={rep+'-'+i} style={{ width:100, textAlign:'center', color: c.label==='N'||c.label==='S'||c.label==='E'||c.label==='O' ? 'white' : 'rgba(255,255,255,0.5)', fontSize: c.label==='N'||c.label==='S'||c.label==='E'||c.label==='O' ? 13 : 11, fontWeight: c.label==='S'?700:500, fontFamily:'inherit', letterSpacing:'0.05em', paddingTop:14 }}>
+                {c.label}
+              </div>
+            )))}
+          </div>
+        </div>
+      </div>
+
+      {/* Panel inferior Golden Hour */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:10, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.1)', padding:'16px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          {/* Golden Hour Salida */}
+          <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:12, padding:'14px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:'#FFD050' }}/>
+              <span style={{ color:'rgba(255,255,255,0.6)', fontSize:11, fontFamily:'inherit', fontWeight:500 }}>Golden Hour (Salida)</span>
+            </div>
+            <div style={{ fontSize:20, fontWeight:700, color:'#FFD050', fontFamily:'inherit', marginBottom:4 }}>{ghRiseStart} – {ghRiseEnd}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'inherit' }}>Duración: 1h 0m</div>
+          </div>
+          {/* Golden Hour Puesta */}
+          <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:12, padding:'14px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:'#FF8C00' }}/>
+              <span style={{ color:'rgba(255,255,255,0.6)', fontSize:11, fontFamily:'inherit', fontWeight:500 }}>Golden Hour (Puesta)</span>
+            </div>
+            <div style={{ fontSize:20, fontWeight:700, color:'#FF8C00', fontFamily:'inherit', marginBottom:4 }}>{ghSetStart} – {ghSetEnd}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'inherit' }}>Duración: 1h 0m</div>
+          </div>
+        </div>
+        {/* Botón animación */}
+        <button onClick={() => setIsAnimating(!isAnimating)} className="tap" style={{ marginTop:12, width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'white', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', letterSpacing:'0.04em' }}>
+          {isAnimating ? '⏸ Pausar animación' : '▶ Simular día'}
+        </button>
+      </div>
+
+      <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COLOR TEMPERATURE VIEW — solo el número, sin íconos
+// ═══════════════════════════════════════════════════════════
+function ColorTempView({ project, onBack }) {
+  const [currentTemp, setCurrentTemp] = useState(null);
+  const [isMeasuring, setIsMeasuring] = useState(false);
+
+  const lightSources = {
+    1700: { name: 'Vela', desc: 'Muy cálida' },
+    2500: { name: 'Tungsteno', desc: 'Cálida artificial' },
+    3200: { name: 'Tungsteno Estándar', desc: 'Estudio cinematográfico' },
+    5500: { name: 'Luz Natural', desc: 'Sol al mediodía' },
+    6500: { name: 'Daylight', desc: 'Luz natural promedio' },
+    7500: { name: 'Cielo Nublado', desc: 'Luz fría difusa' },
+    10000: { name: 'Cielo Despejado', desc: 'Luz muy azul' }
+  };
+
+  const measureTemp = () => {
+    if (isMeasuring) return;
+    setIsMeasuring(true);
+    setTimeout(() => {
+      const temps = [2500, 3200, 5500, 6500, 7500];
+      let temp = temps[Math.floor(Math.random() * temps.length)];
+      temp += Math.floor(Math.random() * 400 - 200);
+      setCurrentTemp(Math.max(1700, Math.min(10000, temp)));
+      setIsMeasuring(false);
+    }, 1200);
+  };
+
+  const light = currentTemp ? lightSources[Object.keys(lightSources).reduce((p,c) => Math.abs(c-currentTemp)<Math.abs(p-currentTemp)?c:p)] : null;
+
+  return (
+    <div style={{ width:'100%', height:'100vh', position:'relative', overflow:'hidden', background:'#000' }} className="slide-l">
+      {/* Fondo de cámara simulado */}
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)', opacity:0.9 }}/>
+
+      {/* Header */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, padding:'16px 16px 0', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20 }}>
+        <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.08em' }}>Color Temp</div>
+        <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', color:'white', width:32, height:32, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+      </div>
+
+      {/* Temperatura — grande en el centro exacto como el mockup */}
+      <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', textAlign:'center', zIndex:10, userSelect:'none' }}>
+        {isMeasuring ? (
+          <div style={{ width:48, height:48, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>
+        ) : currentTemp ? (
+          <>
+            <div style={{ fontSize:72, fontWeight:300, color:'white', letterSpacing:'-2px', lineHeight:1, fontFamily:'-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+              {Math.round(currentTemp)} <span style={{ fontSize:40, fontWeight:300, opacity:0.8 }}>K</span>
+            </div>
+            <div style={{ marginTop:16, fontSize:13, color:'rgba(255,255,255,0.5)', fontFamily:'inherit', letterSpacing:'0.05em', textTransform:'uppercase' }}>
+              {light?.name}
+            </div>
+            <div style={{ marginTop:4, fontSize:11, color:'rgba(255,255,255,0.35)', fontFamily:'inherit' }}>
+              {light?.desc}
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize:14, color:'rgba(255,255,255,0.3)', fontFamily:'inherit', letterSpacing:'0.05em', textTransform:'uppercase' }}>Apunta y mide</div>
+        )}
+      </div>
+
+      {/* Botón medir — centrado abajo */}
+      <div style={{ position:'absolute', bottom:48, left:'50%', transform:'translateX(-50%)', zIndex:20 }}>
+        <button onClick={measureTemp} disabled={isMeasuring} className="tap" style={{ width:64, height:64, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.08)', color:'white', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.5:1, backdropFilter:'blur(10px)' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M20.94 11A8.994 8.994 0 0 0 12 3a8.994 8.994 0 0 0-8.94 8"/>
+            <path d="M3.06 13A8.994 8.994 0 0 0 12 21a8.994 8.994 0 0 0 8.94-8"/>
+          </svg>
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 //  HOME VIEW
 // ═══════════════════════════════════════════════════════════
-function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, onLock, onExport, onNewProject, onUpdateProject, onSelectDept, onOpenMessages, onOpenCitaciones, onOpenScouting }) {
+function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, onLock, onExport, onNewProject, onUpdateProject, onSelectDept, onOpenMessages, onOpenCitaciones, onOpenScouting, onOpenTools }) {
   const [showAddDept, setShowAddDept] = useState(false);
   const [newDeptLabel, setNewDeptLabel] = useState('');
   const [newDeptIcon, setNewDeptIcon] = useState('👤');
@@ -7103,6 +7394,15 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Scouting</div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Locaciones y fotos</div>
+              </div>
+              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            </button>
+
+            <button onClick={onOpenTools} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom: isAdmin ? '1px solid rgba(255,255,255,0.08)' : 'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255, 87, 34, 0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🧰</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Herramientas</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Sun AR, Color Temperature</div>
               </div>
               <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
             </button>
@@ -8796,23 +9096,46 @@ function AdminAllProjectsPanel({ onClose }) {
 //  MARKETPLACE VIEW
 // ═══════════════════════════════════════════════════════════
 function MarketplaceView({ onBack }) {
-  const STORE_KEY = 'marketplace_items';
-  const [items, setItems] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [search, setSearch] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState({ titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[] });
-  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const STORE_KEY = 'mkt_v2';
+  const CATEGORIAS = ['Equipos','Cámaras','Lentes','Iluminación','Sonido','Props & Arte','Transporte','Vestuario','Servicios','Otros'];
+  const EMPTY_FORM = { titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[], pin:'' };
 
+  const [items, setItems]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // Modos: null | 'new' | 'edit' | 'pin-edit' | 'pin-del'
+  const [mode, setMode]           = useState(null);
+  const [form, setForm]           = useState(EMPTY_FORM);
+  const [editId, setEditId]       = useState(null);
+  const [pinInput, setPinInput]   = useState('');
+  const [pinError, setPinError]   = useState('');
+  const [saving, setSaving]       = useState(false);
+
+  const sf = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  // ── LOAD desde storage compartido ──────────────────────────
   useEffect(() => {
-    try { const s = localStorage.getItem(STORE_KEY); if (s) setItems(JSON.parse(s)); } catch {}
+    (async () => {
+      try {
+        const r = await window.storage.get(STORE_KEY, true);
+        if (r && r.value) setItems(JSON.parse(r.value));
+      } catch {
+        try { const s = localStorage.getItem(STORE_KEY); if (s) setItems(JSON.parse(s)); } catch {}
+      } finally { setLoading(false); }
+    })();
   }, []);
 
-  const saveItems = (newItems) => {
-    setItems(newItems);
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(newItems)); } catch {}
+  // ── SAVE ────────────────────────────────────────────────────
+  const persist = async (list) => {
+    setItems(list);
+    const str = JSON.stringify(list);
+    try { await window.storage.set(STORE_KEY, str, true); } catch {}
+    try { localStorage.setItem(STORE_KEY, str); } catch {}
   };
 
+  // ── FOTOS ───────────────────────────────────────────────────
   const handleFotos = async (e) => {
     const list = Array.from(e.target.files||[]).slice(0,5);
     if (!list.length) return;
@@ -8821,25 +9144,162 @@ function MarketplaceView({ onBack }) {
     for (const f of list) {
       try { nuevas.push(await window.compressImage(f, 900, 0.75)); } catch {}
     }
-    set('fotos', [...(form.fotos||[]), ...nuevas].slice(0,5));
+    sf('fotos', [...(form.fotos||[]), ...nuevas].slice(0,5));
     setUploading(false);
     e.target.value = '';
   };
 
-  const CATEGORIAS = ['Equipos','Cámaras','Lentes','Iluminación','Sonido','Props & Arte','Transporte','Vestuario','Servicios','Otros'];
-
-  const submit = () => {
-    if (!form.titulo || !form.contacto) return;
-    const newItem = { id: Date.now(), ...form, createdAt: new Date().toLocaleDateString('es') };
-    saveItems([newItem, ...items]);
-    setForm({ titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[] });
-    setShowForm(false);
+  // ── SUBMIT NUEVA PUBLICACIÓN ────────────────────────────────
+  const submitNew = async () => {
+    if (!form.titulo || !form.contacto || !form.pin) return;
+    setSaving(true);
+    const newItem = { id: Date.now(), ...form, pin: btoa(form.pin), createdAt: new Date().toLocaleDateString('es') };
+    await persist([newItem, ...items]);
+    setForm(EMPTY_FORM);
+    setMode(null);
+    setSaving(false);
   };
 
-  const del = (id) => saveItems(items.filter(i=>i.id!==id));
+  // ── VERIFICAR PIN ──────────────────────────────────────────
+  const verifyPin = (item) => {
+    try { return atob(item.pin) === pinInput; } catch { return item.pin === pinInput; }
+  };
+
+  // ── FLUJO EDITAR ───────────────────────────────────────────
+  const startEdit = (item) => {
+    setEditId(item.id);
+    setPinInput('');
+    setPinError('');
+    setMode('pin-edit');
+  };
+
+  const confirmPinEdit = () => {
+    const item = items.find(i=>i.id===editId);
+    if (!item || !verifyPin(item)) { setPinError('PIN incorrecto'); return; }
+    setForm({ ...item, pin: pinInput });
+    setPinError('');
+    setMode('edit');
+  };
+
+  const submitEdit = async () => {
+    if (!form.titulo || !form.contacto) return;
+    setSaving(true);
+    const updated = items.map(i => i.id===editId ? { ...i, ...form, pin: btoa(form.pin), updatedAt: new Date().toLocaleDateString('es') } : i);
+    await persist(updated);
+    setForm(EMPTY_FORM);
+    setEditId(null);
+    setMode(null);
+    setSaving(false);
+  };
+
+  // ── FLUJO ELIMINAR ─────────────────────────────────────────
+  const startDel = (item) => {
+    setEditId(item.id);
+    setPinInput('');
+    setPinError('');
+    setMode('pin-del');
+  };
+
+  const confirmDel = async () => {
+    const item = items.find(i=>i.id===editId);
+    if (!item || !verifyPin(item)) { setPinError('PIN incorrecto'); return; }
+    await persist(items.filter(i=>i.id!==editId));
+    setEditId(null);
+    setMode(null);
+  };
+
+  const closeModal = () => { setMode(null); setForm(EMPTY_FORM); setEditId(null); setPinInput(''); setPinError(''); };
 
   const filtered = items.filter(i =>
     !search || (i.titulo+i.descripcion+i.categoria+i.nombre).toLowerCase().includes(search.toLowerCase())
+  );
+
+  // ── FORM COMPARTIDO (nueva / editar) ───────────────────────
+  const renderForm = (isEdit) => (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:500, display:'flex', alignItems:'flex-end' }} onClick={closeModal}>
+      <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', padding:'20px 20px calc(env(safe-area-inset-bottom,0px)+24px)', maxHeight:'92vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><div style={{ width:36, height:4, background:'#e0ddd8', borderRadius:2 }}/></div>
+        <div style={{ fontSize:16, fontWeight:700, color:'#1a1714', marginBottom:16 }}>{isEdit ? 'Editar publicación' : 'Nueva publicación'}</div>
+
+        {/* Fotos */}
+        <div style={{ marginBottom:12 }}>
+          <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:8 }}>
+            {(form.fotos||[]).map((src,i) => (
+              <div key={i} style={{ position:'relative', flexShrink:0 }}>
+                <img src={src} alt="" style={{ width:72, height:72, borderRadius:10, objectFit:'cover' }}/>
+                <button onClick={()=>sf('fotos',(form.fotos||[]).filter((_,j)=>j!==i))} style={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', background:'rgba(200,0,0,0.7)', border:'none', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+              </div>
+            ))}
+            {(form.fotos||[]).length < 5 && (
+              <label style={{ width:72, height:72, borderRadius:10, border:'1.5px dashed #ccc', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:22, color:'#bbb' }}>
+                {uploading ? '⏳' : '📷'}
+                <input type="file" accept="image/*" multiple onChange={handleFotos} style={{ display:'none' }}/>
+              </label>
+            )}
+          </div>
+          <div style={{ fontSize:10, color:'#aaa' }}>Máximo 5 fotos</div>
+        </div>
+
+        <input value={form.titulo} onChange={e=>sf('titulo',e.target.value)} placeholder="Título del ítem *"
+          style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', marginBottom:8, boxSizing:'border-box' }}/>
+        <textarea value={form.descripcion} onChange={e=>sf('descripcion',e.target.value)} placeholder="Descripción (estado, características, etc.)" rows={3}
+          style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', marginBottom:8, resize:'none', boxSizing:'border-box' }}/>
+        <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+          <input value={form.precio} onChange={e=>sf('precio',e.target.value)} placeholder="Precio (ej: $500)"
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+          <select value={form.categoria} onChange={e=>sf('categoria',e.target.value)}
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 10px', color:'#1a1714', outline:'none' }}>
+            {CATEGORIAS.map(c=><option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+          <input value={form.nombre} onChange={e=>sf('nombre',e.target.value)} placeholder="Tu nombre"
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+          <input value={form.contacto} onChange={e=>sf('contacto',e.target.value)} placeholder="WhatsApp *"
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1.5px solid #0092B8', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+        </div>
+
+        {/* PIN — solo al crear */}
+        {!isEdit && (
+          <div style={{ marginBottom:16 }}>
+            <input value={form.pin} onChange={e=>sf('pin',e.target.value)} placeholder="🔒 PIN para editar/eliminar *" type="password" maxLength={20}
+              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#fff8e1', border:'1.5px solid #f0b429', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+            <div style={{ fontSize:11, color:'#aaa', marginTop:4 }}>Guardá este PIN — lo necesitarás para editar o eliminar tu publicación</div>
+          </div>
+        )}
+
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={closeModal} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>Cancelar</button>
+          <button onClick={isEdit ? submitEdit : submitNew} disabled={saving || (!isEdit ? (!form.titulo||!form.contacto||!form.pin) : (!form.titulo||!form.contacto))}
+            style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:saving?'#aaa':'#0092B8', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>
+            {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Publicar ítem'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── MODAL DE PIN ───────────────────────────────────────────
+  const renderPinModal = (action) => (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={closeModal}>
+      <div style={{ background:'#fff', borderRadius:20, width:'100%', maxWidth:340, padding:24 }} onClick={e=>e.stopPropagation()}>
+        <div style={{ fontSize:32, textAlign:'center', marginBottom:8 }}>{action==='edit' ? '✏️' : '🗑️'}</div>
+        <div style={{ fontSize:16, fontWeight:700, color:'#1a1714', textAlign:'center', marginBottom:4 }}>
+          {action==='edit' ? 'Editar publicación' : 'Eliminar publicación'}
+        </div>
+        <div style={{ fontSize:13, color:'#888', textAlign:'center', marginBottom:20 }}>Ingresá el PIN que elegiste al publicar</div>
+        <input value={pinInput} onChange={e=>{setPinInput(e.target.value); setPinError('');}} placeholder="PIN" type="password" maxLength={20}
+          style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:16, textAlign:'center', letterSpacing:4, background:'#f7f5f2', border:`1.5px solid ${pinError?'#e53e3e':'#e5e2dd'}`, borderRadius:12, padding:'13px', color:'#1a1714', outline:'none', boxSizing:'border-box', marginBottom:4 }}/>
+        {pinError && <div style={{ color:'#e53e3e', fontSize:12, textAlign:'center', marginBottom:8 }}>{pinError}</div>}
+        <div style={{ display:'flex', gap:8, marginTop:12 }}>
+          <button onClick={closeModal} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>Cancelar</button>
+          <button onClick={action==='edit' ? confirmPinEdit : confirmDel} disabled={!pinInput}
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:action==='edit'?'#0092B8':'#e53e3e', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:'pointer', opacity:pinInput?1:0.4 }}>
+            {action==='edit' ? 'Continuar' : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   return (
@@ -8852,74 +9312,30 @@ function MarketplaceView({ onBack }) {
             <div style={{ fontSize:24, fontWeight:800, color:'#fff' }}>🛒 Marketplace</div>
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginTop:2 }}>Equipos, props y servicios para producción</div>
           </div>
-          <button onClick={()=>setShowForm(true)} style={{ background:'rgba(255,255,255,0.95)', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, color:'#005a72', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>+ Publicar</button>
+          <button onClick={()=>{ setForm(EMPTY_FORM); setMode('new'); }} style={{ background:'rgba(255,255,255,0.95)', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, color:'#005a72', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>+ Publicar</button>
         </div>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍  Buscar equipos, props, servicios..."
           style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.25)', borderRadius:12, padding:'11px 14px', color:'#fff', outline:'none', boxSizing:'border-box' }}/>
       </div>
 
-      {/* Form modal */}
-      {showForm && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:500, display:'flex', alignItems:'flex-end' }} onClick={()=>setShowForm(false)}>
-          <div style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', padding:'20px 20px calc(env(safe-area-inset-bottom,0px)+24px)', maxHeight:'90vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
-            <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><div style={{ width:36, height:4, background:'#e0ddd8', borderRadius:2 }}/></div>
-            <div style={{ fontSize:16, fontWeight:700, color:'#1a1714', marginBottom:16 }}>Publicar ítem</div>
+      {/* Modales */}
+      {mode === 'new'      && renderForm(false)}
+      {mode === 'edit'     && renderForm(true)}
+      {mode === 'pin-edit' && renderPinModal('edit')}
+      {mode === 'pin-del'  && renderPinModal('del')}
 
-            {/* Fotos */}
-            <div style={{ marginBottom:12 }}>
-              <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:8 }}>
-                {(form.fotos||[]).map((src, i) => (
-                  <div key={i} style={{ position:'relative', flexShrink:0 }}>
-                    <img src={src} alt="" style={{ width:72, height:72, borderRadius:10, objectFit:'cover' }}/>
-                    <button onClick={()=>set('fotos',(form.fotos||[]).filter((_,j)=>j!==i))} style={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', background:'rgba(200,0,0,0.7)', border:'none', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
-                  </div>
-                ))}
-                {(form.fotos||[]).length < 5 && (
-                  <label style={{ width:72, height:72, borderRadius:10, border:'1.5px dashed #ccc', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:22, color:'#bbb' }}>
-                    {uploading ? '⏳' : '📷'}
-                    <input type="file" accept="image/*" multiple onChange={handleFotos} style={{ display:'none' }}/>
-                  </label>
-                )}
-              </div>
-              <div style={{ fontSize:10, color:'#aaa' }}>Máximo 5 fotos</div>
-            </div>
-
-            <input value={form.titulo} onChange={e=>set('titulo',e.target.value)} placeholder="Título del ítem *"
-              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', marginBottom:8, boxSizing:'border-box' }}/>
-            <textarea value={form.descripcion} onChange={e=>set('descripcion',e.target.value)} placeholder="Descripción (estado, características, etc.)" rows={3}
-              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', marginBottom:8, resize:'none', boxSizing:'border-box' }}/>
-
-            <div style={{ display:'flex', gap:8, marginBottom:8 }}>
-              <input value={form.precio} onChange={e=>set('precio',e.target.value)} placeholder="Precio (ej: $500)"
-                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
-              <select value={form.categoria} onChange={e=>set('categoria',e.target.value)}
-                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 10px', color:'#1a1714', outline:'none' }}>
-                {CATEGORIAS.map(c=><option key={c}>{c}</option>)}
-              </select>
-            </div>
-
-            <div style={{ display:'flex', gap:8, marginBottom:16 }}>
-              <input value={form.nombre} onChange={e=>set('nombre',e.target.value)} placeholder="Tu nombre"
-                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
-              <input value={form.contacto} onChange={e=>set('contacto',e.target.value)} placeholder="Teléfono / WhatsApp *"
-                style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1.5px solid #0092B8', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
-            </div>
-
-            <div style={{ display:'flex', gap:8 }}>
-              <button onClick={()=>setShowForm(false)} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>Cancelar</button>
-              <button onClick={submit} disabled={!form.titulo||!form.contacto} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:form.titulo&&form.contacto?'#0092B8':'#ccc', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:form.titulo&&form.contacto?'pointer':'not-allowed' }}>Publicar ítem</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Items grid */}
+      {/* Items */}
       <div style={{ flex:1, padding:'16px', paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 24px)' }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'#bbb' }}>
+            <div style={{ width:32, height:32, border:'3px solid #e5e2dd', borderTop:'3px solid #0092B8', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }}/>
+            <div style={{ fontSize:13 }}>Cargando publicaciones…</div>
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'#bbb' }}>
             <div style={{ fontSize:40, marginBottom:12 }}>🛒</div>
             <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>{search ? 'Sin resultados' : 'El marketplace está vacío'}</div>
-            <div style={{ fontSize:13 }}>{search ? 'Probá con otra búsqueda' : 'Sé el primero en publicar un ítem'}</div>
+            <div style={{ fontSize:13 }}>{search ? 'Probá con otra búsqueda' : 'Sé el primero en publicar'}</div>
           </div>
         ) : (
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
@@ -8937,16 +9353,20 @@ function MarketplaceView({ onBack }) {
                   {item.precio && <div style={{ fontSize:14, fontWeight:700, color:'#0092B8', marginBottom:4 }}>{item.precio}</div>}
                   <div style={{ fontSize:11, color:'#aaa', marginBottom:8 }}>📞 {item.contacto}{item.nombre?' · '+item.nombre:''}</div>
                   <a href={`https://wa.me/${item.contacto.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
-                    style={{ display:'block', textAlign:'center', background:'#25D366', color:'#fff', borderRadius:8, padding:'7px', fontSize:12, fontWeight:700, textDecoration:'none', fontFamily:'Inter, sans-serif' }}>
+                    style={{ display:'block', textAlign:'center', background:'#25D366', color:'#fff', borderRadius:8, padding:'7px', fontSize:12, fontWeight:700, textDecoration:'none', fontFamily:'Inter, sans-serif', marginBottom:6 }}>
                     💬 WhatsApp
                   </a>
-                  <button onClick={()=>del(item.id)} style={{ width:'100%', marginTop:5, background:'none', border:'none', fontSize:11, color:'#ccc', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>Eliminar</button>
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button onClick={()=>startEdit(item)} style={{ flex:1, background:'#f0f7ff', border:'1px solid #cce4f7', borderRadius:8, fontSize:11, color:'#0092B8', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>✏️ Editar</button>
+                    <button onClick={()=>startDel(item)} style={{ flex:1, background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8, fontSize:11, color:'#e53e3e', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>🗑️ Eliminar</button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
@@ -10068,10 +10488,20 @@ function ProjectAppShell({ project, save, view, setView, activeDayId, setActiveD
           onOpenMessages={()=>setView('messages')}
           onOpenCitaciones={()=>setView('citaciones')}
           onOpenScouting={()=>setView('scouting')}
+          onOpenTools={()=>setView('tools-menu')}
         />
       )}
       {view==='scouting' && project && (
         <ScoutingView project={project} onBack={()=>setView('home')}/>
+      )}
+      {view==='tools-menu' && project && (
+        <ToolsMenuView onBack={()=>setView('home')} onSelectTool={(tool)=>setView('tool-'+tool)}/>
+      )}
+      {view==='tool-sun-ar' && project && (
+        <SunARView project={project} onBack={()=>setView('tools-menu')}/>
+      )}
+      {view==='tool-color-temp' && project && (
+        <ColorTempView project={project} onBack={()=>setView('tools-menu')}/>
       )}
       {view==='day' && activeDay && (
         <DayView
