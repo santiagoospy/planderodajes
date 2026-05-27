@@ -6644,18 +6644,23 @@ function ToolsMenuView({ onBack, onSelectTool }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SUN AR VIEW — como mockup: arco SVG + brújula + golden hour
+//  SUN AR VIEW — cámara real + arco AR responsive al giroscopio
 // ═══════════════════════════════════════════════════════════
 function SunARView({ project, onBack }) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [heading, setHeading]         = useState(180);
-  const [location, setLocation]       = useState(null);
-  const [camError, setCamError]       = useState(false);
-  const videoRef  = React.useRef(null);
-  const streamRef = React.useRef(null);
+  const [heading, setHeading]   = useState(180); // brújula
+  const [pitch, setPitch]       = useState(0);   // inclinación vertical
+  const [location, setLocation] = useState(null);
+  const [camError, setCamError] = useState(false);
+  const [now, setNow]           = useState(new Date());
+  const videoRef   = React.useRef(null);
+  const canvasRef  = React.useRef(null);
+  const streamRef  = React.useRef(null);
+  const rafRef     = React.useRef(null);
+  const headingRef = React.useRef(180);
+  const pitchRef   = React.useRef(0);
+  const locationRef= React.useRef(null);
 
-  // Cámara real
+  // Cámara
   useEffect(() => {
     (async () => {
       try {
@@ -6669,24 +6674,28 @@ function SunARView({ project, onBack }) {
     return () => { if (streamRef.current) streamRef.current.getTracks().forEach(t=>t.stop()); };
   }, []);
 
-  // Geolocalización
+  // GPS
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { locationRef.current = { lat:-25.2867, lng:-57.6470 }; setLocation(locationRef.current); return; }
     navigator.geolocation.getCurrentPosition(
-      pos => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      ()  => setLocation({ lat: -25.2867, lng: -57.6470 })
+      pos => { locationRef.current = { lat:pos.coords.latitude, lng:pos.coords.longitude }; setLocation(locationRef.current); },
+      ()  => { locationRef.current = { lat:-25.2867, lng:-57.6470 }; setLocation(locationRef.current); }
     );
   }, []);
 
-  // Brújula
+  // Brújula + pitch (beta = inclinación hacia adelante)
   useEffect(() => {
     const handle = (e) => {
-      if (e.webkitCompassHeading != null) setHeading(Math.round(e.webkitCompassHeading));
-      else if (e.alpha != null)           setHeading(Math.round((360 - e.alpha) % 360));
+      let h = headingRef.current;
+      if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
+      else if (e.alpha != null)           h = (360 - e.alpha + 360) % 360;
+      headingRef.current = h;
+      setHeading(Math.round(h));
+      if (e.beta != null) { pitchRef.current = e.beta; setPitch(e.beta); }
     };
     const setup = async () => {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try { const p = await DeviceOrientationEvent.requestPermission(); if (p==='granted') { window.addEventListener('deviceorientationabsolute', handle, true); } } catch {}
+        try { const p = await DeviceOrientationEvent.requestPermission(); if (p==='granted') { window.addEventListener('deviceorientationabsolute', handle, true); window.addEventListener('deviceorientation', handle, true); } } catch {}
       } else {
         window.addEventListener('deviceorientationabsolute', handle, true);
         window.addEventListener('deviceorientation', handle, true);
@@ -6696,155 +6705,215 @@ function SunARView({ project, onBack }) {
     return () => { window.removeEventListener('deviceorientationabsolute', handle, true); window.removeEventListener('deviceorientation', handle, true); };
   }, []);
 
+  // Actualizar reloj cada minuto
   useEffect(() => {
-    if (!isAnimating) return;
-    const id = setInterval(() => {
-      setCurrentDate(d => { const n=new Date(d); n.setMinutes(n.getMinutes()+8); return n; });
-    }, 80);
+    const id = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(id);
-  }, [isAnimating]);
+  }, []);
 
-  const fmt = (d) => d ? String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') : '--:--';
+  // ── Loop de dibujo AR en canvas ────────────────────────────
+  useEffect(() => {
+    const draw = () => {
+      const canvas = canvasRef.current;
+      const video  = videoRef.current;
+      if (!canvas) { rafRef.current = requestAnimationFrame(draw); return; }
 
-  // SunCalc real + GPS
-  const lat = location ? location.lat : -25.2867;
-  const lng = location ? location.lng : -57.6470;
-  const SC        = window.SunCalc;
-  const times       = SC ? SC.getTimes(currentDate, lat, lng) : null;
-  const sunriseDate = times ? times.sunrise : null;
-  const sunsetDate  = times ? times.sunset  : null;
-  const sunPos      = SC ? SC.getPosition(currentDate, lat, lng) : null;
-  const sunAltDeg   = sunPos ? sunPos.altitude * (180/Math.PI) : 0;
-  const sunAzDeg    = sunPos ? ((sunPos.azimuth * (180/Math.PI)) + 180 + 360) % 360 : 180;
-  const srH = sunriseDate ? sunriseDate.getHours()   : 6;
-  const srM = sunriseDate ? sunriseDate.getMinutes() : 18;
-  const ssH = sunsetDate  ? sunsetDate.getHours()    : 20;
-  const ssM = sunsetDate  ? sunsetDate.getMinutes()  : 42;
-  const sunriseMin = srH*60+srM;
-  const sunsetMin  = ssH*60+ssM;
-  const curMin     = currentDate.getHours()*60+currentDate.getMinutes();
-  const progress   = Math.max(0, Math.min(1, (curMin-sunriseMin)/(sunsetMin-sunriseMin)));
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
 
-  const ghRiseStart = `${String(srH).padStart(2,'0')}:${String(srM).padStart(2,'0')}`;
-  const ghRiseEnd   = `${String(srH+1).padStart(2,'0')}:${String(srM).padStart(2,'0')}`;
-  const ghSetStart  = `${String(ssH-1).padStart(2,'0')}:${String(ssM).padStart(2,'0')}`;
-  const ghSetEnd    = `${String(ssH).padStart(2,'0')}:${String(ssM).padStart(2,'0')}`;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
 
-  // Posición del sol en pantalla (AR)
-  const azDiff   = ((sunAzDeg - heading) + 540) % 360 - 180;
-  const HFOV     = 60;
-  const sunScrX  = 50 + (azDiff / HFOV) * 50;
-  const sunScrY  = Math.max(5, Math.min(75, 50 - (sunAltDeg / 45) * 40));
-  const sunInFOV = Math.abs(azDiff) < HFOV && sunAltDeg > -5;
+      const SC  = window.SunCalc;
+      if (!SC) { rafRef.current = requestAnimationFrame(draw); return; }
 
-  // SVG arco
-  const W=320, H=160, cx=W/2, cy=H+10, rx=130, ry=145;
-  const arcPath    = `M ${cx-rx} ${cy} A ${rx} ${ry} 0 0 1 ${cx+rx} ${cy}`;
-  const angle      = Math.PI - progress * Math.PI;
-  const endX       = cx + rx * Math.cos(angle);
-  const endY       = cy - ry * Math.sin(angle);
-  const largeArc   = progress > 0.5 ? 1 : 0;
-  const passedPath = progress > 0 ? `M ${cx-rx} ${cy} A ${rx} ${ry} 0 ${largeArc} 1 ${endX} ${endY}` : '';
+      const loc  = locationRef.current || { lat:-25.2867, lng:-57.6470 };
+      const date = new Date();
+      const times = SC.getTimes(date, loc.lat, loc.lng);
 
-  const compassLabels = [
-    {label:'N'},{label:'NE'},{label:'E'},{label:'SE'},
-    {label:'S'},{label:'SO'},{label:'O'},{label:'NO'}
-  ];
+      const HFOV = 65; // campo visual horizontal en grados
+      const VFOV = 50; // campo visual vertical en grados
+      const hdg  = headingRef.current;
+      const pch  = pitchRef.current; // beta: 0=horizontal, 90=apuntando al cielo
+
+      // Convertir azimut/altitud → píxeles en pantalla
+      const toScreen = (azDeg, altDeg) => {
+        const azDiff = ((azDeg - hdg) + 540) % 360 - 180;
+        // pitch=90 → mirando al cielo (altitud alta arriba)
+        // pitch=0  → horizontal
+        const altOffset = altDeg - (90 - pch); // ajuste por inclinación
+        const sx = W/2 + (azDiff / HFOV) * W;
+        const sy = H/2 - (altOffset / VFOV) * H;
+        return { x:sx, y:sy };
+      };
+
+      // Calcular posición del sol cada 5 min durante el día
+      const srMin = times.sunrise;
+      const ssMin = times.sunset;
+      const arcPoints = [];
+      const step = 5; // minutos
+      const totalMin = (ssMin - srMin) / 60000;
+      for (let m = 0; m <= totalMin; m += step) {
+        const t = new Date(srMin.getTime() + m * 60000);
+        const pos = SC.getPosition(t, loc.lat, loc.lng);
+        const az  = ((pos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+        const alt = pos.altitude * 180/Math.PI;
+        arcPoints.push({ t, az, alt, screen: toScreen(az, alt) });
+      }
+
+      // ── Dibujar arco amarillo ──────────────────────────────
+      if (arcPoints.length > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#FFD050';
+        ctx.lineWidth   = 3;
+        ctx.shadowColor = 'rgba(255,208,80,0.6)';
+        ctx.shadowBlur  = 8;
+        let started = false;
+        for (const p of arcPoints) {
+          // Solo dibujar si está cerca del FOV (extendido para continuidad)
+          const azDiff = ((p.az - hdg) + 540) % 360 - 180;
+          if (Math.abs(azDiff) > HFOV * 2) { started = false; continue; }
+          if (!started) { ctx.moveTo(p.screen.x, p.screen.y); started = true; }
+          else          { ctx.lineTo(p.screen.x, p.screen.y); }
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // ── Sol actual ─────────────────────────────────────────
+      const sunPos = SC.getPosition(date, loc.lat, loc.lng);
+      const sunAz  = ((sunPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+      const sunAlt = sunPos.altitude * 180/Math.PI;
+      const sunAzDiff = ((sunAz - hdg) + 540) % 360 - 180;
+      if (Math.abs(sunAzDiff) < HFOV * 1.5 && sunAlt > -5) {
+        const sp = toScreen(sunAz, sunAlt);
+        if (sunAlt > 0) {
+          // Glow
+          const grad = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, 36);
+          grad.addColorStop(0, 'rgba(255,208,80,0.5)');
+          grad.addColorStop(1, 'rgba(255,208,80,0)');
+          ctx.beginPath(); ctx.arc(sp.x, sp.y, 36, 0, Math.PI*2);
+          ctx.fillStyle = grad; ctx.fill();
+          // Círculo del sol
+          ctx.beginPath(); ctx.arc(sp.x, sp.y, 18, 0, Math.PI*2);
+          ctx.fillStyle = '#FFD050';
+          ctx.shadowColor = 'rgba(255,208,80,0.9)'; ctx.shadowBlur = 20;
+          ctx.fill(); ctx.shadowBlur = 0;
+        }
+      }
+
+      // ── Marcador Salida ────────────────────────────────────
+      const srPos = SC.getPosition(times.sunrise, loc.lat, loc.lng);
+      const srAz  = ((srPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+      const srAzDiff = ((srAz - hdg) + 540) % 360 - 180;
+      if (Math.abs(srAzDiff) < HFOV * 1.5) {
+        const sp = toScreen(srAz, 0);
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 10, 0, Math.PI*2);
+        ctx.fillStyle = '#FFD050'; ctx.fill();
+        ctx.fillStyle = 'white'; ctx.font = 'bold 12px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Salida', sp.x, sp.y - 16);
+        ctx.font = '11px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText(`${String(times.sunrise.getHours()).padStart(2,'0')}:${String(times.sunrise.getMinutes()).padStart(2,'0')}`, sp.x, sp.y - 4);
+      }
+
+      // ── Marcador Puesta ────────────────────────────────────
+      const ssPos = SC.getPosition(times.sunset, loc.lat, loc.lng);
+      const ssAz  = ((ssPos.azimuth * 180/Math.PI) + 180 + 360) % 360;
+      const ssAzDiff = ((ssAz - hdg) + 540) % 360 - 180;
+      if (Math.abs(ssAzDiff) < HFOV * 1.5) {
+        const sp = toScreen(ssAz, 0);
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, 10, 0, Math.PI*2);
+        ctx.fillStyle = '#FF8C00'; ctx.fill();
+        ctx.fillStyle = 'white'; ctx.font = 'bold 12px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Puesta', sp.x, sp.y - 16);
+        ctx.font = '11px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText(`${String(times.sunset.getHours()).padStart(2,'0')}:${String(times.sunset.getMinutes()).padStart(2,'0')}`, sp.x, sp.y - 4);
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  // Datos para panel inferior
+  const SC2 = window.SunCalc;
+  const loc2 = location || { lat:-25.2867, lng:-57.6470 };
+  const times2 = SC2 ? SC2.getTimes(now, loc2.lat, loc2.lng) : null;
+  const fmtT = (d) => d && !isNaN(d) ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '--:--';
+  const srT = times2 ? times2.sunrise : null;
+  const ssT = times2 ? times2.sunset  : null;
+  const ghRS = fmtT(srT);
+  const ghRE = srT ? fmtT(new Date(srT.getTime() + 3600000)) : '--:--';
+  const ghSS = ssT ? fmtT(new Date(ssT.getTime() - 3600000)) : '--:--';
+  const ghSE = fmtT(ssT);
+
+  const compassLabels = ['N','NE','E','SE','S','SO','O','NO'];
 
   return (
     <div style={{ width:'100%', height:'100vh', position:'relative', overflow:'hidden', background:'#000' }} className="slide-l">
 
-      {/* Video cámara real */}
+      {/* Video fondo */}
       <video ref={videoRef} autoPlay playsInline muted
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:1 }}/>
       {camError && <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,#1a2a3a,#2a3d52 40%,#3d5a3a)', zIndex:1 }}/>}
 
-      {/* Sol AR — posición real en el cielo */}
-      {sunInFOV && sunAltDeg > 0 && (
-        <div style={{ position:'absolute', left:`${Math.max(5,Math.min(95,sunScrX))}%`, top:`${sunScrY}%`, transform:'translate(-50%,-50%)', zIndex:8, pointerEvents:'none' }}>
-          <div style={{ width:64, height:64, borderRadius:'50%', background:'rgba(255,208,80,0.2)', display:'flex', alignItems:'center', justifyContent:'center', animation:'pulse 2s ease-in-out infinite' }}>
-            <div style={{ width:38, height:38, borderRadius:'50%', background:'#FFD050', boxShadow:'0 0 24px rgba(255,208,80,0.9), 0 0 60px rgba(255,208,80,0.3)' }}/>
-          </div>
-          <div style={{ textAlign:'center', marginTop:6, color:'white', fontSize:11, fontFamily:'inherit', fontWeight:600, textShadow:'0 1px 4px rgba(0,0,0,0.9)', whiteSpace:'nowrap' }}>
-            {Math.round(sunAltDeg)}° · {Math.round(sunAzDeg)}°az
-          </div>
-        </div>
-      )}
-      {sunInFOV && sunAltDeg <= 0 && (
-        <div style={{ position:'absolute', bottom:220, left:'50%', transform:'translateX(-50%)', zIndex:8, color:'rgba(255,255,255,0.6)', fontSize:12, fontFamily:'inherit', textAlign:'center', textShadow:'0 1px 4px rgba(0,0,0,0.8)' }}>
-          El sol está bajo el horizonte
-        </div>
-      )}
+      {/* Canvas AR encima del video */}
+      <canvas ref={canvasRef}
+        style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:5, pointerEvents:'none' }}/>
 
-      {/* Header */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, padding:'calc(env(safe-area-inset-top,0px)+12px) 16px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.55) 0%,transparent 100%)' }}>
-        <div style={{ color:'rgba(255,255,255,0.9)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.08em' }}>
-          Sun AR {!location && '· GPS…'}
+      {/* Header respeta notch */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, paddingTop:'env(safe-area-inset-top,44px)', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.55) 0%,transparent 100%)' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 20px' }}>
+          <div style={{ color:'rgba(255,255,255,0.85)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+            Sun AR {!location && <span style={{ opacity:0.5 }}>· GPS…</span>}
+          </div>
+          <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
         </div>
-        <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:32, height:32, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-      </div>
-
-      {/* Arco SVG superpuesto */}
-      <div style={{ position:'absolute', top:'42%', left:'50%', transform:'translate(-50%,-50%)', zIndex:5, pointerEvents:'none' }}>
-        <svg width={W} height={H+20} viewBox={`0 0 ${W} ${H+20}`}>
-          <path d={arcPath} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeDasharray="5 5"/>
-          {passedPath && <path d={passedPath} fill="none" stroke="#FFD050" strokeWidth="2" strokeLinecap="round"/>}
-          <circle cx={cx-rx} cy={cy} r="7" fill="#FFD050" stroke="rgba(0,0,0,0.3)" strokeWidth="1"/>
-          <text x={cx-rx+12} y={cy-14} fill="white" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">Salida</text>
-          <text x={cx-rx+12} y={cy-2} fill="rgba(255,255,255,0.7)" fontSize="10" fontFamily="Inter,sans-serif">{ghRiseStart}</text>
-          <circle cx={cx+rx} cy={cy} r="7" fill="#FF8C00" stroke="rgba(0,0,0,0.3)" strokeWidth="1"/>
-          <text x={cx+rx-52} y={cy-14} fill="white" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">Puesta</text>
-          <text x={cx+rx-52} y={cy-2} fill="rgba(255,255,255,0.7)" fontSize="10" fontFamily="Inter,sans-serif">{ghSetEnd}</text>
-          <line x1={cx-10} y1={cy-40} x2={cx+10} y2={cy-40} stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
-          <line x1={cx} y1={cy-50} x2={cx} y2={cy-30} stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
-        </svg>
       </div>
 
       {/* Brújula horizontal */}
-      <div style={{ position:'absolute', bottom:215, left:0, right:0, zIndex:10, overflow:'hidden', height:40 }}>
-        <div style={{ position:'relative', height:'100%' }}>
-          <div style={{ position:'absolute', top:'50%', left:0, right:0, height:1, background:'rgba(255,255,255,0.15)'}}/>
-          <div style={{ position:'absolute', top:2, left:'50%', transform:'translateX(-50%)', color:'white', fontSize:10, zIndex:2 }}>▲</div>
-          <div style={{ display:'flex', justifyContent:'center', overflow:'hidden' }}>
-            <div style={{ display:'flex', gap:0, transform:`translateX(${-((heading%360)/360*800)}px)`, whiteSpace:'nowrap' }}>
-              {[-1,0,1].map(rep => compassLabels.map((c,i) => (
-                <div key={`${rep}-${i}`} style={{ width:100, textAlign:'center', color:['N','S','E','O'].includes(c.label)?'white':'rgba(255,255,255,0.45)', fontSize:['N','S','E','O'].includes(c.label)?13:11, fontWeight:c.label==='S'?700:500, fontFamily:'inherit', letterSpacing:'0.05em', paddingTop:14 }}>
-                  {c.label}
-                </div>
-              )))}
-            </div>
+      <div style={{ position:'absolute', bottom:195, left:0, right:0, zIndex:10, overflow:'hidden', height:36 }}>
+        <div style={{ position:'absolute', top:'50%', left:0, right:0, height:1, background:'rgba(255,255,255,0.15)'}}/>
+        <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', color:'white', fontSize:9, zIndex:2, fontWeight:700 }}>▲</div>
+        <div style={{ display:'flex', justifyContent:'center' }}>
+          <div style={{ display:'flex', transform:`translateX(${-((heading%360)/360*800%800)}px)`, whiteSpace:'nowrap', transition:'transform 0.05s linear' }}>
+            {[-1,0,1].map(rep => compassLabels.map((c,i) => (
+              <div key={`${rep}-${i}`} style={{ width:100, textAlign:'center', paddingTop:12, color:['N','S','E','O'].includes(c)?'white':'rgba(255,255,255,0.4)', fontSize:['N','S','E','O'].includes(c)?12:10, fontWeight:600, fontFamily:'inherit', letterSpacing:'0.05em' }}>
+                {c}
+              </div>
+            )))}
           </div>
         </div>
       </div>
 
       {/* Panel inferior Golden Hour */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:10, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.1)', padding:'14px 16px calc(env(safe-area-inset-bottom,0px)+14px)' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
-          <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:12, padding:'12px' }}>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:10, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.08)', padding:`14px 16px calc(env(safe-area-inset-bottom,0px) + 14px)` }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:12, padding:'12px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5 }}>
               <div style={{ width:7, height:7, borderRadius:'50%', background:'#FFD050' }}/>
-              <span style={{ color:'rgba(255,255,255,0.55)', fontSize:10, fontFamily:'inherit', fontWeight:500 }}>Golden Hour (Salida)</span>
+              <span style={{ color:'rgba(255,255,255,0.5)', fontSize:10, fontFamily:'inherit', fontWeight:500 }}>Golden Hour (Salida)</span>
             </div>
-            <div style={{ fontSize:17, fontWeight:700, color:'#FFD050', fontFamily:'inherit', marginBottom:2 }}>{ghRiseStart} – {ghRiseEnd}</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontFamily:'inherit' }}>Duración: 1h 0m</div>
+            <div style={{ fontSize:17, fontWeight:700, color:'#FFD050', fontFamily:'inherit', marginBottom:2 }}>{ghRS} – {ghRE}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:'inherit' }}>Duración: 1h</div>
           </div>
-          <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:12, padding:'12px' }}>
+          <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:12, padding:'12px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5 }}>
               <div style={{ width:7, height:7, borderRadius:'50%', background:'#FF8C00' }}/>
-              <span style={{ color:'rgba(255,255,255,0.55)', fontSize:10, fontFamily:'inherit', fontWeight:500 }}>Golden Hour (Puesta)</span>
+              <span style={{ color:'rgba(255,255,255,0.5)', fontSize:10, fontFamily:'inherit', fontWeight:500 }}>Golden Hour (Puesta)</span>
             </div>
-            <div style={{ fontSize:17, fontWeight:700, color:'#FF8C00', fontFamily:'inherit', marginBottom:2 }}>{ghSetStart} – {ghSetEnd}</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontFamily:'inherit' }}>Duración: 1h 0m</div>
+            <div style={{ fontSize:17, fontWeight:700, color:'#FF8C00', fontFamily:'inherit', marginBottom:2 }}>{ghSS} – {ghSE}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:'inherit' }}>Duración: 1h</div>
           </div>
         </div>
-        <button onClick={() => setIsAnimating(!isAnimating)} className="tap" style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'white', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-          {isAnimating ? '⏸ Pausar animación' : '▶ Simular día'}
-        </button>
       </div>
-
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}`}</style>
     </div>
   );
 }
@@ -6934,40 +7003,41 @@ function ColorTempView({ project, onBack }) {
       <video ref={videoRef} autoPlay playsInline muted
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:1 }}/>
       {camError && <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg,#1a1a2e,#16213e,#0f3460)', zIndex:1 }}/>}
-      {/* Canvas oculto para análisis de píxeles */}
       <canvas ref={canvasRef} style={{ display:'none' }}/>
-      {/* Overlay oscuro sutil para legibilidad */}
-      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.25)', zIndex:2 }}/>
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.3)', zIndex:2 }}/>
 
-      {/* Header */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, padding:'calc(env(safe-area-inset-top,0px)+12px) 16px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.5) 0%,transparent 100%)' }}>
-        <div style={{ color:'rgba(255,255,255,0.85)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.08em' }}>Color Temp</div>
-        <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:32, height:32, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
+      {/* Header — respeta notch */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, paddingTop:'env(safe-area-inset-top,44px)', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.55) 0%,transparent 100%)' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 20px' }}>
+          <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.1em' }}>Color Temp</div>
+          <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+        </div>
       </div>
 
-      {/* Temperatura — grande centrado */}
-      <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-55%)', textAlign:'center', zIndex:10, userSelect:'none' }}>
+      {/* Temperatura — centrada exacta en la pantalla */}
+      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10, userSelect:'none' }}>
         {isMeasuring ? (
-          <div style={{ width:48, height:48, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>
+          <div style={{ width:52, height:52, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
         ) : currentTemp ? (
           <>
-            <div style={{ fontSize:80, fontWeight:200, color:'white', letterSpacing:'-3px', lineHeight:1, fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif', textShadow:'0 2px 20px rgba(0,0,0,0.5)' }}>
-              {Math.round(currentTemp)}<span style={{ fontSize:44, fontWeight:200, opacity:0.75 }}> K</span>
+            <div style={{ fontSize:88, fontWeight:200, color:'white', letterSpacing:'-4px', lineHeight:1, fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif', textShadow:'0 2px 24px rgba(0,0,0,0.6)' }}>
+              {Math.round(currentTemp)}<span style={{ fontSize:48, fontWeight:200, opacity:0.7 }}> K</span>
             </div>
-            <div style={{ marginTop:14, fontSize:13, color:'rgba(255,255,255,0.65)', fontFamily:'inherit', letterSpacing:'0.05em', textTransform:'uppercase' }}>{light?.name}</div>
-            <div style={{ marginTop:4, fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'inherit' }}>{light?.desc}</div>
+            <div style={{ marginTop:16, fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>{light?.name}</div>
+            <div style={{ marginTop:5, fontSize:12, color:'rgba(255,255,255,0.38)', fontFamily:'inherit' }}>{light?.desc}</div>
           </>
         ) : (
-          <div style={{ fontSize:14, color:'rgba(255,255,255,0.4)', fontFamily:'inherit', letterSpacing:'0.05em', textTransform:'uppercase' }}>Apunta y mide</div>
+          <div style={{ fontSize:14, color:'rgba(255,255,255,0.38)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>Apunta y mide</div>
         )}
       </div>
 
-      {/* Botón medir */}
-      <div style={{ position:'absolute', bottom:'calc(env(safe-area-inset-bottom,0px)+40px)', left:'50%', transform:'translateX(-50%)', zIndex:20 }}>
-        <button onClick={measureTemp} disabled={isMeasuring} className="tap" style={{ width:68, height:68, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.1)', color:'white', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.5:1, backdropFilter:'blur(10px)' }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      {/* Botón medir — fijo en la parte inferior con margen de safe area */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 40px)', display:'flex', justifyContent:'center', zIndex:20 }}>
+        <button onClick={measureTemp} disabled={isMeasuring} className="tap"
+          style={{ width:72, height:72, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.12)', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.45:1, backdropFilter:'blur(12px)' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M20.94 11A8.994 8.994 0 0 0 12 3a8.994 8.994 0 0 0-8.94 8"/>
             <path d="M3.06 13A8.994 8.994 0 0 0 12 21a8.994 8.994 0 0 0 8.94-8"/>
