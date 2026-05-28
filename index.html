@@ -5455,6 +5455,89 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkName, setLinkName] = useState('');
+  // progress: { [fileId]: { name, sent, total, done, error, msg } }
+  const [progress, setProgress] = useState({});
+
+  const CHUNK_SIZE   = 5 * 1024 * 1024;  // 5 MB por chunk
+  const PARALLEL     = 4;                 // 4 chunks simultáneos
+  const IMG_LIMIT    = 2 * 1024 * 1024;  // imágenes < 2MB → base64 local
+
+  // Sube un chunk con reintento (hasta 3 veces)
+  const uploadChunk = async (fileId, fileName, fileType, chunk, index, total, attempt = 0) => {
+    try {
+      const res = await fetch('/.netlify/functions/upload', {
+        method: 'POST',
+        headers: {
+          'X-File-Name':     fileName,
+          'X-File-Type':     fileType || 'application/octet-stream',
+          'X-Chunk-Index':   String(index),
+          'X-Total-Chunks':  String(total),
+          'X-File-Id':       fileId,
+        },
+        body: chunk,
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Chunk ${index} → HTTP ${res.status}: ${txt}`);
+      }
+      return await res.json();
+    } catch (err) {
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        return uploadChunk(fileId, fileName, fileType, chunk, index, total, attempt + 1);
+      }
+      throw err;
+    }
+  };
+
+  const uploadFile = async (f) => {
+    const fileId  = `${Date.now()}_${Math.random().toString(36).slice(2)}_${f.name}`;
+    const isImg   = f.type.startsWith('image/');
+    const isVid   = f.type.startsWith('video/');
+    const isPdf   = f.type === 'application/pdf';
+
+    // Imágenes pequeñas → comprimir y guardar en base64 (sin red)
+    if (isImg && f.size < IMG_LIMIT) {
+      try {
+        const data = await window.compressImageStrong(f);
+        return { id: fileId, data, nombre: f.name, tipo: 'imagen', inline: true };
+      } catch {}
+    }
+
+    // Todo lo demás → chunking a Netlify Blobs
+    const totalChunks = Math.ceil(f.size / CHUNK_SIZE);
+    setProgress(p => ({ ...p, [fileId]: { name: f.name, sent: 0, total: totalChunks, done: false, error: false } }));
+
+    // Dividir en chunks
+    const chunks = [];
+    for (let i = 0; i < totalChunks; i++) {
+      chunks.push({ index: i, blob: f.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, f.size)) });
+    }
+
+    // Cola de chunks con concurrencia PARALLEL
+    let sentCount = 0;
+    let lastJson  = null;
+
+    const runChunk = async ({ index, blob }) => {
+      const json = await uploadChunk(fileId, f.name, f.type, blob, index, totalChunks);
+      sentCount++;
+      setProgress(p => ({ ...p, [fileId]: { ...p[fileId], sent: sentCount } }));
+      lastJson = json;
+      return json;
+    };
+
+    // Ejecutar en grupos de PARALLEL
+    for (let i = 0; i < chunks.length; i += PARALLEL) {
+      const batch = chunks.slice(i, i + PARALLEL);
+      await Promise.all(batch.map(runChunk));
+    }
+
+    setProgress(p => ({ ...p, [fileId]: { ...p[fileId], sent: totalChunks, done: true } }));
+
+    const finalUrl = lastJson?.url || `/.netlify/functions/serve?key=${encodeURIComponent('files/' + fileId)}`;
+    const tipo = isVid ? 'video' : isPdf ? 'pdf' : 'archivo';
+    return { id: fileId, url: finalUrl, nombre: f.name, tipo, size: f.size };
+  };
 
   const handle = async (e) => {
     const list = Array.from(e.target.files || []);
@@ -5463,19 +5546,22 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
     const nuevos = [];
     for (const f of list) {
       try {
-        const isImg = f.type.startsWith('image/');
-        let data;
-        if (isImg) {
-          data = await window.compressImageStrong(f);
-        } else {
-          data = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=ev=>res(ev.target.result); r.onerror=rej; r.readAsDataURL(f); });
-        }
-        nuevos.push({ id: Date.now()+Math.random(), data, nombre:f.name, tipo: isImg?'imagen':'archivo' });
-      } catch {}
+        const result = await uploadFile(f);
+        nuevos.push(result);
+      } catch (err) {
+        const fileId = Object.keys(progress).find(k => progress[k]?.name === f.name) || f.name;
+        setProgress(p => ({ ...p, [fileId]: { ...p[fileId], error: true, msg: err.message } }));
+      }
     }
     setFiles([...files, ...nuevos]);
     setUploading(false);
     e.target.value = '';
+    // Limpiar progreso completado después de 3s
+    setTimeout(() => setProgress(p => {
+      const next = { ...p };
+      Object.keys(next).forEach(k => { if (next[k].done || next[k].error) delete next[k]; });
+      return next;
+    }), 3000);
   };
 
   const addLink = () => {
@@ -5505,14 +5591,14 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
           {files.map(f => (
             <div key={f.id} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card-dark)', borderRadius:8, padding:'8px 10px', border:'1px solid var(--border-light)' }}>
               {f.tipo === 'imagen'
-                ? <img src={f.data} alt={f.nombre} style={{ width:36, height:36, borderRadius:6, objectFit:'cover', flexShrink:0 }}/>
+                ? <img src={f.data || f.url} alt={f.nombre} style={{ width:36, height:36, borderRadius:6, objectFit:'cover', flexShrink:0 }}/>
                 : f.tipo === 'link'
                   ? <span style={{ fontSize:20, flexShrink:0 }}>{f.linkIcon||'🔗'}</span>
                   : <span style={{ fontSize:20 }}>📄</span>
               }
               {f.tipo === 'link'
                 ? <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ flex:1, minWidth:0, fontSize:11, color:color||'var(--text-secondary)', fontFamily:'inherit', textDecoration:'underline', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}</a>
-                : <a href={f.data} download={f.nombre} style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}</a>
+                : <a href={f.data || f.url} download={f.nombre} target={f.url && !f.data ? '_blank' : undefined} style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}{f.tipo==='video'?' 🎬':f.tipo==='pdf'?' 📄':''}</a>
               }
               <button onClick={()=>eliminar(f.id)} style={{ background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:11, cursor:'pointer', padding:'3px 6px' }}>✕</button>
             </div>
@@ -5532,6 +5618,31 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
           </div>
         </div>
       )}
+      {/* Barras de progreso de uploads en curso */}
+      {Object.entries(progress).map(([fid, p]) => (
+        <div key={fid} style={{ marginBottom:6, background:'var(--bg-card-dark)', borderRadius:8, padding:'8px 10px', border:`1px solid ${p.error ? '#e55' : color}33` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color: p.error ? '#e55' : 'var(--text-secondary)', fontFamily:'inherit', marginBottom:4, gap:8 }}>
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
+              {p.error ? '❌' : p.done ? '✅' : '⬆️'} {p.name}
+            </span>
+            <span style={{ flexShrink:0 }}>
+              {p.error ? p.msg?.slice(0,30) : p.done ? 'Listo' : `${p.sent}/${p.total} chunks`}
+            </span>
+          </div>
+          {!p.error && (
+            <div style={{ height:4, background:'var(--border-light)', borderRadius:2, overflow:'hidden' }}>
+              <div style={{
+                height:'100%',
+                width: `${p.total > 0 ? Math.round((p.sent / p.total) * 100) : 0}%`,
+                background: p.done ? '#4caf50' : color,
+                borderRadius:2,
+                transition:'width 0.3s ease',
+              }}/>
+            </div>
+          )}
+        </div>
+      ))}
+
       <div style={{ display:'flex', gap:6 }}>
         <label style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color }}>
           {uploading ? '⏳ Subiendo…' : '📎 Archivo'}
