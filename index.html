@@ -383,14 +383,48 @@
   // Limpieza de localStorage cuando se llena
   function cleanupStorage() {
     try {
-      // Borrar la cola vieja (los datos siguen en dept:/project:/etc)
+      // 1. Borrar cola vieja
       localStorage.removeItem('_syncQueue');
-      // Borrar caches de listas que se pueden re-fetchear
+      
+      // 2. Borrar caches de listas
       const disposable = Object.keys(localStorage).filter(k =>
         k.startsWith('msgarchive:') || k.startsWith('chat:')
       );
+      
+      // 3. Si aún hay espacio insuficiente, borrar archivos base64 más viejos
+      //    (los archivos grandes ahora van a Netlify Blobs, así que esto es seguro)
+      if (disposable.length === 0) {
+        const fileKeys = Object.keys(localStorage).filter(k => 
+          k.startsWith('dept:') || k.startsWith('project:')
+        );
+        // Borrar solo los que sean muy grandes (> 1MB en base64 = ~750KB reales)
+        const largeOnes = fileKeys.filter(k => {
+          try {
+            const val = localStorage.getItem(k);
+            return val && val.length > 1024 * 1024;
+          } catch { return false; }
+        }).slice(0, 5); // Borrar máximo 5 archivos grandes
+        
+        disposable.push(...largeOnes);
+      }
+      
       disposable.forEach(k => localStorage.removeItem(k));
       console.log(`[Storage] Limpiados ${disposable.length + 1} items`);
+    } catch {}
+  }
+
+  // Función para verificar y alertar sobre cuota baja
+  function checkStorageQuota() {
+    try {
+      if (navigator.storage?.estimate) {
+        navigator.storage.estimate().then(({ usage, quota }) => {
+          const percent = Math.round((usage / quota) * 100);
+          if (percent > 90) {
+            console.warn(`[Storage] Cuota al ${percent}% - limpiando...`);
+            cleanupStorage();
+          }
+        });
+      }
     } catch {}
   }
 
@@ -406,8 +440,9 @@
     try {
       const light = syncQueue.map(op => ({ id: op.id, store: op.store, key: op.key, name: op.name, delete: op.delete, retries: op.retries, addedAt: op.addedAt }));
       localStorage.setItem('_syncQueue', JSON.stringify(light));
+      checkStorageQuota();
     } catch (e) {
-      if (e.name === 'QuotaExceededError') { cleanupStorage(); }
+      if (e.name === 'QuotaExceededError') { cleanupStorage(); persistQueueLight(); }
     }
   }
 
