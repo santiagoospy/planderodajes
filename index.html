@@ -11040,65 +11040,54 @@ function SnakeGameView({ onBack }) {
       onTouchMove={handleTouchMove}
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(165deg, #1a1714 0%, #2a2420 100%)',
+        background: 'var(--bg-primary)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: 'Inter, sans-serif',
+        fontFamily: 'inherit',
         padding: '20px',
       }}>
       {/* Header */}
-      <div style={{ marginBottom: '20px', textAlign: 'center', width: '100%' }}>
-        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>🐍 Snake Game</div>
-        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Usa WASD o flechas para moverte</div>
+      <div style={{ marginBottom: '24px', textAlign: 'center', width: '100%' }}>
+        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', fontFamily: 'inherit' }}>Snake</div>
+        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'inherit' }}>WASD o flechas para moverte</div>
       </div>
 
       {/* Game Canvas */}
       <div style={{
-        background: '#1a1a1a',
-        border: '3px solid rgba(255,255,255,0.1)',
-        borderRadius: '8px',
-        padding: '10px',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-light)',
+        borderRadius: '12px',
+        padding: '12px',
         marginBottom: '20px',
-        boxShadow: '0 0 30px rgba(0,0,0,0.5)',
       }}>
         <div style={{
           position: 'relative',
           width: GRID_WIDTH * CELL_SIZE,
           height: GRID_HEIGHT * CELL_SIZE,
-          background: '#111',
-          border: '2px solid rgba(0,200,100,0.3)',
-          borderRadius: '4px',
+          background: 'var(--bg-primary)',
+          border: '1px solid var(--border-tertiary)',
+          borderRadius: '6px',
         }}>
-          {/* Grid de fondo */}
-          {[...Array(GRID_HEIGHT)].map((_, y) =>
-            [...Array(GRID_WIDTH)].map((_, x) => (
-              <div
-                key={`${x}-${y}`}
-                style={{
-                  position: 'absolute',
-                  left: x * CELL_SIZE,
-                  top: y * CELL_SIZE,
-                  width: CELL_SIZE,
-                  height: CELL_SIZE,
-                  border: '1px solid rgba(0,200,100,0.1)',
-                }}
-              />
-            ))
-          )}
-
-          {/* Comida */}
+          {/* Comida — punto sutil */}
           <div style={{
             position: 'absolute',
             left: food.x * CELL_SIZE,
             top: food.y * CELL_SIZE,
             width: CELL_SIZE,
             height: CELL_SIZE,
-            background: '#FF5722',
-            borderRadius: '2px',
-            boxShadow: '0 0 8px rgba(255,87,34,0.8)',
-          }} />
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'var(--text-secondary)',
+            }}/>
+          </div>
 
           {/* Snake */}
           {snake.map((segment, idx) => (
@@ -11106,14 +11095,13 @@ function SnakeGameView({ onBack }) {
               key={idx}
               style={{
                 position: 'absolute',
-                left: segment.x * CELL_SIZE,
-                top: segment.y * CELL_SIZE,
-                width: CELL_SIZE,
-                height: CELL_SIZE,
-                background: idx === 0 ? '#00FF00' : 'rgba(0,255,0,0.6)',
+                left: segment.x * CELL_SIZE + 2,
+                top: segment.y * CELL_SIZE + 2,
+                width: CELL_SIZE - 4,
+                height: CELL_SIZE - 4,
+                background: idx === 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
                 borderRadius: '2px',
-                boxShadow: idx === 0 ? '0 0 10px rgba(0,255,0,0.9)' : 'none',
-                border: idx === 0 ? '1px solid #00FF00' : '1px solid rgba(0,255,0,0.4)',
+                opacity: idx === 0 ? 1 : 0.6,
               }}
             />
           ))}
@@ -11122,16 +11110,16 @@ function SnakeGameView({ onBack }) {
 
       {/* Score */}
       <div style={{
-        fontSize: '18px',
-        fontWeight: 'bold',
-        color: '#00FF00',
+        fontSize: '14px',
+        color: 'var(--text-primary)',
         marginBottom: '20px',
-        textShadow: '0 0 10px rgba(0,255,0,0.5)',
+        fontFamily: 'inherit',
+        fontWeight: 600,
       }}>
-        Puntos: {score}
+        {score} puntos
       </div>
 
-      {/* Game Over */}
+      {/* Game Over Modal */}
       {gameOver && (
         <div style={{
           position: 'fixed',
@@ -11139,73 +11127,80 @@ function SnakeGameView({ onBack }) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
+          background: 'rgba(0,0,0,0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999,
         }}>
           <div style={{
-            background: 'linear-gradient(165deg, #1a1714 0%, #2a2420 100%)',
-            padding: '30px',
-            borderRadius: '12px',
+            background: 'var(--bg-secondary)',
+            padding: '28px',
+            borderRadius: '14px',
             textAlign: 'center',
-            border: '2px solid rgba(255,255,255,0.1)',
+            border: '1px solid var(--border-light)',
+            maxWidth: '280px',
+            fontFamily: 'inherit',
           }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FF5722', marginBottom: '16px' }}>
-              🎮 Game Over
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+              Game Over
             </div>
-            <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
-              Puntuación Final: <span style={{ color: '#00FF00', fontWeight: 'bold' }}>{score}</span>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              Puntuación: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{score}</span>
             </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => window.location.reload()}
                 style={{
-                  padding: '10px 20px',
-                  background: '#00FF00',
-                  color: '#000',
+                  flex: 1,
+                  padding: '12px 16px',
+                  background: 'var(--text-primary)',
+                  color: 'var(--bg-primary)',
                   border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
                 }}>
                 Reintentar
               </button>
               <button onClick={onBack}
                 style={{
-                  padding: '10px 20px',
-                  background: 'rgba(255,255,255,0.1)',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '6px',
-                  fontWeight: 'bold',
+                  flex: 1,
+                  padding: '12px 16px',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '8px',
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
                 }}>
-                Volver
+                Salir
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Botón Volver (si no está game over) */}
-      {!gameOver && (
-        <button onClick={onBack}
-          style={{
-            padding: '10px 20px',
-            background: 'rgba(255,255,255,0.1)',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: '6px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}>
-          ← Volver
-        </button>
-      )}
+      {/* Botón back en header */}
+      <button onClick={onBack} className="tap" style={{
+        position: 'absolute',
+        top: 16,
+        left: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-primary)',
+        fontSize: 18,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}>
+        ←
+      </button>
     </div>
   );
 }
