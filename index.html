@@ -329,7 +329,8 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
-<script src="https://unpkg.com/suncalc@1.9.2/suncalc.js"></script>
+<script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"
+        onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js';document.head.appendChild(s);"></script>
 
 <!-- Netlify Blobs Backend -->
 <script type="module">
@@ -6726,6 +6727,18 @@ function SunARView({ project, onBack }) {
     return () => clearInterval(id);
   }, []);
 
+  // Poll para detectar cuando SunCalc termina de cargar (CDN async) y forzar re-render del panel inferior
+  useEffect(() => {
+    if (window.SunCalc) return;
+    let tries = 0;
+    const id = setInterval(() => {
+      tries++;
+      if (window.SunCalc) { setNow(new Date()); clearInterval(id); }
+      else if (tries > 60) { clearInterval(id); } // 30s máx
+    }, 500);
+    return () => clearInterval(id);
+  }, []);
+
   // Estado del sol actual para mostrar en panel
   const [sunInfo, setSunInfo] = useState({ az: 0, alt: 0, inView: false, dx: 0, dy: 0 });
 
@@ -7004,6 +7017,7 @@ function SunARView({ project, onBack }) {
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 20px' }}>
           <div style={{ color:'rgba(255,255,255,0.85)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.08em' }}>
             Sun AR {!location && <span style={{ opacity:0.5 }}>· GPS…</span>}
+            {!window.SunCalc && <span style={{ opacity:0.7, color:'#ff9a6a', marginLeft:6 }}>· cargando librería…</span>}
           </div>
           <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -7226,9 +7240,17 @@ function DirectorViewfinderView({ project, onBack }) {
   const [note,      setNote]        = useState('');
   const [showNote,  setShowNote]    = useState(false);
   const [camError,  setCamError]    = useState(false);
-  const [camHFOV]                   = useState(65); // FOV asumido de cámara del teléfono
   const [flash,     setFlash]       = useState(false);
   const [savedPreview, setSavedPreview] = useState(null);
+  const [savingToDirector, setSavingToDirector] = useState(false);
+  const [savedToDirector,  setSavedToDirector]  = useState(false);
+
+  // ── Cámaras del teléfono (gran angular / ultra angular / teleobjetivo) ──
+  // En iOS 16.3+ y Android moderno, enumerateDevices() devuelve TODAS las cámaras traseras
+  // una vez concedido el permiso. Cada lente físico es un deviceId distinto.
+  const [cameras,     setCameras]     = useState([]);     // [{deviceId, label, hfov, role}]
+  const [activeCamId, setActiveCamId] = useState(null);
+  const [showLensPicker, setShowLensPicker] = useState(false);
 
   const videoRef  = React.useRef(null);
   const streamRef = React.useRef(null);
@@ -7236,17 +7258,84 @@ function DirectorViewfinderView({ project, onBack }) {
   const sensor = DV_SENSORS[sensorKey];
   const ratio  = DV_RATIOS.find(r=>r.id===ratioId).value;
 
-  // Cámara real
+  // FOV horizontal del lente físico de la cámara actualmente activa.
+  // Cuando hay más de una cámara, intentamos estimarlo a partir del label
+  // (Apple devuelve "Back Ultra Wide", "Back Camera", "Back Telephoto", etc.).
+  const activeCam = cameras.find(c => c.deviceId === activeCamId);
+  const camHFOV   = (activeCam && activeCam.hfov) || 65; // fallback razonable
+
+  // Heurística: deducir rol y FOV nominal a partir del label de la cámara
+  const classifyCamera = (label, idx) => {
+    const l = (label || '').toLowerCase();
+    // iPhone labels: "Back Ultra Wide Camera", "Back Camera", "Back Dual Wide Camera",
+    //                "Back Telephoto Camera", "Back Triple Camera"
+    if (/ultra\s*wide|ultrawide|0\.5x/.test(l))      return { role:'ultrawide', hfov:103, short:'0.5×' };
+    if (/tele|2x|3x|5x|telephoto/.test(l))           return { role:'tele',      hfov:32,  short:'2×'   };
+    if (/wide|main|back camera|environment/.test(l)) return { role:'wide',      hfov:65,  short:'1×'   };
+    // Si no hay label (permiso aún no aceptado por completo) → ordenar por índice típico
+    if (idx === 0) return { role:'wide',      hfov:65,  short:'1×' };
+    if (idx === 1) return { role:'ultrawide', hfov:103, short:'0.5×' };
+    if (idx === 2) return { role:'tele',      hfov:32,  short:'2×' };
+    return { role:'cam'+(idx+1), hfov:65, short:`#${idx+1}` };
+  };
+
+  // Cambiar de lente: para el stream anterior y abrir uno nuevo con ese deviceId
+  const switchToCamera = async (deviceId) => {
+    try {
+      if (streamRef.current) streamRef.current.getTracks().forEach(t=>t.stop());
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: deviceId },
+          width:{ ideal:1920 }, height:{ ideal:1080 }
+        }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+      setActiveCamId(deviceId);
+    } catch(e) {
+      console.warn('switch lens:', e);
+    }
+  };
+
+  // Cámara real + enumerar lentes
   useEffect(() => {
     (async () => {
       try {
+        // Primero abrimos la cámara por defecto (sin esto, enumerateDevices no expone labels en iOS)
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
         });
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
+        if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+
+        // Tomar el deviceId actual
+        const currentTrack = stream.getVideoTracks()[0];
+        const currentId    = currentTrack && currentTrack.getSettings ? currentTrack.getSettings().deviceId : null;
+
+        // Ahora enumerar para obtener todas las cámaras (en iOS 16.3+ devuelve los lentes físicos)
+        if (navigator.mediaDevices.enumerateDevices) {
+          const devs = await navigator.mediaDevices.enumerateDevices();
+          const vids = devs.filter(d => d.kind === 'videoinput');
+          // Filtrar a cámaras traseras (en iOS los labels traseros contienen "Back" o no contienen "Front"/"User")
+          const backs = vids.filter(d => {
+            const l = (d.label || '').toLowerCase();
+            if (/front|user|selfie|cara/.test(l)) return false;
+            return true;
+          });
+          const list = backs.length ? backs.map((d, i) => {
+            const cls = classifyCamera(d.label, i);
+            return { deviceId: d.deviceId, label: d.label || ('Cámara '+(i+1)), ...cls };
+          }) : vids.map((d, i) => {
+            const cls = classifyCamera(d.label, i);
+            return { deviceId: d.deviceId, label: d.label || ('Cámara '+(i+1)), ...cls };
+          });
+          // Orden lógico: ultra → wide → tele → resto
+          const order = { ultrawide:0, wide:1, tele:2 };
+          list.sort((a,b) => (order[a.role] ?? 9) - (order[b.role] ?? 9));
+          setCameras(list);
+          // Marcar como activa la que coincide, o la primera "wide"
+          const matched = list.find(c => c.deviceId === currentId);
+          setActiveCamId(matched ? matched.deviceId : (list.find(c=>c.role==='wide') || list[0] || {}).deviceId);
         }
       } catch(e) { console.warn('Cam:', e); setCamError(true); }
     })();
@@ -7260,11 +7349,13 @@ function DirectorViewfinderView({ project, onBack }) {
   // Width ratio del frame del lente vs lo que ve la cámara del teléfono
   const widthRatio = lensHFOV / camHFOV;
 
-  const onCapture = async () => {
-    if (!videoRef.current) return;
+  // Construir el canvas con todo el overlay (frame + banda de datos) — reutilizable
+  // tanto para descarga como para guardar en archivos del depto Dirección.
+  const buildCaptureCanvas = () => {
+    if (!videoRef.current) return null;
     const video = videoRef.current;
     const vw = video.videoWidth, vh = video.videoHeight;
-    if (!vw || !vh) return;
+    if (!vw || !vh) return null;
 
     const out = document.createElement('canvas');
     out.width = vw; out.height = vh;
@@ -7345,7 +7436,14 @@ function DirectorViewfinderView({ project, onBack }) {
     c.textAlign = 'right';
     c.fillText('Director\u2019s Viewfinder', vw - px, vh - Math.round(barH * 0.15));
 
-    // Descargar
+    return { canvas: out, vw, vh, now };
+  };
+
+  // Capturar y DESCARGAR localmente
+  const onCapture = async () => {
+    const built = buildCaptureCanvas();
+    if (!built) return;
+    const { canvas: out, now } = built;
     const blob = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.92));
     if (blob) {
       const url = URL.createObjectURL(blob);
@@ -7358,8 +7456,72 @@ function DirectorViewfinderView({ project, onBack }) {
       setSavedPreview(out.toDataURL('image/jpeg', 0.5));
       setTimeout(()=>setSavedPreview(null), 2500);
     }
-
     setFlash(true); setTimeout(()=>setFlash(false), 180);
+  };
+
+  // Capturar y GUARDAR en archivos del departamento Dirección del proyecto
+  const onSaveToDirector = async () => {
+    if (!project || !project.id) { alert('No hay proyecto activo.'); return; }
+    if (typeof fb !== 'function' || !window._fb) {
+      alert('Backend no disponible para guardar en Dirección.');
+      return;
+    }
+    const built = buildCaptureCanvas();
+    if (!built) return;
+    setSavingToDirector(true);
+    try {
+      // Comprimir para no inflar la base — el viewfinder ya está overlaid sobre el video,
+      // basta con ~1200px de ancho y calidad 0.78 para que se vea bien en mural.
+      const out  = built.canvas;
+      const now  = built.now;
+      const targetW = 1400;
+      const scale = Math.min(1, targetW / out.width);
+      let dataURL;
+      if (scale < 1) {
+        const small = document.createElement('canvas');
+        small.width  = Math.round(out.width  * scale);
+        small.height = Math.round(out.height * scale);
+        small.getContext('2d').drawImage(out, 0, 0, small.width, small.height);
+        dataURL = small.toDataURL('image/jpeg', 0.78);
+      } else {
+        dataURL = out.toDataURL('image/jpeg', 0.85);
+      }
+
+      const stamp = now.toISOString().replace(/[:.]/g,'-').slice(0,19);
+      const nombre = `viewfinder_${sensor.label.replace(/\s/g,'')}_${focal}mm_${ratioId}_${stamp}.jpg`;
+
+      // Cargar lista actual y agregar
+      const current = await fb().getDeptData(project.id, 'direccion', 'mural') || [];
+      const arr = Array.isArray(current) ? current : [];
+      const entry = {
+        id: Date.now(),
+        autor: 'Director\u2019s Viewfinder',
+        ts: now.getTime(),
+        adjunto: {
+          tipo: 'imagen',
+          nombre,
+          data: dataURL,
+          meta: {
+            sensor: sensor.label,
+            focal,
+            ratio: DV_RATIOS.find(r=>r.id===ratioId).label,
+            note: note.trim() || null,
+            project: project.name || ''
+          }
+        }
+      };
+      await fb().saveDeptData(project.id, 'direccion', 'mural', [...arr, entry]);
+
+      setSavedToDirector(true);
+      setTimeout(()=>setSavedToDirector(false), 2500);
+      setSavedPreview(out.toDataURL('image/jpeg', 0.5));
+      setTimeout(()=>setSavedPreview(null), 2500);
+      setFlash(true); setTimeout(()=>setFlash(false), 180);
+    } catch (e) {
+      console.warn('save to direccion:', e);
+      alert('No se pudo guardar en archivos de Dirección. Probá de nuevo.');
+    }
+    setSavingToDirector(false);
   };
 
   const frameWPct = Math.min(1, widthRatio) * 100;
@@ -7456,7 +7618,9 @@ function DirectorViewfinderView({ project, onBack }) {
       {savedPreview && (
         <div style={{ position:'absolute', top: 'calc(env(safe-area-inset-top,44px) + 130px)', right:20, zIndex:15, background:'rgba(0,0,0,0.7)', borderRadius:10, padding:6, border:'1px solid rgba(255,255,255,0.2)' }}>
           <img src={savedPreview} alt="captura" style={{ display:'block', width:80, height:'auto', borderRadius:4 }}/>
-          <div style={{ color:'#7dffa9', fontSize:9, textAlign:'center', marginTop:3, fontFamily:'inherit', fontWeight:600 }}>✓ guardada</div>
+          <div style={{ color:'#7dffa9', fontSize:9, textAlign:'center', marginTop:3, fontFamily:'inherit', fontWeight:600 }}>
+            {savedToDirector ? '✓ en Dirección' : '✓ descargada'}
+          </div>
         </div>
       )}
 
@@ -7472,6 +7636,34 @@ function DirectorViewfinderView({ project, onBack }) {
           />
           <div style={{ display:'flex', justifyContent:'flex-end', marginTop:6 }}>
             <button onClick={()=>setShowNote(false)} className="tap" style={{ background:'#FFD050', color:'#1a1a1a', border:'none', borderRadius:8, padding:'6px 14px', fontSize:11, fontWeight:700, fontFamily:'inherit', cursor:'pointer' }}>Listo</button>
+          </div>
+        </div>
+      )}
+
+      {/* Selector de LENTE FÍSICO DEL TELÉFONO (gran angular / ultra / tele) */}
+      {cameras.length > 1 && (
+        <div style={{ position:'absolute', bottom:185, left:0, right:0, zIndex:10, padding:'0 12px' }}>
+          <div style={{ display:'flex', gap:6, justifyContent:'center', flexWrap:'wrap' }}>
+            {cameras.map(cam => {
+              const active = cam.deviceId === activeCamId;
+              const labelShort = cam.short || (cam.role === 'ultrawide' ? '0.5×' : cam.role === 'tele' ? '2×' : '1×');
+              const labelLong  = cam.role === 'ultrawide' ? 'Ultra' : cam.role === 'tele' ? 'Tele' : (cam.role === 'wide' ? 'Wide' : 'Cam');
+              return (
+                <button key={cam.deviceId} onClick={()=>switchToCamera(cam.deviceId)} className="tap" style={{
+                  padding:'6px 12px',
+                  background: active ? 'rgba(255,208,80,0.95)' : 'rgba(0,0,0,0.55)',
+                  color: active ? '#1a1a1a' : 'rgba(255,255,255,0.95)',
+                  border: '1px solid ' + (active ? '#FFD050' : 'rgba(255,255,255,0.25)'),
+                  borderRadius: 20,
+                  fontSize: 12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  backdropFilter:'blur(10px)',
+                  display:'flex', alignItems:'center', gap:6
+                }}>
+                  <span style={{ fontSize: 13 }}>{labelShort}</span>
+                  <span style={{ fontSize: 10, opacity: 0.75, fontWeight:600 }}>{labelLong}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -7498,7 +7690,7 @@ function DirectorViewfinderView({ project, onBack }) {
 
       {/* Panel inferior */}
       <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:10, background:'rgba(0,0,0,0.78)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.08)', padding:`12px 16px calc(env(safe-area-inset-bottom,0px) + 12px)` }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
 
           <button onClick={()=>setShowNote(s=>!s)} className="tap" style={{
             width:48, height:48, borderRadius:12,
@@ -7521,10 +7713,37 @@ function DirectorViewfinderView({ project, onBack }) {
             </div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontFamily:'monospace' }}>
               HFOV {lensHFOV.toFixed(1)}° · VFOV {lensVFOV.toFixed(1)}°
+              {activeCam && <span style={{ marginLeft:6, opacity:0.7 }}>· tel: {activeCam.short || activeCam.role}</span>}
             </div>
           </div>
 
-          <button onClick={onCapture} className="tap" style={{
+          {/* Guardar en Dirección */}
+          <button onClick={onSaveToDirector} disabled={savingToDirector} className="tap" title="Guardar en archivos del depto. Dirección" style={{
+            width:48, height:48, borderRadius:12,
+            background: savedToDirector ? 'rgba(125,255,169,0.22)' : 'rgba(255,255,255,0.08)',
+            border:'1px solid ' + (savedToDirector ? 'rgba(125,255,169,0.55)' : 'rgba(255,255,255,0.15)'),
+            color: savedToDirector ? '#7dffa9' : 'white',
+            cursor: savingToDirector ? 'wait' : 'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            opacity: savingToDirector ? 0.6 : 1
+          }}>
+            {savingToDirector ? (
+              <div style={{ width:18, height:18, border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+            ) : savedToDirector ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+            )}
+          </button>
+
+          {/* Captura (descarga local) */}
+          <button onClick={onCapture} className="tap" title="Capturar y descargar" style={{
             width:62, height:62, borderRadius:'50%',
             background:'#fff',
             border:'4px solid rgba(255,255,255,0.4)',
@@ -7539,6 +7758,7 @@ function DirectorViewfinderView({ project, onBack }) {
 
       <style>{`
         @keyframes dvflash { 0%{opacity:0.9} 100%{opacity:0} }
+        @keyframes spin { to{transform:rotate(360deg)} }
         ::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
@@ -10041,6 +10261,291 @@ function MarketplaceView({ onBack }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+//  JUEGO DE SNAKE (NOKIA) 🐍
+// ═══════════════════════════════════════════════════════════
+function SnakeGameView({ onBack }) {
+  const [snake, setSnake] = React.useState([{ x: 10, y: 10 }]);
+  const [food, setFood] = React.useState({ x: 15, y: 15 });
+  const [direction, setDirection] = React.useState({ x: 1, y: 0 });
+  const [nextDirection, setNextDirection] = React.useState({ x: 1, y: 0 });
+  const [gameOver, setGameOver] = React.useState(false);
+  const [score, setScore] = React.useState(0);
+  const gameLoopRef = React.useRef();
+  const GRID_WIDTH = 20;
+  const GRID_HEIGHT = 20;
+  const CELL_SIZE = 20;
+
+  // Generar nueva comida en posición aleatoria
+  const generateFood = React.useCallback((currentSnake) => {
+    let newFood;
+    let isOnSnake = true;
+    while (isOnSnake) {
+      newFood = { x: Math.floor(Math.random() * GRID_WIDTH), y: Math.floor(Math.random() * GRID_HEIGHT) };
+      isOnSnake = currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y);
+    }
+    return newFood;
+  }, []);
+
+  // Game loop principal
+  React.useEffect(() => {
+    if (gameOver) return;
+
+    gameLoopRef.current = setInterval(() => {
+      setSnake(prevSnake => {
+        // Nueva cabeza
+        const head = prevSnake[0];
+        const newHead = {
+          x: (head.x + nextDirection.x + GRID_WIDTH) % GRID_WIDTH,
+          y: (head.y + nextDirection.y + GRID_HEIGHT) % GRID_HEIGHT,
+        };
+
+        // Colisión con el cuerpo
+        if (prevSnake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+          setGameOver(true);
+          return prevSnake;
+        }
+
+        let newSnake = [newHead, ...prevSnake];
+        setDirection(nextDirection);
+
+        // Colisión con comida
+        if (newHead.x === food.x && newHead.y === food.y) {
+          setScore(s => s + 10);
+          setFood(generateFood(newSnake));
+        } else {
+          newSnake.pop();
+        }
+
+        return newSnake;
+      });
+    }, 200);
+
+    return () => clearInterval(gameLoopRef.current);
+  }, [gameOver, nextDirection, food, generateFood]);
+
+  // Controles del teclado
+  React.useEffect(() => {
+    const handleKeyPress = (e) => {
+      switch (e.key.toLowerCase()) {
+        case 'arrowup':
+        case 'w':
+          if (direction.y === 0) setNextDirection({ x: 0, y: -1 });
+          break;
+        case 'arrowdown':
+        case 's':
+          if (direction.y === 0) setNextDirection({ x: 0, y: 1 });
+          break;
+        case 'arrowleft':
+        case 'a':
+          if (direction.x === 0) setNextDirection({ x: -1, y: 0 });
+          break;
+        case 'arrowright':
+        case 'd':
+          if (direction.x === 0) setNextDirection({ x: 1, y: 0 });
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [direction]);
+
+  // Controles táctiles
+  const handleTouchStart = React.useRef({ x: 0, y: 0 });
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - handleTouchStart.current.x;
+    const deltaY = touch.clientY - handleTouchStart.current.y;
+    
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX > 0 && direction.x === 0) setNextDirection({ x: 1, y: 0 });
+      else if (deltaX < 0 && direction.x === 0) setNextDirection({ x: -1, y: 0 });
+    } else {
+      if (deltaY > 0 && direction.y === 0) setNextDirection({ x: 0, y: 1 });
+      else if (deltaY < 0 && direction.y === 0) setNextDirection({ x: 0, y: -1 });
+    }
+  };
+
+  return (
+    <div 
+      onTouchStart={(e) => { handleTouchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+      onTouchMove={handleTouchMove}
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(165deg, #1a1714 0%, #2a2420 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Inter, sans-serif',
+        padding: '20px',
+      }}>
+      {/* Header */}
+      <div style={{ marginBottom: '20px', textAlign: 'center', width: '100%' }}>
+        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>🐍 Snake Game</div>
+        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Usa WASD o flechas para moverte</div>
+      </div>
+
+      {/* Game Canvas */}
+      <div style={{
+        background: '#1a1a1a',
+        border: '3px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
+        padding: '10px',
+        marginBottom: '20px',
+        boxShadow: '0 0 30px rgba(0,0,0,0.5)',
+      }}>
+        <div style={{
+          position: 'relative',
+          width: GRID_WIDTH * CELL_SIZE,
+          height: GRID_HEIGHT * CELL_SIZE,
+          background: '#111',
+          border: '2px solid rgba(0,200,100,0.3)',
+          borderRadius: '4px',
+        }}>
+          {/* Grid de fondo */}
+          {[...Array(GRID_HEIGHT)].map((_, y) =>
+            [...Array(GRID_WIDTH)].map((_, x) => (
+              <div
+                key={`${x}-${y}`}
+                style={{
+                  position: 'absolute',
+                  left: x * CELL_SIZE,
+                  top: y * CELL_SIZE,
+                  width: CELL_SIZE,
+                  height: CELL_SIZE,
+                  border: '1px solid rgba(0,200,100,0.1)',
+                }}
+              />
+            ))
+          )}
+
+          {/* Comida */}
+          <div style={{
+            position: 'absolute',
+            left: food.x * CELL_SIZE,
+            top: food.y * CELL_SIZE,
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            background: '#FF5722',
+            borderRadius: '2px',
+            boxShadow: '0 0 8px rgba(255,87,34,0.8)',
+          }} />
+
+          {/* Snake */}
+          {snake.map((segment, idx) => (
+            <div
+              key={idx}
+              style={{
+                position: 'absolute',
+                left: segment.x * CELL_SIZE,
+                top: segment.y * CELL_SIZE,
+                width: CELL_SIZE,
+                height: CELL_SIZE,
+                background: idx === 0 ? '#00FF00' : 'rgba(0,255,0,0.6)',
+                borderRadius: '2px',
+                boxShadow: idx === 0 ? '0 0 10px rgba(0,255,0,0.9)' : 'none',
+                border: idx === 0 ? '1px solid #00FF00' : '1px solid rgba(0,255,0,0.4)',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Score */}
+      <div style={{
+        fontSize: '18px',
+        fontWeight: 'bold',
+        color: '#00FF00',
+        marginBottom: '20px',
+        textShadow: '0 0 10px rgba(0,255,0,0.5)',
+      }}>
+        Puntos: {score}
+      </div>
+
+      {/* Game Over */}
+      {gameOver && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: 'linear-gradient(165deg, #1a1714 0%, #2a2420 100%)',
+            padding: '30px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '2px solid rgba(255,255,255,0.1)',
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FF5722', marginBottom: '16px' }}>
+              🎮 Game Over
+            </div>
+            <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
+              Puntuación Final: <span style={{ color: '#00FF00', fontWeight: 'bold' }}>{score}</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button onClick={() => window.location.reload()}
+                style={{
+                  padding: '10px 20px',
+                  background: '#00FF00',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}>
+                Reintentar
+              </button>
+              <button onClick={onBack}
+                style={{
+                  padding: '10px 20px',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}>
+                Volver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botón Volver (si no está game over) */}
+      {!gameOver && (
+        <button onClick={onBack}
+          style={{
+            padding: '10px 20px',
+            background: 'rgba(255,255,255,0.1)',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '6px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            fontSize: '14px',
+          }}>
+          ← Volver
+        </button>
+      )}
+    </div>
+  );
+}
+
 function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   const [codigo, setCodigo] = useState('');
   const [showEnter, setShowEnter] = useState(false);
@@ -10049,6 +10554,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [adminError, setAdminError] = useState('');
+  const [showSnakeGame, setShowSnakeGame] = useState(false);
   const ADMIN_PASSWORD = '4862';
 
   const handleAdminLogin = () => {
@@ -10092,6 +10598,9 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   };
   const [landingTheme, setLandingTheme] = React.useState(() => localStorage.getItem('landing-theme') || 'celeste');
   const landingGrad = LANDING_THEMES[landingTheme];
+
+  // ── JUEGO DE SNAKE (NOKIA) ──
+  if (showSnakeGame) return <SnakeGameView onBack={() => setShowSnakeGame(false)} />;
 
   if (!modo) return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:landingGrad, fontFamily:'Inter, sans-serif', transition:'background 0.4s ease' }}>
@@ -10146,6 +10655,17 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
                 boxShadow: landingTheme===key ? '0 0 0 2px rgba(0,0,0,0.3)' : 'none' }}
               title={key.charAt(0).toUpperCase()+key.slice(1)}/>
           ))}
+          {/* Botón secreto de Snake Game */}
+          <button onClick={() => setShowSnakeGame(true)}
+            style={{ width: 22, height: 22,
+              borderRadius:'50%', background: 'linear-gradient(165deg, #9B59B6 0%, #8E44AD 100%)',
+              border: '2px solid rgba(255,255,255,0.3)',
+              cursor:'pointer', transition:'all 0.2s ease', flexShrink:0, padding:0, outline:'none',
+              fontSize: 11, fontWeight: 'bold', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            title="Juego Secreto 🐍"
+          >🕹️</button>
         </div>
         <p style={{ margin:0, fontSize:11, color:'rgba(255,255,255,0.3)', textAlign:'center' }}>Hecho en Asunción, Paraguay 🇵🇾</p>
         <div style={{ textAlign:'center' }}>
