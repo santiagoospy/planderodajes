@@ -324,6 +324,13 @@
       gap: 16px;
     }
   }
+
+  /* Animaciones para sync toasts */
+  @keyframes fadeOut {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
@@ -361,6 +368,82 @@
     try { localStorage.removeItem(key); } catch {}
   }
 
+  // ── Cola de sincronización — reintentos automáticos ──
+  const syncQueue = [];
+  const MAX_RETRIES = 5;
+  let isSyncing = false;
+
+  async function addToSyncQueue(operation) {
+    syncQueue.push({ ...operation, retries: 0, addedAt: Date.now() });
+    localStorage.setItem('_syncQueue', JSON.stringify(syncQueue));
+    processSyncQueue();
+  }
+
+  async function processSyncQueue() {
+    if (isSyncing || syncQueue.length === 0) return;
+    if (!navigator.onLine) {
+      console.log('[Sync] Offline — esperando conexión...');
+      return;
+    }
+    isSyncing = true;
+    const toRemove = [];
+    for (let i = 0; i < syncQueue.length; i++) {
+      const op = syncQueue[i];
+      try {
+        await apiCall(op.fn, op.method, op.body, op.params);
+        console.log(`[Sync] ✓ ${op.name || op.fn}`);
+        toRemove.push(i);
+        notifyUI({ type: 'sync-ok', message: `Guardado: ${op.name || op.fn}` });
+      } catch (e) {
+        op.retries = (op.retries || 0) + 1;
+        if (op.retries >= MAX_RETRIES) {
+          console.warn(`[Sync] ✗ Falló tras ${MAX_RETRIES} reintentos:`, op.name || op.fn);
+          toRemove.push(i);
+          notifyUI({ type: 'sync-error', message: `Error guardando: ${op.name || op.fn}` });
+        } else {
+          console.warn(`[Sync] Reintentando (${op.retries}/${MAX_RETRIES}):`, op.name || op.fn, e.message);
+          const delay = Math.min(30000, 2000 * Math.pow(2, op.retries - 1));
+          setTimeout(() => processSyncQueue(), delay);
+          break;
+        }
+      }
+    }
+    toRemove.reverse().forEach(i => syncQueue.splice(i, 1));
+    localStorage.setItem('_syncQueue', JSON.stringify(syncQueue));
+    isSyncing = false;
+  }
+
+  // Restaurar cola al cargar
+  if (localStorage.getItem('_syncQueue')) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('_syncQueue'));
+      syncQueue.push(...saved.filter(op => Date.now() - op.addedAt < 7 * 24 * 60 * 60 * 1000));
+      setTimeout(processSyncQueue, 2000);
+    } catch {}
+  }
+
+  window.addEventListener('online', processSyncQueue);
+  window.addEventListener('offline', () => console.log('[Sync] Offline'));
+
+  // UI toast para notificaciones
+  let toastTimeout = null;
+  function notifyUI(notification) {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    let toast = document.getElementById('_syncToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = '_syncToast';
+      document.body.appendChild(toast);
+    }
+    const icon = notification.type === 'sync-ok' ? '✓' : notification.type === 'sync-error' ? '✗' : '…';
+    const color = notification.type === 'sync-ok' ? '#22c55e' : notification.type === 'sync-error' ? '#ef4444' : '#f59e0b';
+    toast.style.cssText = `position:fixed;bottom:20px;right:20px;background:${color};color:white;padding:12px 16px;borderRadius:8px;fontSize:13px;fontWeight:600;zIndex:99999;boxShadow:0 4px 12px rgba(0,0,0,0.3);fontFamily:Inter,sans-serif;${notification.type === 'sync-error'?'':'animation: fadeOut 3s ease forwards;'}`;
+    toast.textContent = icon + ' ' + notification.message;
+    if (notification.type !== 'sync-error') {
+      toastTimeout = setTimeout(() => toast.remove(), 3000);
+    }
+  }
+
   // Listeners para simular onSnapshot
   const listeners = {};
   function notify(channel, data) {
@@ -381,8 +464,14 @@
     },
     async saveProductora(prod) {
       localSet(`productora:${prod.id}`, prod);
-      try { await apiCall('data', 'POST', { store: 'productoras', key: prod.id, data: prod }); }
-      catch(e) { console.warn('Save productora offline:', e.message); }
+      notifyUI({ type: 'sync-pending', message: 'Guardando productora...' });
+      addToSyncQueue({
+        name: prod.name || 'Productora',
+        fn: 'data',
+        method: 'POST',
+        body: { store: 'productoras', key: prod.id, data: prod },
+        params: null
+      });
       notify('productoras', null);
     },
     async productoraExists(id) {
@@ -458,8 +547,14 @@
     },
     async saveProject(proj) {
       localSet(`project:${proj.id}`, proj);
-      try { await apiCall('data', 'POST', { store: 'projects', key: proj.id, data: proj }); }
-      catch(e) { console.warn('Save project offline:', e.message); }
+      notifyUI({ type: 'sync-pending', message: 'Guardando proyecto...' });
+      addToSyncQueue({
+        name: proj.nombre || 'Proyecto',
+        fn: 'data',
+        method: 'POST',
+        body: { store: 'projects', key: proj.id, data: proj },
+        params: null
+      });
       notify(`project:${proj.id}`, proj);
       notify(`projects:${proj.productoraId}`, null);
     },
@@ -485,9 +580,18 @@
     async saveDeptData(projectId, deptKey, section, items) {
       const storeKey = `${projectId}_${deptKey}_${section}`;
       const data = { items, updatedAt: new Date().toISOString() };
+      // 1. Guardar localmente PRIMERO (offline-first)
       localSet(`dept:${storeKey}`, data);
-      try { await apiCall('data', 'POST', { store: 'depts', key: storeKey, data }); }
-      catch(e) { console.warn('Save dept offline:', e.message); }
+      notifyUI({ type: 'sync-pending', message: `${section}: guardando...` });
+      // 2. Agregar a cola de sync
+      addToSyncQueue({
+        name: `${deptKey}/${section}`,
+        fn: 'data',
+        method: 'POST',
+        body: { store: 'depts', key: storeKey, data },
+        params: null
+      });
+      // 3. Notificar listeners inmediatamente (UI actualizada con datos locales)
       notify(`dept:${storeKey}`, items);
     },
     onDeptData(projectId, deptKey, section, cb) {
@@ -511,7 +615,14 @@
     async saveMsg(projectId, msg) {
       const data = msg || { deleted: true };
       localSet(`msg:${projectId}`, data);
-      try { await apiCall('data', 'POST', { store: 'messages', key: projectId, data }); } catch {}
+      notifyUI({ type: 'sync-pending', message: 'Guardando mensaje...' });
+      addToSyncQueue({
+        name: 'Mensaje',
+        fn: 'data',
+        method: 'POST',
+        body: { store: 'messages', key: projectId, data },
+        params: null
+      });
       notify(`msg:${projectId}`, data.deleted ? null : data);
     },
     onMsg(projectId, cb) {
@@ -550,7 +661,14 @@
     async saveMsgArchive(projectId, items) {
       const data = { items };
       localSet(`msgarchive:${projectId}`, data);
-      try { await apiCall('data', 'POST', { store: 'msgarchive', key: projectId, data }); } catch {}
+      notifyUI({ type: 'sync-pending', message: 'Guardando archivo de mensajes...' });
+      addToSyncQueue({
+        name: 'Archivo de mensajes',
+        fn: 'data',
+        method: 'POST',
+        body: { store: 'msgarchive', key: projectId, data },
+        params: null
+      });
     },
 
     // ── Chat conversacional ──
@@ -567,7 +685,14 @@
     async saveChat(projectId, messages) {
       const data = { messages };
       localSet(`chat:${projectId}`, data);
-      try { await apiCall('data', 'POST', { store: 'chat', key: projectId, data }); } catch {}
+      notifyUI({ type: 'sync-pending', message: 'Guardando chat...' });
+      addToSyncQueue({
+        name: 'Chat',
+        fn: 'data',
+        method: 'POST',
+        body: { store: 'chat', key: projectId, data },
+        params: null
+      });
       notify(`chat:${projectId}`, messages);
     },
     onChat(projectId, cb) {
