@@ -362,16 +362,24 @@
     try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
   }
   function localSet(key, val) {
+    const str = JSON.stringify(val);
     try {
-      localStorage.setItem(key, JSON.stringify(val));
+      localStorage.setItem(key, str);
       return true;
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
-        console.warn('[Storage] Cuota excedida — limpiando datos antiguos...');
-        cleanupStorage();
-        // Reintentar una vez tras limpiar
-        try { localStorage.setItem(key, JSON.stringify(val)); return true; }
-        catch { console.error('[Storage] Sigue lleno tras limpiar'); return false; }
+        console.warn('[Storage] Cuota excedida — limpiando...');
+        // Limpieza progresiva: liberar al menos el tamaño que queremos guardar + margen
+        const needed = str.length + 200000; // +200KB de margen
+        cleanupStorage(needed, key);
+        try { localStorage.setItem(key, str); return true; }
+        catch {
+          // Segundo intento: limpieza extrema
+          console.warn('[Storage] Limpieza extrema...');
+          cleanupStorage(needed * 3, key);
+          try { localStorage.setItem(key, str); return true; }
+          catch { console.error('[Storage] No se pudo guardar tras limpieza extrema'); return false; }
+        }
       }
       return false;
     }
@@ -380,52 +388,90 @@
     try { localStorage.removeItem(key); } catch {}
   }
 
-  // Limpieza de localStorage cuando se llena
-  function cleanupStorage() {
+  // Calcula el tamaño (en chars) de un valor en localStorage
+  function itemSize(key) {
+    try { return (localStorage.getItem(key) || '').length; } catch { return 0; }
+  }
+
+  // Limpieza de localStorage cuando se llena.
+  // freeBytes: cuánto espacio liberar (opcional). protectKey: no borrar esta clave.
+  function cleanupStorage(freeBytes = 0, protectKey = null) {
     try {
-      // 1. Borrar cola vieja
-      localStorage.removeItem('_syncQueue');
-      
-      // 2. Borrar caches de listas
-      const disposable = Object.keys(localStorage).filter(k =>
-        k.startsWith('msgarchive:') || k.startsWith('chat:')
+      let freed = 0;
+      // 1. Primero: borrar caches re-fetcheables (cola vieja, archivos de mensajes, chats)
+      const trashFirst = Object.keys(localStorage).filter(k =>
+        k === '_syncQueue' || k.startsWith('msgarchive:') || k.startsWith('chat:')
       );
-      
-      // 3. Si aún hay espacio insuficiente, borrar archivos base64 más viejos
-      //    (los archivos grandes ahora van a Netlify Blobs, así que esto es seguro)
-      if (disposable.length === 0) {
-        const fileKeys = Object.keys(localStorage).filter(k => 
-          k.startsWith('dept:') || k.startsWith('project:')
-        );
-        // Borrar solo los que sean muy grandes (> 1MB en base64 = ~750KB reales)
-        const largeOnes = fileKeys.filter(k => {
-          try {
-            const val = localStorage.getItem(k);
-            return val && val.length > 1024 * 1024;
-          } catch { return false; }
-        }).slice(0, 5); // Borrar máximo 5 archivos grandes
-        
-        disposable.push(...largeOnes);
+      for (const k of trashFirst) {
+        if (k === protectKey) continue;
+        freed += itemSize(k);
+        localStorage.removeItem(k);
       }
-      
-      disposable.forEach(k => localStorage.removeItem(k));
-      console.log(`[Storage] Limpiados ${disposable.length + 1} items`);
+
+      // 2. Si aún falta espacio: borrar los items MÁS GRANDES primero.
+      //    Los archivos base64 viejos son lo más pesado y bloquean todo.
+      if (freeBytes === 0 || freed < freeBytes) {
+        const sized = Object.keys(localStorage)
+          .filter(k => k !== protectKey && k !== '_syncQueue')
+          .map(k => ({ key: k, size: itemSize(k) }))
+          .sort((a, b) => b.size - a.size); // más grande primero
+
+        for (const { key, size } of sized) {
+          if (freeBytes > 0 && freed >= freeBytes) break;
+          // Solo borrar items realmente grandes (> 100KB = casi seguro base64)
+          if (size < 100000 && freeBytes > 0 && freed > 0) break;
+          freed += size;
+          localStorage.removeItem(key);
+          console.warn(`[Storage] Borrado ${key} (${Math.round(size/1024)}KB)`);
+        }
+      }
+      console.log(`[Storage] Liberados ${Math.round(freed/1024)}KB`);
+    } catch (err) {
+      console.error('[Storage] Error limpiando:', err);
+    }
+  }
+
+  // Migración única: quitar archivos base64 gigantes atascados en localStorage.
+  // Los archivos nuevos van a Netlify Blobs; los viejos base64 se eliminan para destrabar.
+  function migrateStripBase64() {
+    try {
+      if (localStorage.getItem('_migratedBase64') === '1') return;
+      let cleaned = 0;
+      Object.keys(localStorage).forEach(k => {
+        if (!k.startsWith('dept:') && !k.startsWith('project:')) return;
+        try {
+          const raw = localStorage.getItem(k);
+          // Si el item tiene base64 incrustado y es grande, alivianarlo
+          if (raw && raw.length > 500000 && raw.includes('base64,')) {
+            const obj = JSON.parse(raw);
+            const stripped = stripHeavyData(obj);
+            localStorage.setItem(k, JSON.stringify(stripped));
+            cleaned++;
+          }
+        } catch {}
+      });
+      localStorage.setItem('_migratedBase64', '1');
+      if (cleaned) console.log(`[Storage] Migración: alivianados ${cleaned} items con base64`);
     } catch {}
   }
 
-  // Función para verificar y alertar sobre cuota baja
-  function checkStorageQuota() {
-    try {
-      if (navigator.storage?.estimate) {
-        navigator.storage.estimate().then(({ usage, quota }) => {
-          const percent = Math.round((usage / quota) * 100);
-          if (percent > 90) {
-            console.warn(`[Storage] Cuota al ${percent}% - limpiando...`);
-            cleanupStorage();
-          }
-        });
+  // Recorre un objeto y reemplaza valores base64 gigantes por un marcador
+  function stripHeavyData(obj) {
+    if (Array.isArray(obj)) return obj.map(stripHeavyData);
+    if (obj && typeof obj === 'object') {
+      const out = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (typeof v === 'string' && v.length > 200000 && v.includes('base64,')) {
+          // Archivo base64 viejo sin URL → marcarlo como no disponible
+          out[k] = '';
+          out._archivoLocalPerdido = true;
+        } else {
+          out[k] = stripHeavyData(v);
+        }
       }
-    } catch {}
+      return out;
+    }
+    return obj;
   }
 
   // ── Cola de sincronización — deduplicada y eficiente ──
@@ -440,9 +486,8 @@
     try {
       const light = syncQueue.map(op => ({ id: op.id, store: op.store, key: op.key, name: op.name, delete: op.delete, retries: op.retries, addedAt: op.addedAt }));
       localStorage.setItem('_syncQueue', JSON.stringify(light));
-      checkStorageQuota();
     } catch (e) {
-      if (e.name === 'QuotaExceededError') { cleanupStorage(); persistQueueLight(); }
+      if (e.name === 'QuotaExceededError') { cleanupStorage(); }
     }
   }
 
@@ -515,6 +560,9 @@
     persistQueueLight();
     isSyncing = false;
   }
+
+  // Migración: destrabar localStorage de archivos base64 viejos
+  migrateStripBase64();
 
   // Restaurar cola al cargar (solo referencias; los datos están en localStorage)
   if (localStorage.getItem('_syncQueue')) {
@@ -5490,88 +5538,66 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkName, setLinkName] = useState('');
-  // progress: { [fileId]: { name, sent, total, done, error, msg } }
   const [progress, setProgress] = useState({});
 
-  const CHUNK_SIZE   = 5 * 1024 * 1024;  // 5 MB por chunk
-  const PARALLEL     = 4;                 // 4 chunks simultáneos
-  const IMG_LIMIT    = 2 * 1024 * 1024;  // imágenes < 2MB → base64 local
+  const CHUNK_SIZE = 5 * 1024 * 1024;  // 5 MB por chunk
+  const PARALLEL   = 4;                 // 4 chunks simultáneos
+  const IMG_LIMIT  = 1.5 * 1024 * 1024; // imágenes < 1.5MB → base64 local
 
-  // Sube un chunk con reintento (hasta 3 veces)
   const uploadChunk = async (fileId, fileName, fileType, chunk, index, total, attempt = 0) => {
     try {
       const res = await fetch('/.netlify/functions/upload', {
         method: 'POST',
         headers: {
-          'X-File-Name':     fileName,
-          'X-File-Type':     fileType || 'application/octet-stream',
-          'X-Chunk-Index':   String(index),
-          'X-Total-Chunks':  String(total),
-          'X-File-Id':       fileId,
+          'X-File-Name': fileName,
+          'X-File-Type': fileType || 'application/octet-stream',
+          'X-Chunk-Index': String(index),
+          'X-Total-Chunks': String(total),
+          'X-File-Id': fileId,
         },
         body: chunk,
       });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`Chunk ${index} → HTTP ${res.status}: ${txt}`);
-      }
+      if (!res.ok) { const t = await res.text(); throw new Error(`Chunk ${index}: HTTP ${res.status} ${t}`); }
       return await res.json();
     } catch (err) {
-      if (attempt < 2) {
-        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-        return uploadChunk(fileId, fileName, fileType, chunk, index, total, attempt + 1);
-      }
+      if (attempt < 2) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); return uploadChunk(fileId, fileName, fileType, chunk, index, total, attempt + 1); }
       throw err;
     }
   };
 
   const uploadFile = async (f) => {
-    const fileId  = `${Date.now()}_${Math.random().toString(36).slice(2)}_${f.name}`;
-    const isImg   = f.type.startsWith('image/');
-    const isVid   = f.type.startsWith('video/');
-    const isPdf   = f.type === 'application/pdf';
+    const fileId = `${Date.now()}_${Math.random().toString(36).slice(2)}_${f.name}`;
+    const isImg = f.type.startsWith('image/');
+    const isVid = f.type.startsWith('video/');
+    const isPdf = f.type === 'application/pdf';
 
-    // Imágenes pequeñas → comprimir y guardar en base64 (sin red)
+    // Imágenes chicas → base64 local (rápido, sin red)
     if (isImg && f.size < IMG_LIMIT) {
-      try {
-        const data = await window.compressImageStrong(f);
-        return { id: fileId, data, nombre: f.name, tipo: 'imagen', inline: true };
-      } catch {}
+      try { const data = await window.compressImageStrong(f); return { id: fileId, data, nombre: f.name, tipo: 'imagen' }; } catch {}
     }
 
     // Todo lo demás → chunking a Netlify Blobs
     const totalChunks = Math.ceil(f.size / CHUNK_SIZE);
     setProgress(p => ({ ...p, [fileId]: { name: f.name, sent: 0, total: totalChunks, done: false, error: false } }));
 
-    // Dividir en chunks
     const chunks = [];
-    for (let i = 0; i < totalChunks; i++) {
-      chunks.push({ index: i, blob: f.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, f.size)) });
-    }
+    for (let i = 0; i < totalChunks; i++) chunks.push({ index: i, blob: f.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, f.size)) });
 
-    // Cola de chunks con concurrencia PARALLEL
-    let sentCount = 0;
-    let lastJson  = null;
-
+    let sentCount = 0, lastJson = null;
     const runChunk = async ({ index, blob }) => {
       const json = await uploadChunk(fileId, f.name, f.type, blob, index, totalChunks);
       sentCount++;
       setProgress(p => ({ ...p, [fileId]: { ...p[fileId], sent: sentCount } }));
       lastJson = json;
-      return json;
     };
-
-    // Ejecutar en grupos de PARALLEL
     for (let i = 0; i < chunks.length; i += PARALLEL) {
-      const batch = chunks.slice(i, i + PARALLEL);
-      await Promise.all(batch.map(runChunk));
+      await Promise.all(chunks.slice(i, i + PARALLEL).map(runChunk));
     }
 
     setProgress(p => ({ ...p, [fileId]: { ...p[fileId], sent: totalChunks, done: true } }));
-
-    const finalUrl = lastJson?.url || `/.netlify/functions/serve?key=${encodeURIComponent('files/' + fileId)}`;
-    const tipo = isVid ? 'video' : isPdf ? 'pdf' : 'archivo';
-    return { id: fileId, url: finalUrl, nombre: f.name, tipo, size: f.size };
+    const url = lastJson?.url || `/.netlify/functions/serve?key=${encodeURIComponent('files/' + fileId)}`;
+    const tipo = isVid ? 'video' : isPdf ? 'pdf' : isImg ? 'imagen' : 'archivo';
+    return { id: fileId, url, nombre: f.name, tipo, size: f.size };
   };
 
   const handle = async (e) => {
@@ -5580,23 +5606,17 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
     setUploading(true);
     const nuevos = [];
     for (const f of list) {
-      try {
-        const result = await uploadFile(f);
-        nuevos.push(result);
-      } catch (err) {
-        const fileId = Object.keys(progress).find(k => progress[k]?.name === f.name) || f.name;
-        setProgress(p => ({ ...p, [fileId]: { ...p[fileId], error: true, msg: err.message } }));
+      try { nuevos.push(await uploadFile(f)); }
+      catch (err) {
+        const fid = Object.keys(progress).find(k => progress[k]?.name === f.name);
+        if (fid) setProgress(p => ({ ...p, [fid]: { ...p[fid], error: true, msg: err.message } }));
+        console.warn('Upload falló:', f.name, err.message);
       }
     }
     setFiles([...files, ...nuevos]);
     setUploading(false);
     e.target.value = '';
-    // Limpiar progreso completado después de 3s
-    setTimeout(() => setProgress(p => {
-      const next = { ...p };
-      Object.keys(next).forEach(k => { if (next[k].done || next[k].error) delete next[k]; });
-      return next;
-    }), 3000);
+    setTimeout(() => setProgress(p => { const n = { ...p }; Object.keys(n).forEach(k => { if (n[k].done || n[k].error) delete n[k]; }); return n; }), 3000);
   };
 
   const addLink = () => {
@@ -5653,7 +5673,6 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
           </div>
         </div>
       )}
-      {/* Barras de progreso de uploads en curso */}
       {Object.entries(progress).map(([fid, p]) => (
         <div key={fid} style={{ marginBottom:6, background:'var(--bg-card-dark)', borderRadius:8, padding:'8px 10px', border:`1px solid ${p.error ? '#e55' : color}33` }}>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color: p.error ? '#e55' : 'var(--text-secondary)', fontFamily:'inherit', marginBottom:4, gap:8 }}>
@@ -5661,23 +5680,16 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
               {p.error ? '❌' : p.done ? '✅' : '⬆️'} {p.name}
             </span>
             <span style={{ flexShrink:0 }}>
-              {p.error ? p.msg?.slice(0,30) : p.done ? 'Listo' : `${p.sent}/${p.total} chunks`}
+              {p.error ? (p.msg||'').slice(0,28) : p.done ? 'Listo' : `${p.sent}/${p.total} chunks`}
             </span>
           </div>
           {!p.error && (
             <div style={{ height:4, background:'var(--border-light)', borderRadius:2, overflow:'hidden' }}>
-              <div style={{
-                height:'100%',
-                width: `${p.total > 0 ? Math.round((p.sent / p.total) * 100) : 0}%`,
-                background: p.done ? '#4caf50' : color,
-                borderRadius:2,
-                transition:'width 0.3s ease',
-              }}/>
+              <div style={{ height:'100%', width:`${p.total>0?Math.round((p.sent/p.total)*100):0}%`, background: p.done ? '#4caf50' : color, borderRadius:2, transition:'width 0.3s ease' }}/>
             </div>
           )}
         </div>
       ))}
-
       <div style={{ display:'flex', gap:6 }}>
         <label style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color }}>
           {uploading ? '⏳ Subiendo…' : '📎 Archivo'}
@@ -6944,6 +6956,129 @@ function IMessageChat({ project, isAdmin }) {
 // ═══════════════════════════════════════════════════════════
 //  TOOLS MENU VIEW
 // ═══════════════════════════════════════════════════════════
+function ClaquetaView({ project, onBack }) {
+  const [scene, setScene] = React.useState('1');
+  const [take, setTake] = React.useState('1');
+  const [roll, setRoll] = React.useState('A');
+  const [clapping, setClapping] = React.useState(false);
+  const [flash, setFlash] = React.useState(false);
+  const audioCtxRef = React.useRef(null);
+
+  // Sonido de claqueta: click seco y agudo (sincronizable en post)
+  const playClap = () => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume();
+      const now = ctx.currentTime;
+
+      // 1. Transiente agudo (el "clap" de madera)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(2200, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
+      gain.gain.setValueAtTime(0.6, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.09);
+
+      // 2. Ruido blanco corto (el golpe seco)
+      const bufferSize = ctx.sampleRate * 0.05;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const out = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+      const noise = ctx.createBufferSource();
+      const nGain = ctx.createGain();
+      noise.buffer = buffer;
+      nGain.gain.setValueAtTime(0.5, now);
+      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      noise.connect(nGain); nGain.connect(ctx.destination);
+      noise.start(now);
+    } catch (e) { console.warn('Audio no disponible:', e.message); }
+  };
+
+  const handleClap = () => {
+    if (clapping) return;
+    setClapping(true);
+    setFlash(true);
+    playClap();
+    if (navigator.vibrate) navigator.vibrate(60);
+    setTimeout(() => setFlash(false), 120);
+    setTimeout(() => setClapping(false), 400);
+  };
+
+  const fecha = new Date().toLocaleDateString('es', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const Field = ({ label, value, onChange, w }) => (
+    <div style={{ flex: w || 1 }}>
+      <div style={{ fontSize:9, letterSpacing:'0.1em', color:'#888', marginBottom:4, textTransform:'uppercase', fontFamily:'inherit' }}>{label}</div>
+      <input value={value} onChange={e=>onChange(e.target.value)} style={{ width:'100%', boxSizing:'border-box', background:'#000', color:'#fff', border:'1px solid #333', borderRadius:8, padding:'10px 8px', fontSize:18, fontWeight:800, textAlign:'center', fontFamily:'inherit', outline:'none' }}/>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column', padding:'52px 20px 32px' }} className="slide-l">
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:28 }}>
+        <button onClick={onBack} className="tap" style={{ background:'var(--bg-secondary)', border:'1px solid var(--border-light)', color:'var(--text-primary)', width:36, height:36, borderRadius:8, fontSize:18, cursor:'pointer', fontFamily:'inherit' }}>←</button>
+        <h1 style={{ fontSize:24, fontWeight:800, color:'var(--text-primary)', margin:0, fontFamily:'inherit' }}>Claqueta</h1>
+      </div>
+
+      {/* Claqueta visual */}
+      <div style={{ position:'relative', background:'#111', borderRadius:16, overflow:'hidden', border:'1px solid #222', marginBottom:24 }}>
+        {/* Brazo superior (palos) */}
+        <div style={{
+          display:'flex', height:38, transformOrigin:'left center',
+          transform: flash ? 'rotate(0deg)' : 'rotate(-14deg)',
+          transition: flash ? 'transform 0.04s ease-in' : 'transform 0.3s ease-out',
+        }}>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} style={{ flex:1, background: i%2===0 ? '#fff' : '#111', transform:'skewX(-20deg)' }}/>
+          ))}
+        </div>
+        {/* Cuerpo */}
+        <div style={{ padding:'18px 16px 16px' }}>
+          <div style={{ display:'flex', gap:10, marginBottom:14 }}>
+            <Field label="Rollo" value={roll} onChange={setRoll}/>
+            <Field label="Escena" value={scene} onChange={setScene} w={1.4}/>
+            <Field label="Toma" value={take} onChange={setTake}/>
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#777', fontFamily:'inherit', borderTop:'1px solid #222', paddingTop:10 }}>
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'60%' }}>{project?.nombre || project?.name || 'Proyecto'}</span>
+            <span>{fecha}</span>
+          </div>
+        </div>
+        {/* Flash blanco al golpear */}
+        {flash && <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,0.25)', pointerEvents:'none' }}/>}
+      </div>
+
+      {/* Botón gigante de claqueta */}
+      <button onClick={handleClap} className="tap" style={{
+        width:'100%', padding:'26px', borderRadius:18, border:'none', cursor:'pointer', fontFamily:'inherit',
+        background: clapping ? '#fff' : 'linear-gradient(135deg,#e8392d,#b8261c)',
+        color: clapping ? '#000' : '#fff', fontSize:22, fontWeight:800, letterSpacing:'0.02em',
+        transition:'all 0.15s', boxShadow:'0 6px 20px rgba(232,57,45,0.3)', marginBottom:16,
+      }}>
+        {clapping ? '🎬 ¡MARCA!' : '🎬 ¡CLAQUETA!'}
+      </button>
+
+      <div style={{ display:'flex', gap:10, marginBottom:8 }}>
+        <button onClick={()=>setTake(String((parseInt(take)||0)+1))} className="tap" style={{ flex:1, padding:'14px', borderRadius:12, border:'1px solid var(--border-light)', background:'var(--bg-secondary)', color:'var(--text-primary)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+          Toma +1
+        </button>
+        <button onClick={()=>{ setScene(String((parseInt(scene)||0)+1)); setTake('1'); }} className="tap" style={{ flex:1, padding:'14px', borderRadius:12, border:'1px solid var(--border-light)', background:'var(--bg-secondary)', color:'var(--text-primary)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+          Escena +1
+        </button>
+      </div>
+
+      <p style={{ fontSize:11, color:'var(--text-tertiary)', textAlign:'center', lineHeight:1.6, margin:'12px 0 0' }}>
+        Tocá el botón al mismo tiempo que grabás. El sonido seco y el flash visual sirven de punto de sincronización entre audio y video en montaje.
+      </p>
+    </div>
+  );
+}
+
 function ToolsMenuView({ onBack, onSelectTool }) {
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column', padding:'52px 20px 20px' }} className="slide-l">
@@ -6998,6 +7133,22 @@ function ToolsMenuView({ onBack, onSelectTool }) {
           <div style={{ flex:1 }}>
             <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Director's Viewfinder</div>
             <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Previsualización por sensor + lente</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <button onClick={() => onSelectTool('claqueta')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="9" width="18" height="11" rx="1.5"/>
+              <path d="M3 9l2.2-4 3.2 2.4L5.4 5 3 9z" fill="var(--text-primary)" stroke="none"/>
+              <path d="M9.4 7.4L12.6 5l3.2 2.4L12.6 5 9.4 7.4z" fill="var(--text-primary)" stroke="none"/>
+              <path d="M3 9l2.6-4.3 3.4 2.5 3.2-2.4 3.4 2.5 3.2-2.4L21 7.6V9H3z" fill="var(--text-primary)" stroke="none"/>
+            </svg>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Claqueta</div>
+            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Sincronización con sonido</div>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -8248,6 +8399,11 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
   const [showAddDept, setShowAddDept] = useState(false);
   const [newDeptLabel, setNewDeptLabel] = useState('');
   const [newDeptIcon, setNewDeptIcon] = useState('👤');
+  const [pinned, setPinned] = useState(() => isPinnedProject(project.id));
+  const togglePin = () => {
+    if (pinned) { unpinProject(project.id); setPinned(false); }
+    else { pinProject(project); setPinned(true); }
+  };
 
   // Detectar gradient de la productora
   const PRODUCTORA_THEMES_MAP = {
@@ -8760,6 +8916,15 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Herramientas</div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Sun AR, Color Temperature</div>
+              </div>
+              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            </button>
+
+            <button onClick={togglePin} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
+              <div style={{ width:34, height:34, borderRadius:9, background: pinned ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{pinned ? '📌' : '📍'}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>{pinned ? 'Quitar del inicio' : 'Pinear en el inicio'}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>{pinned ? 'Ya aparece en la pantalla de inicio' : 'Acceso directo desde el inicio (con PIN)'}</div>
               </div>
               <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
             </button>
@@ -9907,6 +10072,29 @@ function buildProjectUrl(projectId) {
   return `${base}?p=${projectId}`;
 }
 
+// ── Proyectos pineados en el inicio (acceso directo con PIN) ──
+function getPinnedProjects() {
+  try { return JSON.parse(localStorage.getItem('pinnedProjects')) || []; } catch { return []; }
+}
+function setPinnedProjects(arr) {
+  try { localStorage.setItem('pinnedProjects', JSON.stringify(arr)); } catch {}
+}
+function isPinnedProject(id) {
+  return getPinnedProjects().some(p => p.id === id);
+}
+function pinProject(proj) {
+  const list = getPinnedProjects();
+  if (list.some(p => p.id === proj.id)) return list;
+  list.push({ id: proj.id, nombre: proj.title || proj.nombre || proj.name || proj.id, color: proj.color || '#0092B8', pin: proj.pin || '' });
+  setPinnedProjects(list);
+  return list;
+}
+function unpinProject(id) {
+  const list = getPinnedProjects().filter(p => p.id !== id);
+  setPinnedProjects(list);
+  return list;
+}
+
 function buildProductoraUrl(productoraId) {
   const base = window.location.origin + window.location.pathname;
   return `${base}?productora=${productoraId}`;
@@ -11031,7 +11219,19 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   const [adminPassword, setAdminPassword] = useState('');
   const [adminError, setAdminError] = useState('');
   const [showSnakeGame, setShowSnakeGame] = useState(false);
+  const [pinnedList, setPinnedList] = useState(() => getPinnedProjects());
+  const [pinTarget, setPinTarget] = useState(null); // proyecto pineado a desbloquear
   const ADMIN_PASSWORD = '4862';
+
+  const handleOpenPinned = (proj) => {
+    // Si no tiene PIN guardado, entra directo. Si tiene, pide PIN.
+    if (!proj.pin) { window.location.href = buildProjectUrl(proj.id); return; }
+    setPinTarget(proj);
+  };
+  const removePinned = (id, e) => {
+    e.stopPropagation();
+    setPinnedList(unpinProject(id));
+  };
 
   const handleAdminLogin = () => {
     if (adminPassword === ADMIN_PASSWORD) {
@@ -11085,6 +11285,35 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
           <div style={{ fontSize:32, fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>Plan de Rodaje</div>
           <div style={{ fontSize:15, color:'rgba(255,255,255,0.5)', marginTop:8 }}>Organizá tus producciones</div>
         </div>
+
+        {pinnedList.length > 0 && (
+          <div style={{ padding:'0 20px 8px' }}>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:10, paddingLeft:4, textTransform:'uppercase' }}>📌 Acceso directo</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
+              {pinnedList.map(proj => (
+                <button key={proj.id} onClick={()=>handleOpenPinned(proj)} className="tap" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', border:'none', borderRadius:14, background:'rgba(255,255,255,0.12)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
+                  <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0092B8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
+                    <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>{proj.pin ? '🔒 Requiere PIN' : 'Abrir proyecto'}</div>
+                  </div>
+                  <span onClick={(e)=>removePinned(proj.id, e)} style={{ fontSize:16, color:'rgba(255,255,255,0.4)', padding:'4px 8px', cursor:'pointer', borderRadius:8 }} title="Quitar">✕</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pinTarget && (
+          <PinModal
+            title={pinTarget.nombre}
+            subtitle="Ingresá el PIN del proyecto"
+            correctPin={pinTarget.pin}
+            onSuccess={()=>{ window.location.href = buildProjectUrl(pinTarget.id); }}
+            onCancel={()=>setPinTarget(null)}
+          />
+        )}
+
         <div style={{ display:'flex', flexDirection:'column', padding:'0 20px', gap:0 }}>
           <button onClick={()=>setModo('complejo')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔑</div>
@@ -12171,6 +12400,9 @@ function ProjectAppShell({ project, save, view, setView, activeDayId, setActiveD
       )}
       {view==='tool-viewfinder' && project && (
         <DirectorViewfinderView project={project} onBack={()=>setView('tools-menu')}/>
+      )}
+      {view==='tool-claqueta' && project && (
+        <ClaquetaView project={project} onBack={()=>setView('tools-menu')}/>
       )}
       {view==='day' && activeDay && (
         <DayView
