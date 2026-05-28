@@ -362,20 +362,76 @@
     try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
   }
   function localSet(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+      return true;
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') {
+        console.warn('[Storage] Cuota excedida — limpiando datos antiguos...');
+        cleanupStorage();
+        // Reintentar una vez tras limpiar
+        try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+        catch { console.error('[Storage] Sigue lleno tras limpiar'); return false; }
+      }
+      return false;
+    }
   }
   function localDel(key) {
     try { localStorage.removeItem(key); } catch {}
   }
 
-  // ── Cola de sincronización — reintentos automáticos ──
-  const syncQueue = [];
+  // Limpieza de localStorage cuando se llena
+  function cleanupStorage() {
+    try {
+      // Borrar la cola vieja (los datos siguen en dept:/project:/etc)
+      localStorage.removeItem('_syncQueue');
+      // Borrar caches de listas que se pueden re-fetchear
+      const disposable = Object.keys(localStorage).filter(k =>
+        k.startsWith('msgarchive:') || k.startsWith('chat:')
+      );
+      disposable.forEach(k => localStorage.removeItem(k));
+      console.log(`[Storage] Limpiados ${disposable.length + 1} items`);
+    } catch {}
+  }
+
+  // ── Cola de sincronización — deduplicada y eficiente ──
+  // La cola NO duplica los datos: solo guarda referencias (store+key).
+  // Los datos reales viven en dept:/project:/etc. Al sincronizar se leen de ahí.
+  const syncQueue = [];          // [{ id, store, key, name, delete, retries }]
   const MAX_RETRIES = 5;
   let isSyncing = false;
 
-  async function addToSyncQueue(operation) {
-    syncQueue.push({ ...operation, retries: 0, addedAt: Date.now() });
-    localStorage.setItem('_syncQueue', JSON.stringify(syncQueue));
+  function persistQueueLight() {
+    // Solo persistir referencias ligeras (sin los datos), para no llenar localStorage
+    try {
+      const light = syncQueue.map(op => ({ id: op.id, store: op.store, key: op.key, name: op.name, delete: op.delete, retries: op.retries, addedAt: op.addedAt }));
+      localStorage.setItem('_syncQueue', JSON.stringify(light));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') { cleanupStorage(); }
+    }
+  }
+
+  function addToSyncQueue(operation) {
+    // operation: { store, key, name, delete, localKey }
+    const id = `${operation.store}::${operation.key}`;
+    // Deduplicar: si ya existe una op para esta clave, reemplazarla
+    const existingIdx = syncQueue.findIndex(op => op.id === id);
+    const entry = {
+      id,
+      store: operation.store,
+      key: operation.key,
+      name: operation.name || operation.key,
+      delete: !!operation.delete,
+      localKey: operation.localKey,    // de dónde leer los datos al sincronizar
+      retries: 0,
+      addedAt: Date.now()
+    };
+    if (existingIdx >= 0) {
+      syncQueue[existingIdx] = entry;   // reemplaza la versión vieja
+    } else {
+      syncQueue.push(entry);
+    }
+    persistQueueLight();
     processSyncQueue();
   }
 
@@ -390,36 +446,58 @@
     for (let i = 0; i < syncQueue.length; i++) {
       const op = syncQueue[i];
       try {
-        await apiCall(op.fn, op.method, op.body, op.params);
-        console.log(`[Sync] ✓ ${op.name || op.fn}`);
+        let body;
+        if (op.delete) {
+          body = { store: op.store, key: op.key, delete: true };
+        } else {
+          // Leer los datos ACTUALES desde localStorage (siempre la última versión)
+          const localData = localGet(op.localKey);
+          if (!localData) { toRemove.push(i); continue; } // ya no existe, descartar
+          body = { store: op.store, key: op.key, data: localData };
+        }
+        await apiCall('data', 'POST', body, null);
+        console.log(`[Sync] ✓ ${op.name}`);
         toRemove.push(i);
-        notifyUI({ type: 'sync-ok', message: `Guardado: ${op.name || op.fn}` });
+        notifyUI({ type: 'sync-ok', message: `Guardado: ${op.name}` });
       } catch (e) {
         op.retries = (op.retries || 0) + 1;
         if (op.retries >= MAX_RETRIES) {
-          console.warn(`[Sync] ✗ Falló tras ${MAX_RETRIES} reintentos:`, op.name || op.fn);
+          console.warn(`[Sync] ✗ Falló tras ${MAX_RETRIES} reintentos:`, op.name);
           toRemove.push(i);
-          notifyUI({ type: 'sync-error', message: `Error guardando: ${op.name || op.fn}` });
+          notifyUI({ type: 'sync-error', message: `Error guardando: ${op.name}` });
         } else {
-          console.warn(`[Sync] Reintentando (${op.retries}/${MAX_RETRIES}):`, op.name || op.fn, e.message);
+          console.warn(`[Sync] Reintentando (${op.retries}/${MAX_RETRIES}):`, op.name, e.message);
           const delay = Math.min(30000, 2000 * Math.pow(2, op.retries - 1));
-          setTimeout(() => processSyncQueue(), delay);
-          break;
+          setTimeout(() => { isSyncing = false; processSyncQueue(); }, delay);
+          // Guardar progreso de retries y salir
+          toRemove.reverse().forEach(idx => syncQueue.splice(idx, 1));
+          persistQueueLight();
+          return;
         }
       }
     }
     toRemove.reverse().forEach(i => syncQueue.splice(i, 1));
-    localStorage.setItem('_syncQueue', JSON.stringify(syncQueue));
+    persistQueueLight();
     isSyncing = false;
   }
 
-  // Restaurar cola al cargar
+  // Restaurar cola al cargar (solo referencias; los datos están en localStorage)
   if (localStorage.getItem('_syncQueue')) {
     try {
       const saved = JSON.parse(localStorage.getItem('_syncQueue'));
-      syncQueue.push(...saved.filter(op => Date.now() - op.addedAt < 7 * 24 * 60 * 60 * 1000));
-      setTimeout(processSyncQueue, 2000);
-    } catch {}
+      // Detectar formato VIEJO (con body/data embebido) → descartar para liberar espacio
+      const isOldFormat = Array.isArray(saved) && saved.some(op => op.body || op.method || op.fn);
+      if (isOldFormat) {
+        console.warn('[Sync] Cola en formato viejo detectada — limpiando para liberar localStorage');
+        localStorage.removeItem('_syncQueue');
+      } else {
+        const valid = saved.filter(op => op.localKey && Date.now() - op.addedAt < 7 * 24 * 60 * 60 * 1000);
+        syncQueue.push(...valid);
+        setTimeout(processSyncQueue, 2000);
+      }
+    } catch {
+      localStorage.removeItem('_syncQueue');
+    }
   }
 
   window.addEventListener('online', processSyncQueue);
@@ -437,10 +515,10 @@
     }
     const icon = notification.type === 'sync-ok' ? '✓' : notification.type === 'sync-error' ? '✗' : '…';
     const color = notification.type === 'sync-ok' ? '#22c55e' : notification.type === 'sync-error' ? '#ef4444' : '#f59e0b';
-    toast.style.cssText = `position:fixed;bottom:20px;right:20px;background:${color};color:white;padding:12px 16px;borderRadius:8px;fontSize:13px;fontWeight:600;zIndex:99999;boxShadow:0 4px 12px rgba(0,0,0,0.3);fontFamily:Inter,sans-serif;${notification.type === 'sync-error'?'':'animation: fadeOut 3s ease forwards;'}`;
+    toast.style.cssText = `position:fixed;bottom:20px;right:20px;background:${color};color:white;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-family:Inter,sans-serif;${notification.type === 'sync-error'?'':'animation: fadeOut 3s ease forwards;'}`;
     toast.textContent = icon + ' ' + notification.message;
     if (notification.type !== 'sync-error') {
-      toastTimeout = setTimeout(() => toast.remove(), 3000);
+      toastTimeout = setTimeout(() => { if (toast) toast.remove(); }, 3000);
     }
   }
 
@@ -466,11 +544,10 @@
       localSet(`productora:${prod.id}`, prod);
       notifyUI({ type: 'sync-pending', message: 'Guardando productora...' });
       addToSyncQueue({
-        name: prod.name || 'Productora',
-        fn: 'data',
-        method: 'POST',
-        body: { store: 'productoras', key: prod.id, data: prod },
-        params: null
+        store: 'productoras',
+        key: prod.id,
+        localKey: `productora:${prod.id}`,
+        name: prod.name || 'Productora'
       });
       notify('productoras', null);
     },
@@ -549,11 +626,10 @@
       localSet(`project:${proj.id}`, proj);
       notifyUI({ type: 'sync-pending', message: 'Guardando proyecto...' });
       addToSyncQueue({
-        name: proj.nombre || 'Proyecto',
-        fn: 'data',
-        method: 'POST',
-        body: { store: 'projects', key: proj.id, data: proj },
-        params: null
+        store: 'projects',
+        key: proj.id,
+        localKey: `project:${proj.id}`,
+        name: proj.nombre || 'Proyecto'
       });
       notify(`project:${proj.id}`, proj);
       notify(`projects:${proj.productoraId}`, null);
@@ -583,13 +659,12 @@
       // 1. Guardar localmente PRIMERO (offline-first)
       localSet(`dept:${storeKey}`, data);
       notifyUI({ type: 'sync-pending', message: `${section}: guardando...` });
-      // 2. Agregar a cola de sync
+      // 2. Agregar a cola de sync (solo referencia; datos en localStorage)
       addToSyncQueue({
-        name: `${deptKey}/${section}`,
-        fn: 'data',
-        method: 'POST',
-        body: { store: 'depts', key: storeKey, data },
-        params: null
+        store: 'depts',
+        key: storeKey,
+        localKey: `dept:${storeKey}`,
+        name: `${deptKey}/${section}`
       });
       // 3. Notificar listeners inmediatamente (UI actualizada con datos locales)
       notify(`dept:${storeKey}`, items);
@@ -617,11 +692,10 @@
       localSet(`msg:${projectId}`, data);
       notifyUI({ type: 'sync-pending', message: 'Guardando mensaje...' });
       addToSyncQueue({
-        name: 'Mensaje',
-        fn: 'data',
-        method: 'POST',
-        body: { store: 'messages', key: projectId, data },
-        params: null
+        store: 'messages',
+        key: projectId,
+        localKey: `msg:${projectId}`,
+        name: 'Mensaje'
       });
       notify(`msg:${projectId}`, data.deleted ? null : data);
     },
@@ -663,11 +737,10 @@
       localSet(`msgarchive:${projectId}`, data);
       notifyUI({ type: 'sync-pending', message: 'Guardando archivo de mensajes...' });
       addToSyncQueue({
-        name: 'Archivo de mensajes',
-        fn: 'data',
-        method: 'POST',
-        body: { store: 'msgarchive', key: projectId, data },
-        params: null
+        store: 'msgarchive',
+        key: projectId,
+        localKey: `msgarchive:${projectId}`,
+        name: 'Archivo de mensajes'
       });
     },
 
@@ -687,11 +760,10 @@
       localSet(`chat:${projectId}`, data);
       notifyUI({ type: 'sync-pending', message: 'Guardando chat...' });
       addToSyncQueue({
-        name: 'Chat',
-        fn: 'data',
-        method: 'POST',
-        body: { store: 'chat', key: projectId, data },
-        params: null
+        store: 'chat',
+        key: projectId,
+        localKey: `chat:${projectId}`,
+        name: 'Chat'
       });
       notify(`chat:${projectId}`, messages);
     },
