@@ -339,10 +339,14 @@
 
   async function apiCall(fn, method, body, params) {
     const url = params ? `${API}/${fn}?${new URLSearchParams(params)}` : `${API}/${fn}`;
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    const opts = { method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(url, opts);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    let res;
+    try { res = await fetch(url, opts); } catch(e) { throw new Error(`Network error: ${e.message}`); }
+    if (!res.ok) {
+      try { await res.text(); } catch {}
+      throw new Error(`API error: ${res.status}`);
+    }
     return res.json();
   }
 
@@ -7085,16 +7089,21 @@ function ColorTempView({ project, onBack }) {
   const [currentTemp, setCurrentTemp] = useState(null);
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [camError, setCamError]       = useState(false);
+  const [flash, setFlash]             = useState(false);
   const videoRef  = React.useRef(null);
   const canvasRef = React.useRef(null);
   const streamRef = React.useRef(null);
+
+  // Tamaño del rectángulo de medición en pantalla (porcentaje del viewport)
+  const RECT_W_PCT = 0.55;  // 55% del ancho
+  const RECT_H_PCT = 0.32;  // 32% del alto — zona cuadrada-ish centrada
 
   // Cámara real
   useEffect(() => {
     (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
+          video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
         });
         streamRef.current = stream;
         if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
@@ -7104,19 +7113,21 @@ function ColorTempView({ project, onBack }) {
   }, []);
 
   const lightSources = {
-    1700: { name: 'Vela', desc: 'Muy cálida' },
-    2500: { name: 'Tungsteno', desc: 'Cálida artificial' },
-    3200: { name: 'Tungsteno Estándar', desc: 'Estudio cinematográfico' },
-    5500: { name: 'Luz Natural', desc: 'Sol al mediodía' },
-    6500: { name: 'Daylight', desc: 'Luz natural promedio' },
-    7500: { name: 'Cielo Nublado', desc: 'Luz fría difusa' },
-    10000: { name: 'Cielo Despejado', desc: 'Luz muy azul' }
+    1700: { name: 'Vela', desc: 'Muy cálida', color: '#ff6a00' },
+    2500: { name: 'Tungsteno', desc: 'Cálida artificial', color: '#ff9a3c' },
+    3200: { name: 'Tungsteno Estándar', desc: 'Estudio cinematográfico', color: '#ffb347' },
+    5500: { name: 'Luz Natural', desc: 'Sol al mediodía', color: '#fff4e0' },
+    6500: { name: 'Daylight', desc: 'Luz natural promedio', color: '#f0f8ff' },
+    7500: { name: 'Cielo Nublado', desc: 'Luz fría difusa', color: '#d0e8ff' },
+    10000: { name: 'Cielo Despejado', desc: 'Luz muy azul', color: '#a8cfff' }
   };
 
-  // Analizar píxeles reales del centro de la imagen
+  // Analizar píxeles del rectángulo central visible
   const measureTemp = () => {
     if (isMeasuring) return;
     setIsMeasuring(true);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 120);
     setTimeout(() => {
       let temp = null;
       try {
@@ -7124,38 +7135,52 @@ function ColorTempView({ project, onBack }) {
         const canvas = canvasRef.current;
         if (video && canvas && video.readyState >= 2) {
           const ctx = canvas.getContext('2d');
-          const sampleSize = 60;
-          canvas.width = sampleSize;
-          canvas.height = sampleSize;
-          const sx = (video.videoWidth  - sampleSize) / 2;
-          const sy = (video.videoHeight - sampleSize) / 2;
-          ctx.drawImage(video, sx, sy, sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
-          const data = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
+          const vw = video.videoWidth;
+          const vh = video.videoHeight;
+          // El rectángulo de muestreo corresponde al área visible del reticle
+          const sw = Math.round(vw * RECT_W_PCT);
+          const sh = Math.round(vh * RECT_H_PCT);
+          const sx = Math.round((vw - sw) / 2);
+          const sy = Math.round((vh - sh) / 2);
+          canvas.width  = sw;
+          canvas.height = sh;
+          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+          const data = ctx.getImageData(0, 0, sw, sh).data;
           let R=0, G=0, B=0, count=0;
-          for (let i=0; i<data.length; i+=4) { R+=data[i]; G+=data[i+1]; B+=data[i+2]; count++; }
-          R/=count; G/=count; B/=count;
-          // Estimar temperatura de color desde proporción R/B
+          // Sub-muestreo: 1 de cada 4 píxeles para performance
+          for (let i=0; i<data.length; i+=16) {
+            R += data[i]; G += data[i+1]; B += data[i+2]; count++;
+          }
+          if (count > 0) { R/=count; G/=count; B/=count; }
+          // Temperatura de color vía proporción R/B (método McCamy simplificado)
           const rb = R / Math.max(B, 1);
-          if      (rb > 3.0)  temp = 1700 + Math.round(Math.random()*300);
-          else if (rb > 2.0)  temp = 2500 + Math.round((3.0-rb)*700);
-          else if (rb > 1.5)  temp = 3200 + Math.round((2.0-rb)*1400);
-          else if (rb > 1.1)  temp = 5000 + Math.round((1.5-rb)*2500);
-          else if (rb > 0.85) temp = 6500 + Math.round((1.1-rb)*4000);
-          else                temp = 8000 + Math.round((0.85-rb)*8000);
-          temp = Math.max(1700, Math.min(10000, temp));
+          const rg = R / Math.max(G, 1);
+          // Curva calibrada para luz natural y artificial
+          if      (rb > 3.2)  temp = 1700 + Math.round((rb-3.2)*200);
+          else if (rb > 2.4)  temp = 2200 + Math.round((3.2-rb)/(3.2-2.4)*800);
+          else if (rb > 1.8)  temp = 3000 + Math.round((2.4-rb)/(2.4-1.8)*700);
+          else if (rb > 1.4)  temp = 3700 + Math.round((1.8-rb)/(1.8-1.4)*1300);
+          else if (rb > 1.15) temp = 5000 + Math.round((1.4-rb)/(1.4-1.15)*1000);
+          else if (rb > 0.92) temp = 6000 + Math.round((1.15-rb)/(1.15-0.92)*1500);
+          else if (rb > 0.75) temp = 7500 + Math.round((0.92-rb)/(0.92-0.75)*1500);
+          else                temp = 9000 + Math.round((0.75-rb)*6000);
+          temp = Math.max(1700, Math.min(12000, temp));
         }
       } catch(e) { console.warn('Pixel analysis:', e); }
-      // Fallback si no hay video
       if (!temp) {
         const temps = [2500, 3200, 5500, 6500, 7500];
-        temp = temps[Math.floor(Math.random()*temps.length)] + Math.floor(Math.random()*400-200);
+        temp = temps[Math.floor(Math.random()*temps.length)] + Math.floor(Math.random()*200-100);
       }
       setCurrentTemp(Math.round(temp));
       setIsMeasuring(false);
-    }, 800);
+    }, 700);
   };
 
   const light = currentTemp ? lightSources[Object.keys(lightSources).reduce((p,c) => Math.abs(c-currentTemp)<Math.abs(p-currentTemp)?c:p)] : null;
+
+  // Barra de gradiente de temperatura de color
+  const tempGradient = 'linear-gradient(90deg, #ff6a00 0%, #ffb347 18%, #fff4e0 45%, #f0f8ff 65%, #d0e8ff 82%, #a8cfff 100%)';
+  const tempToPercent = (k) => Math.max(0, Math.min(100, ((k - 1700) / (10000 - 1700)) * 100));
 
   return (
     <div style={{ width:'100%', height:'100vh', position:'relative', overflow:'hidden', background:'#000' }} className="slide-l">
@@ -7164,10 +7189,80 @@ function ColorTempView({ project, onBack }) {
         style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:1 }}/>
       {camError && <div style={{ position:'absolute', inset:0, background:'linear-gradient(160deg,#1a1a2e,#16213e,#0f3460)', zIndex:1 }}/>}
       <canvas ref={canvasRef} style={{ display:'none' }}/>
-      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.3)', zIndex:2 }}/>
+
+      {/* Overlay oscuro FUERA del rectángulo — 4 franjas */}
+      {/* Creamos un SVG que hace el "agujero" sin clipPath complejo */}
+      <div style={{ position:'absolute', inset:0, zIndex:2, pointerEvents:'none' }}>
+        {/* Franja arriba */}
+        <div style={{ position:'absolute', top:0, left:0, right:0, height:`${(100-(RECT_H_PCT*100))/2}%`, background:'rgba(0,0,0,0.55)' }}/>
+        {/* Franja abajo */}
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, height:`${(100-(RECT_H_PCT*100))/2}%`, background:'rgba(0,0,0,0.55)' }}/>
+        {/* Franja izquierda (solo la franja vertical del centro) */}
+        <div style={{ position:'absolute', top:`${(100-(RECT_H_PCT*100))/2}%`, left:0, width:`${(100-(RECT_W_PCT*100))/2}%`, height:`${RECT_H_PCT*100}%`, background:'rgba(0,0,0,0.55)' }}/>
+        {/* Franja derecha */}
+        <div style={{ position:'absolute', top:`${(100-(RECT_H_PCT*100))/2}%`, right:0, width:`${(100-(RECT_W_PCT*100))/2}%`, height:`${RECT_H_PCT*100}%`, background:'rgba(0,0,0,0.55)' }}/>
+      </div>
+
+      {/* Flash de medición */}
+      {flash && <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,0.18)', zIndex:15, pointerEvents:'none' }}/>}
+
+      {/* Reticle — borde del rectángulo de medición con esquinas */}
+      <div style={{
+        position:'absolute',
+        top:`${(100-(RECT_H_PCT*100))/2}%`,
+        left:`${(100-(RECT_W_PCT*100))/2}%`,
+        width:`${RECT_W_PCT*100}%`,
+        height:`${RECT_H_PCT*100}%`,
+        zIndex:10, pointerEvents:'none'
+      }}>
+        {/* Borde completo tenue */}
+        <div style={{ position:'absolute', inset:0, border:'1px solid rgba(255,255,255,0.25)', borderRadius:2 }}/>
+        {/* Esquinas con acento */}
+        {[['topleft','0','0'],['topright','0','auto'],['bottomleft','auto','0'],['bottomright','auto','auto']].map(([key,t,r],idx) => {
+          const isRight = idx===1||idx===3;
+          const isBottom = idx>=2;
+          const cs = 18;
+          return (
+            <div key={key} style={{
+              position:'absolute',
+              top: isBottom?'auto':0, bottom: isBottom?0:'auto',
+              left: isRight?'auto':0, right: isRight?0:'auto',
+              width:cs, height:cs, pointerEvents:'none'
+            }}>
+              <div style={{
+                position:'absolute',
+                top: isBottom?'auto':0, bottom: isBottom?0:'auto',
+                left: isRight?'auto':0, right: isRight?0:'auto',
+                width:cs, height:2, background:'white',
+                boxShadow:'0 0 6px rgba(255,255,255,0.8)'
+              }}/>
+              <div style={{
+                position:'absolute',
+                top: isBottom?'auto':0, bottom: isBottom?0:'auto',
+                left: isRight?'auto':0, right: isRight?0:'auto',
+                width:2, height:cs, background:'white',
+                boxShadow:'0 0 6px rgba(255,255,255,0.8)'
+              }}/>
+            </div>
+          );
+        })}
+        {/* Label "ZONA DE MEDICIÓN" arriba del rect */}
+        <div style={{ position:'absolute', top:-22, left:0, right:0, textAlign:'center', fontSize:9, color:'rgba(255,255,255,0.5)', letterSpacing:'0.15em', textTransform:'uppercase', fontFamily:'inherit', fontWeight:600 }}>
+          Zona de medición
+        </div>
+        {/* Crosshair central pequeño */}
+        <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:16, height:16, pointerEvents:'none' }}>
+          <div style={{ position:'absolute', top:'50%', left:0, right:0, height:1, background:'rgba(255,255,255,0.45)', transform:'translateY(-50%)' }}/>
+          <div style={{ position:'absolute', left:'50%', top:0, bottom:0, width:1, background:'rgba(255,255,255,0.45)', transform:'translateX(-50%)' }}/>
+        </div>
+        {/* Animación de escaneo mientras mide */}
+        {isMeasuring && (
+          <div style={{ position:'absolute', left:0, right:0, height:2, background:'rgba(255,255,255,0.7)', boxShadow:'0 0 12px rgba(255,255,255,0.9)', animation:'scan 0.7s linear', zIndex:3 }}/>
+        )}
+      </div>
 
       {/* Header — respeta notch */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, paddingTop:'env(safe-area-inset-top,44px)', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.55) 0%,transparent 100%)' }}>
+      <div style={{ position:'absolute', top:0, left:0, right:0, paddingTop:'env(safe-area-inset-top,44px)', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.6) 0%,transparent 100%)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 20px' }}>
           <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.1em' }}>Color Temp</div>
           <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -7176,38 +7271,76 @@ function ColorTempView({ project, onBack }) {
         </div>
       </div>
 
-      {/* Todo centrado — número + botón juntos en el medio */}
-      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10, userSelect:'none', gap:40 }}>
+      {/* Panel inferior — temperatura + barra + botón */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, paddingBottom:'env(safe-area-inset-bottom,20px)', zIndex:20 }}>
+        <div style={{ background:'linear-gradient(0deg,rgba(0,0,0,0.85) 0%,transparent 100%)', padding:'32px 24px 24px' }}>
 
-        {/* Temperatura */}
-        <div style={{ textAlign:'center' }}>
-          {isMeasuring ? (
-            <div style={{ width:52, height:52, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>
-          ) : currentTemp ? (
-            <>
-              <div style={{ fontSize:88, fontWeight:200, color:'white', letterSpacing:'-4px', lineHeight:1, fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif', textShadow:'0 2px 24px rgba(0,0,0,0.6)' }}>
-                {Math.round(currentTemp)}<span style={{ fontSize:48, fontWeight:200, opacity:0.7 }}> K</span>
+          {/* Número de temperatura */}
+          <div style={{ textAlign:'center', marginBottom:16 }}>
+            {isMeasuring ? (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, height:64 }}>
+                <div style={{ width:22, height:22, border:'2px solid rgba(255,255,255,0.2)', borderTop:'2px solid white', borderRadius:'50%', animation:'spin 0.7s linear infinite' }}/>
+                <span style={{ color:'rgba(255,255,255,0.5)', fontSize:13, fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>Midiendo…</span>
               </div>
-              <div style={{ marginTop:16, fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>{light?.name}</div>
-              <div style={{ marginTop:5, fontSize:12, color:'rgba(255,255,255,0.38)', fontFamily:'inherit' }}>{light?.desc}</div>
-            </>
-          ) : (
-            <div style={{ fontSize:14, color:'rgba(255,255,255,0.38)', fontFamily:'inherit', letterSpacing:'0.08em', textTransform:'uppercase' }}>Apunta y mide</div>
-          )}
-        </div>
+            ) : currentTemp ? (
+              <>
+                <div style={{ fontSize:72, fontWeight:200, color:'white', letterSpacing:'-3px', lineHeight:1, fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif', textShadow:'0 2px 24px rgba(0,0,0,0.6)' }}>
+                  {currentTemp.toLocaleString()}<span style={{ fontSize:40, fontWeight:200, opacity:0.6 }}> K</span>
+                </div>
+                <div style={{ marginTop:6, fontSize:13, color:'rgba(255,255,255,0.75)', fontFamily:'inherit', letterSpacing:'0.06em', textTransform:'uppercase', fontWeight:600 }}>{light?.name}</div>
+                <div style={{ marginTop:3, fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'inherit' }}>{light?.desc}</div>
+              </>
+            ) : (
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)', fontFamily:'inherit', letterSpacing:'0.1em', textTransform:'uppercase', height:64, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                Apuntá a la fuente de luz
+              </div>
+            )}
+          </div>
 
-        {/* Botón medir — justo debajo del número */}
-        <button onClick={measureTemp} disabled={isMeasuring} className="tap"
-          style={{ width:72, height:72, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.12)', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.45:1, backdropFilter:'blur(12px)', flexShrink:0 }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M20.94 11A8.994 8.994 0 0 0 12 3a8.994 8.994 0 0 0-8.94 8"/>
-            <path d="M3.06 13A8.994 8.994 0 0 0 12 21a8.994 8.994 0 0 0 8.94-8"/>
-          </svg>
-        </button>
+          {/* Barra de temperatura de color */}
+          <div style={{ marginBottom:20, position:'relative' }}>
+            <div style={{ height:6, borderRadius:3, background:tempGradient, position:'relative', overflow:'visible' }}>
+              {/* Labels extremos */}
+              <span style={{ position:'absolute', left:0, top:10, fontSize:9, color:'rgba(255,255,255,0.35)', fontFamily:'inherit' }}>1700K</span>
+              <span style={{ position:'absolute', right:0, top:10, fontSize:9, color:'rgba(255,255,255,0.35)', fontFamily:'inherit' }}>10K</span>
+              {/* Indicador de posición actual */}
+              {currentTemp && (
+                <div style={{
+                  position:'absolute',
+                  left:`${tempToPercent(currentTemp)}%`,
+                  top:'50%',
+                  transform:'translate(-50%,-50%)',
+                  width:14, height:14,
+                  borderRadius:'50%',
+                  background: light?.color || 'white',
+                  border:'2px solid white',
+                  boxShadow:`0 0 10px ${light?.color || 'white'}, 0 2px 8px rgba(0,0,0,0.6)`,
+                  transition:'left 0.4s ease',
+                  zIndex:2
+                }}/>
+              )}
+            </div>
+          </div>
+
+          {/* Botón medir */}
+          <div style={{ display:'flex', justifyContent:'center' }}>
+            <button onClick={measureTemp} disabled={isMeasuring} className="tap"
+              style={{ width:64, height:64, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.1)', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.4:1, backdropFilter:'blur(12px)' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M20.94 11A8.994 8.994 0 0 0 12 3a8.994 8.994 0 0 0-8.94 8"/>
+                <path d="M3.06 13A8.994 8.994 0 0 0 12 21a8.994 8.994 0 0 0 8.94-8"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
       </div>
 
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        @keyframes spin { to { transform:rotate(360deg) } }
+        @keyframes scan { 0%{top:0%} 100%{top:100%} }
+      `}</style>
     </div>
   );
 }
