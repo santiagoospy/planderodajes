@@ -8572,7 +8572,7 @@ function DirectorViewfinderView({ project, onBack }) {
 // ═══════════════════════════════════════════════════════════
 //  HOME VIEW
 // ═══════════════════════════════════════════════════════════
-function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, onLock, onExport, onNewProject, onUpdateProject, onSelectDept, onOpenMessages, onOpenCitaciones, onOpenScouting, onOpenTools }) {
+function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, onLock, onExport, onNewProject, onUpdateProject, onSelectDept, onOpenMessages, onOpenCitaciones, onOpenScouting, onOpenTools, onOpenDropbox }) {
   const [showAddDept, setShowAddDept] = useState(false);
   const [newDeptLabel, setNewDeptLabel] = useState('');
   const [newDeptIcon, setNewDeptIcon] = useState('👤');
@@ -8584,17 +8584,22 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
 
   // Detectar gradient de la productora
   const PRODUCTORA_THEMES_MAP = {
-    celeste:  'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)',
-    naranja:  '#C24400',
-    amarillo: '#C89500',
-    gris:     'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
-    verde:    'linear-gradient(165deg, #0D4A2A 0%, #1A6B3A 50%, #237A44 100%)',
-    violeta:  '#3A106A',
-    rojo:     '#C00A0A',
-    rosado:   '#8C1050',
-    claro:    '#F0EDE8',
+    celeste:   'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
+    turquesa:  '#2EC4B6',
+    arena:     '#F4A261',
+    coral:     '#E76F51',
+    oscuro:    'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
+    claro:     '#F1FAEE',
+    // Backward compat: viejos keys → paleta nueva
+    naranja:   '#F4A261',
+    amarillo:  '#F4A261',
+    gris:      'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
+    verde:     '#0B7285',
+    violeta:   '#E76F51',
+    rojo:      '#E76F51',
+    rosado:    '#E76F51',
   };
-  const [productoraGrad, setProductoraGrad] = useState('linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)');
+  const [productoraGrad, setProductoraGrad] = useState('linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)');
   const [isLightTheme, setIsLightTheme] = useState(false);
   useEffect(() => {
     if (project.productoraId && window._fb) {
@@ -8759,83 +8764,33 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
   return (
     <div style={{ minHeight:'100vh', background:productoraGrad, display:'flex', flexDirection:'column' }} className="slide-r">
       <div style={{ flex:1, overflowY:'auto' }}>
-        {/* Header Clear */}
-        <div style={{ padding:'52px 20px 20px', position:'sticky', top:0, zIndex:10, background:productoraGrad }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-            <h1 style={{ fontSize:26, fontWeight:800, color:isLightTheme?'#1a1714':'#fff', fontFamily:'inherit', margin:0, letterSpacing:'-0.5px' }}>
-              {editingProjectName ? (
-                <input 
-                  type="text" 
-                  value={newProjectName} 
-                  onChange={e => setNewProjectName(e.target.value)} 
-                  onBlur={() => { 
-                    setEditingProjectName(false); 
-                    onUpdateProject({ ...project, name: newProjectName }); 
-                  }} 
-                  autoFocus 
-                  style={{ fontFamily:'inherit', fontSize:22, fontWeight:800, border:'none', borderBottom:'2px solid rgba(255,255,255,0.5)', borderRadius:0, padding:'4px 0', background:'transparent', color:'#fff', outline:'none', width:'100%' }} 
-                /> 
-              ) : (
-                <span onClick={() => setEditingProjectName(true)} style={{ cursor:'pointer' }}>{project.name}</span>
-              )}
-            </h1>
-            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:16, cursor:'pointer', padding:'6px 8px', borderRadius:8 }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
-                {isAdmin ? '🔓' : '🔒'}
-              </button>
-              {project.productoraId && (
-                <button onClick={() => {
-                  // Go back to productora hub, not landing
-                  const pid = project.productoraId;
-                  if (window.history.length > 1) {
-                    window.history.back();
-                  } else {
-                    window.location.href = `/?pid=${pid}`;
-                  }
-                }} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:12, color:'rgba(255,255,255,0.85)', cursor:'pointer', fontFamily:'inherit', padding:'6px 10px', borderRadius:8 }} title="Volver a productora">
-                  ← Productora
-                </button>
-              )}
-              <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:14, cursor:'pointer', padding:'6px 8px', borderRadius:8 }} title="Inicio">
-                🏠
-              </button>
-            </div>
-          </div>
-          <div style={{ fontSize:12, color:isLightTheme?'rgba(0,0,0,0.45)':'rgba(255,255,255,0.6)', fontFamily:'inherit' }}>{project.client||''}{project.client?' · ':''}{project.days.length} días · {project.days.reduce((s, d) => s + d.scenes.length, 0)} escenas</div>
-        </div>
-
-        {/* Contenido principal */}
-        <div style={{ padding:'16px 16px 48px' }}>
-
-          {/* 📸 FOTO DE PORTADA */}
+        {/* ═══ HERO: Portada + Nombre + Progreso fusionados ═══ */}
+        <div style={{ position:'relative', width:'100%', minHeight:260, overflow:'hidden' }}>
+          {/* Fondo: foto o gradiente */}
           {project.logo ? (
-            <div style={{ position:'relative', width:'100%', marginBottom:20, height:200, overflow:'hidden', borderRadius:14 }}>
-              <img src={project.logo} alt="Portada" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-              {isAdmin && (
-                <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ position:'absolute', top:8, right:8, width:28, height:28, borderRadius:'50%', background:'rgba(0,0,0,0.7)', border:'none', color:'#fff', fontSize:14, cursor:'pointer', fontWeight:700 }}>✕</button>
-              )}
-            </div>
-          ) : (isAdmin && (
-            <label style={{ 
-              display:'flex', 
-              alignItems:'center', 
-              justifyContent:'center', 
-              gap:8, 
-              background:'rgba(255,255,255,0.12)',
-              border:'1.5px dashed rgba(255,255,255,0.3)', 
-              borderRadius:14, 
-              padding:'32px 20px', 
-              cursor:'pointer', 
-              fontFamily:'Inter, sans-serif', 
-              fontSize:14, 
-              fontWeight:600,
-              color:'rgba(255,255,255,0.8)', 
-              width:'100%', 
-              marginBottom:16, 
-              minHeight:100,
-              boxSizing:'border-box'
-            }}>
-              📸 SUBIR FOTO DE PORTADA
+            <img src={project.logo} alt="Portada" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
+          ) : (
+            <div style={{ position:'absolute', inset:0, background:productoraGrad }}/>
+          )}
+
+          {/* Scrim oscuro inferior para legibilidad */}
+          <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'70%', background:'linear-gradient(transparent, rgba(0,0,0,0.65))', pointerEvents:'none' }}/>
+
+          {/* Botones superiores */}
+          <div style={{ position:'absolute', top:'env(safe-area-inset-top,44px)', right:16, display:'flex', gap:6, zIndex:10 }}>
+            <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', fontSize:16, cursor:'pointer', padding:'6px 8px', borderRadius:8, color:'#fff' }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
+              {isAdmin ? '🔓' : '🔒'}
+            </button>
+            {project.productoraId && (
+              <button onClick={() => { window.history.length > 1 ? window.history.back() : (window.location.href = `/?pid=${project.productoraId}`); }} className="tap" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', fontSize:11, color:'rgba(255,255,255,0.9)', cursor:'pointer', fontFamily:'inherit', padding:'6px 10px', borderRadius:8 }}>← Productora</button>
+            )}
+            <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', fontSize:14, cursor:'pointer', padding:'6px 8px', borderRadius:8, color:'#fff' }}>🏠</button>
+          </div>
+
+          {/* Botón subir/cambiar foto (admin) */}
+          {isAdmin && (
+            <label style={{ position:'absolute', top:'env(safe-area-inset-top,44px)', left:16, zIndex:10, background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:11, color:'rgba(255,255,255,0.9)', fontFamily:'inherit', fontWeight:600 }}>
+              📸 {project.logo ? 'Cambiar' : 'Portada'}
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
                 onChange={async (e) => {
                   const f = e.target.files[0]; if (!f) return;
@@ -8849,24 +8804,43 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                   }
                 }}/>
             </label>
-          ))}
+          )}
+          {isAdmin && project.logo && (
+            <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ position:'absolute', top:'calc(env(safe-area-inset-top,44px) + 36px)', left:16, zIndex:10, background:'rgba(200,50,50,0.6)', border:'none', color:'#fff', fontSize:10, fontWeight:700, padding:'4px 8px', borderRadius:6, cursor:'pointer', fontFamily:'inherit' }}>✕ Quitar</button>
+          )}
 
-          {/* PROGRESO - Clear style */}
-          <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-              <div style={{ position:'relative', width:52, height:52, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <ProgressRing pct={pct} size={52} stroke={5} color='rgba(255,255,255,0.9)'/>
+          {/* Overlay inferior: Nombre + Info + Progreso */}
+          <div style={{ position:'relative', zIndex:5, display:'flex', flexDirection:'column', justifyContent:'flex-end', minHeight:260, padding:'16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)' }}>
+            <h1 style={{ fontSize:28, fontWeight:800, color:'#fff', fontFamily:'inherit', margin:'0 0 4px', letterSpacing:'-0.5px', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>
+              {editingProjectName ? (
+                <input type="text" value={newProjectName} onChange={e => setNewProjectName(e.target.value)}
+                  onBlur={() => { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }); }}
+                  autoFocus style={{ fontFamily:'inherit', fontSize:24, fontWeight:800, border:'none', borderBottom:'2px solid rgba(255,255,255,0.5)', borderRadius:0, padding:'4px 0', background:'transparent', color:'#fff', outline:'none', width:'100%', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}/>
+              ) : (
+                <span onClick={() => setEditingProjectName(true)} style={{ cursor:'pointer' }}>{project.name}</span>
+              )}
+            </h1>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.7)', fontFamily:'inherit', marginBottom:12, textShadow:'0 1px 4px rgba(0,0,0,0.4)' }}>{project.client||''}{project.client?' · ':''}{project.days.length} días · {project.days.reduce((s,d)=>s+d.scenes.length,0)} escenas</div>
+
+            {/* Progress inline */}
+            <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(0,0,0,0.3)', backdropFilter:'blur(10px)', borderRadius:12, padding:'10px 14px' }}>
+              <div style={{ position:'relative', width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <ProgressRing pct={pct} size={42} stroke={4} color='rgba(255,255,255,0.9)'/>
                 <div style={{ position:'absolute', textAlign:'center' }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:'#fff', lineHeight:1 }}>{doneAll}</div>
-                  <div style={{ fontSize:7, color:'rgba(255,255,255,0.6)' }}>/{allScenes.length}</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:'#fff', lineHeight:1 }}>{doneAll}</div>
+                  <div style={{ fontSize:6, color:'rgba(255,255,255,0.6)' }}>/{allScenes.length}</div>
                 </div>
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', letterSpacing:'0.08em', fontWeight:600, marginBottom:3 }}>GRABACIÓN COMPLETADA</div>
-                <div style={{ fontSize:28, fontWeight:800, color:'#fff', lineHeight:1 }}>{Math.round(pct*100)}%</div>
+                <div style={{ fontSize:9, color:'rgba(255,255,255,0.55)', letterSpacing:'0.08em', fontWeight:600 }}>GRABACIÓN</div>
+                <div style={{ fontSize:22, fontWeight:800, color:'#fff', lineHeight:1 }}>{Math.round(pct*100)}%</div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Contenido principal */}
+        <div style={{ padding:'16px 16px 48px' }}>
 
           {/* 💬 CHAT DEL EQUIPO */}
           <IMessageChat project={project} isAdmin={isAdmin} />
@@ -8894,7 +8868,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                           style={{ fontFamily:'Inter, sans-serif', fontSize:10, fontWeight:700, padding:'4px 10px', cursor:'pointer',
                             border:'none', borderRadius:20,
                             background: acked ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)',
-                            color: acked ? '#005a72' : 'rgba(255,255,255,0.7)' }}>
+                            color: acked ? '#0B7285' : 'rgba(255,255,255,0.7)' }}>
                           {acked ? '✓ ' : ''}{m.label}
                         </button>
                       );
@@ -8920,7 +8894,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                 style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'10px 12px', color:'#fff', outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={() => { setShowMsgForm(false); setMsgDraft(''); }} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:600, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.6)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
-                <button onClick={postMsg} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#005a72', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Publicar</button>
+                <button onClick={postMsg} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#0B7285', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Publicar</button>
               </div>
             </div>
           )}
@@ -8999,7 +8973,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                         />
                         <div style={{ display:'flex', gap:8 }}>
                           <button onClick={cancelEditDay} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark-secondary)', color:'var(--text-tertiary)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer', fontWeight:700 }}>Cancelar</button>
-                          <button onClick={saveEditDay} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#005a72', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Guardar</button>
+                          <button onClick={saveEditDay} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#0B7285', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Guardar</button>
                         </div>
                       </div>
                     );
@@ -9059,70 +9033,49 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </div>
           )}
 
-          {/* ACCIONES - Clear style */}
-          <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, overflow:'hidden', marginBottom:8 }}>
-            <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🕐</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Citaciones</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Horarios de todos los departamentos</div>
-              </div>
-              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+          {/* ACCIONES - Grid 2 columnas */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+            <button onClick={onOpenDropbox} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+              <div style={{ fontSize:22 }}>📁</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Dropbox</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Archivos del proyecto</div>
             </button>
-
-            <button onClick={onOpenMessages} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>✉️</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Mensajes</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Archivo de comunicaciones</div>
-              </div>
-              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+              <div style={{ fontSize:22 }}>🕐</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Citaciones</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Horarios de los deptos</div>
             </button>
-
-            <button onClick={onOpenScouting} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom: isAdmin ? '1px solid rgba(255,255,255,0.08)' : 'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🗺️</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Scouting</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Locaciones y fotos</div>
-              </div>
-              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <button onClick={onOpenMessages} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+              <div style={{ fontSize:22 }}>✉️</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Mensajes</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Comunicaciones</div>
             </button>
-
-            <button onClick={onOpenTools} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom: isAdmin ? '1px solid rgba(255,255,255,0.08)' : 'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-              <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255, 87, 34, 0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🧰</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Herramientas</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Sun AR, Color Temperature</div>
-              </div>
-              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <button onClick={onOpenScouting} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+              <div style={{ fontSize:22 }}>🗺️</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Scouting</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Locaciones y fotos</div>
             </button>
-
-            <button onClick={togglePin} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-              <div style={{ width:34, height:34, borderRadius:9, background: pinned ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{pinned ? '📌' : '📍'}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>{pinned ? 'Quitar del inicio' : 'Pinear en el inicio'}</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>{pinned ? 'Ya aparece en la pantalla de inicio' : 'Acceso directo desde el inicio'}</div>
-              </div>
-              <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <button onClick={onOpenTools} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+              <div style={{ fontSize:22 }}>🧰</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Herramientas</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Sun AR, Color Temp</div>
             </button>
-
+            <button onClick={togglePin} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: pinned ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+              <div style={{ fontSize:22 }}>{pinned ? '📌' : '📍'}</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>{pinned ? 'Pineado' : 'Pinear'}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>{pinned ? 'Quitar del inicio' : 'Acceso directo'}</div>
+            </button>
             {isAdmin && (
               <>
-                <button onClick={onExport} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-                  <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>📄</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Exportar PDF</div>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Resumen completo del proyecto</div>
-                  </div>
-                  <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+                <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+                  <div style={{ fontSize:22 }}>📄</div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Exportar PDF</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Resumen completo</div>
                 </button>
-                <button onClick={onNewProject} className="tap" style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', border:'none', borderBottom:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%', background:'none' }}>
-                  <div style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🎬</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>Nuevo proyecto</div>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Crear un nuevo rodaje</div>
-                  </div>
-                  <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+                <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+                  <div style={{ fontSize:22 }}>🎬</div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Nuevo proyecto</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)' }}>Crear rodaje</div>
                 </button>
               </>
             )}
@@ -10262,7 +10215,7 @@ function isPinnedProject(id) {
 function pinProject(proj) {
   const list = getPinnedProjects();
   if (list.some(p => p.id === proj.id)) return list;
-  list.push({ id: proj.id, nombre: proj.title || proj.nombre || proj.name || proj.id, color: proj.color || '#0092B8', pin: proj.pin || '' });
+  list.push({ id: proj.id, nombre: proj.title || proj.nombre || proj.name || proj.id, color: proj.color || '#0B7285', pin: proj.pin || '' });
   setPinnedProjects(list);
   return list;
 }
@@ -10989,7 +10942,7 @@ function MarketplaceView({ onBack }) {
           <input value={form.nombre} onChange={e=>sf('nombre',e.target.value)} placeholder="Tu nombre"
             style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1px solid #e5e2dd', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
           <input value={form.contacto} onChange={e=>sf('contacto',e.target.value)} placeholder="WhatsApp *"
-            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1.5px solid #0092B8', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:14, background:'#f7f5f2', border:'1.5px solid #0B7285', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
         </div>
 
         {/* PIN — solo al crear */}
@@ -11004,7 +10957,7 @@ function MarketplaceView({ onBack }) {
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={closeModal} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>Cancelar</button>
           <button onClick={isEdit ? submitEdit : submitNew} disabled={saving || (!isEdit ? (!form.titulo||!form.contacto||!form.pin) : (!form.titulo||!form.contacto))}
-            style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:saving?'#aaa':'#0092B8', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>
+            style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:saving?'#aaa':'#0B7285', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>
             {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Publicar ítem'}
           </button>
         </div>
@@ -11027,7 +10980,7 @@ function MarketplaceView({ onBack }) {
         <div style={{ display:'flex', gap:8, marginTop:12 }}>
           <button onClick={closeModal} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, background:'#f0ede8', color:'#888', border:'none', borderRadius:12, padding:'13px', cursor:'pointer' }}>Cancelar</button>
           <button onClick={action==='edit' ? confirmPinEdit : confirmDel} disabled={!pinInput}
-            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:action==='edit'?'#0092B8':'#e53e3e', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:'pointer', opacity:pinInput?1:0.4 }}>
+            style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:700, background:action==='edit'?'#0B7285':'#e53e3e', color:'#fff', border:'none', borderRadius:12, padding:'13px', cursor:'pointer', opacity:pinInput?1:0.4 }}>
             {action==='edit' ? 'Continuar' : 'Eliminar'}
           </button>
         </div>
@@ -11038,14 +10991,14 @@ function MarketplaceView({ onBack }) {
   return (
     <div style={{ minHeight:'100vh', background:'#f7f5f2', fontFamily:'Inter, sans-serif', display:'flex', flexDirection:'column' }}>
       {/* Header */}
-      <div style={{ background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', padding:'calc(env(safe-area-inset-top,0px) + 16px) 20px 20px', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding:'calc(env(safe-area-inset-top,0px) + 16px) 20px 20px', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.7)', fontSize:14, cursor:'pointer', padding:'0 0 12px', fontFamily:'Inter, sans-serif' }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <div>
             <div style={{ fontSize:24, fontWeight:800, color:'#fff' }}>🛒 Marketplace</div>
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginTop:2 }}>Equipos, props y servicios para producción</div>
           </div>
-          <button onClick={()=>{ setForm(EMPTY_FORM); setMode('new'); }} style={{ background:'rgba(255,255,255,0.95)', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, color:'#005a72', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>+ Publicar</button>
+          <button onClick={()=>{ setForm(EMPTY_FORM); setMode('new'); }} style={{ background:'rgba(255,255,255,0.95)', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, color:'#0B7285', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>+ Publicar</button>
         </div>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍  Buscar equipos, props, servicios..."
           style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.25)', borderRadius:12, padding:'11px 14px', color:'#fff', outline:'none', boxSizing:'border-box' }}/>
@@ -11061,7 +11014,7 @@ function MarketplaceView({ onBack }) {
       <div style={{ flex:1, padding:'16px', paddingBottom:'calc(env(safe-area-inset-bottom,0px) + 24px)' }}>
         {loading ? (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'#bbb' }}>
-            <div style={{ width:32, height:32, border:'3px solid #e5e2dd', borderTop:'3px solid #0092B8', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }}/>
+            <div style={{ width:32, height:32, border:'3px solid #e5e2dd', borderTop:'3px solid #0B7285', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }}/>
             <div style={{ fontSize:13 }}>Cargando publicaciones…</div>
           </div>
         ) : filtered.length === 0 ? (
@@ -11080,17 +11033,17 @@ function MarketplaceView({ onBack }) {
                   <div style={{ width:'100%', aspectRatio:'4/3', background:'#f0ede8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:36 }}>📦</div>
                 )}
                 <div style={{ padding:'10px 10px 12px' }}>
-                  <div style={{ fontSize:10, background:'#0092B815', color:'#0092B8', borderRadius:6, padding:'2px 7px', display:'inline-block', marginBottom:6 }}>{item.categoria}</div>
+                  <div style={{ fontSize:10, background:'#0B728515', color:'#0B7285', borderRadius:6, padding:'2px 7px', display:'inline-block', marginBottom:6 }}>{item.categoria}</div>
                   <div style={{ fontSize:13, fontWeight:700, color:'#1a1714', marginBottom:3, lineHeight:1.3 }}>{item.titulo}</div>
                   {item.descripcion && <div style={{ fontSize:11, color:'#888', marginBottom:6, lineHeight:1.4 }}>{item.descripcion.slice(0,60)}{item.descripcion.length>60?'…':''}</div>}
-                  {item.precio && <div style={{ fontSize:14, fontWeight:700, color:'#0092B8', marginBottom:4 }}>{item.precio}</div>}
+                  {item.precio && <div style={{ fontSize:14, fontWeight:700, color:'#0B7285', marginBottom:4 }}>{item.precio}</div>}
                   <div style={{ fontSize:11, color:'#aaa', marginBottom:8 }}>📞 {item.contacto}{item.nombre?' · '+item.nombre:''}</div>
                   <a href={`https://wa.me/${item.contacto.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
                     style={{ display:'block', textAlign:'center', background:'#25D366', color:'#fff', borderRadius:8, padding:'7px', fontSize:12, fontWeight:700, textDecoration:'none', fontFamily:'Inter, sans-serif', marginBottom:6 }}>
                     💬 WhatsApp
                   </a>
                   <div style={{ display:'flex', gap:4 }}>
-                    <button onClick={()=>startEdit(item)} style={{ flex:1, background:'#f0f7ff', border:'1px solid #cce4f7', borderRadius:8, fontSize:11, color:'#0092B8', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>✏️ Editar</button>
+                    <button onClick={()=>startEdit(item)} style={{ flex:1, background:'#f0f7ff', border:'1px solid #cce4f7', borderRadius:8, fontSize:11, color:'#0B7285', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>✏️ Editar</button>
                     <button onClick={()=>startDel(item)} style={{ flex:1, background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8, fontSize:11, color:'#e53e3e', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>🗑️ Eliminar</button>
                   </div>
                 </div>
@@ -11105,281 +11058,262 @@ function MarketplaceView({ onBack }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  JUEGO DE SNAKE (NOKIA) 🐍
+//  DROPBOX VIEW — Archivos compartidos del proyecto
 // ═══════════════════════════════════════════════════════════
-function SnakeGameView({ onBack }) {
-  const [snake, setSnake] = React.useState([{ x: 10, y: 10 }]);
-  const [food, setFood] = React.useState({ x: 15, y: 15 });
-  const [direction, setDirection] = React.useState({ x: 1, y: 0 });
-  const [nextDirection, setNextDirection] = React.useState({ x: 1, y: 0 });
-  const [gameOver, setGameOver] = React.useState(false);
-  const [score, setScore] = React.useState(0);
-  const gameLoopRef = React.useRef();
-  const GRID_WIDTH = 20;
-  const GRID_HEIGHT = 20;
-  const CELL_SIZE = 20;
+function DropboxView({ project, onBack }) {
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const BLOB_KEY = 'dropbox';
 
-  // Generar nueva comida en posición aleatoria
-  const generateFood = React.useCallback((currentSnake) => {
-    let newFood;
-    let isOnSnake = true;
-    while (isOnSnake) {
-      newFood = { x: Math.floor(Math.random() * GRID_WIDTH), y: Math.floor(Math.random() * GRID_HEIGHT) };
-      isOnSnake = currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y);
-    }
-    return newFood;
-  }, []);
+  useEffect(() => {
+    if (!window._fb) { setLoading(false); return; }
+    fb().getDeptData(project.id, '_shared', BLOB_KEY).then(data => {
+      setFiles(Array.isArray(data) ? data : []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [project.id]);
 
-  // Game loop principal
-  React.useEffect(() => {
-    if (gameOver) return;
+  const saveFiles = async (nf) => {
+    setFiles(nf);
+    if (window._fb) await fb().saveDeptData(project.id, '_shared', BLOB_KEY, nf);
+  };
 
-    gameLoopRef.current = setInterval(() => {
-      setSnake(prevSnake => {
-        // Nueva cabeza
-        const head = prevSnake[0];
-        const newHead = {
-          x: (head.x + nextDirection.x + GRID_WIDTH) % GRID_WIDTH,
-          y: (head.y + nextDirection.y + GRID_HEIGHT) % GRID_HEIGHT,
-        };
-
-        // Colisión con el cuerpo
-        if (prevSnake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
-          setGameOver(true);
-          return prevSnake;
-        }
-
-        let newSnake = [newHead, ...prevSnake];
-        setDirection(nextDirection);
-
-        // Colisión con comida
-        if (newHead.x === food.x && newHead.y === food.y) {
-          setScore(s => s + 10);
-          setFood(generateFood(newSnake));
-        } else {
-          newSnake.pop();
-        }
-
-        return newSnake;
-      });
-    }, 200);
-
-    return () => clearInterval(gameLoopRef.current);
-  }, [gameOver, nextDirection, food, generateFood]);
-
-  // Controles del teclado
-  React.useEffect(() => {
-    const handleKeyPress = (e) => {
-      switch (e.key.toLowerCase()) {
-        case 'arrowup':
-        case 'w':
-          if (direction.y === 0) setNextDirection({ x: 0, y: -1 });
-          break;
-        case 'arrowdown':
-        case 's':
-          if (direction.y === 0) setNextDirection({ x: 0, y: 1 });
-          break;
-        case 'arrowleft':
-        case 'a':
-          if (direction.x === 0) setNextDirection({ x: -1, y: 0 });
-          break;
-        case 'arrowright':
-        case 'd':
-          if (direction.x === 0) setNextDirection({ x: 1, y: 0 });
-          break;
-        default:
-          return;
+  const handleUpload = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    setUploading(true);
+    try {
+      let data;
+      if (f.type.startsWith('image/') && window.compressImage) {
+        data = await window.compressImage(f, 1200, 0.80);
+      } else {
+        data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.onerror = rej; r.readAsDataURL(f); });
       }
-      e.preventDefault();
-    };
+      await saveFiles([...files, { id: Date.now(), name: f.name, type: f.type, data, ts: Date.now() }]);
+    } catch(err) { console.warn('Upload:', err); }
+    setUploading(false);
+  };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [direction]);
+  const deleteFile = async (id) => { await saveFiles(files.filter(f => f.id !== id)); };
 
-  // Controles táctiles
-  const handleTouchStart = React.useRef({ x: 0, y: 0 });
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - handleTouchStart.current.x;
-    const deltaY = touch.clientY - handleTouchStart.current.y;
-    
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX > 0 && direction.x === 0) setNextDirection({ x: 1, y: 0 });
-      else if (deltaX < 0 && direction.x === 0) setNextDirection({ x: -1, y: 0 });
-    } else {
-      if (deltaY > 0 && direction.y === 0) setNextDirection({ x: 0, y: 1 });
-      else if (deltaY < 0 && direction.y === 0) setNextDirection({ x: 0, y: -1 });
-    }
+  const downloadFile = (f) => {
+    const a = document.createElement('a'); a.href = f.data; a.download = f.name;
+    document.body.appendChild(a); a.click(); a.remove();
   };
 
   return (
-    <div 
-      onTouchStart={(e) => { handleTouchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
-      onTouchMove={handleTouchMove}
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'inherit',
-        padding: '20px',
-      }}>
-      {/* Header */}
-      <div style={{ marginBottom: '24px', textAlign: 'center', width: '100%' }}>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', fontFamily: 'inherit' }}>Snake</div>
-        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'inherit' }}>WASD o flechas para moverte</div>
+    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', fontFamily:'Inter, sans-serif' }} className="slide-l">
+      <div style={{ background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <button onClick={onBack} className="tap" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.8)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>‹ Volver</button>
+          <span style={{ color:'#fff', fontSize:14, fontWeight:700, fontFamily:'inherit' }}>📁 Dropbox</span>
+          <label className="tap" style={{ background:'rgba(255,255,255,0.2)', borderRadius:8, padding:'6px 12px', fontSize:12, color:'#fff', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            {uploading ? '⏳…' : '+ Subir'}
+            <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style={{ display:'none' }} onChange={handleUpload} disabled={uploading}/>
+          </label>
+        </div>
+      </div>
+      <div style={{ padding:16 }}>
+        {loading ? (
+          <div style={{ textAlign:'center', padding:48, color:'var(--text-tertiary)' }}>
+            <div style={{ width:24, height:24, border:'3px solid var(--border-light)', borderTop:'3px solid #0B7285', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }}/>
+            Cargando…
+          </div>
+        ) : files.length === 0 ? (
+          <div style={{ textAlign:'center', padding:48, color:'var(--text-tertiary)' }}>
+            <div style={{ fontSize:48, marginBottom:12, opacity:0.5 }}>📁</div>
+            <div style={{ fontSize:14, fontWeight:600, marginBottom:4 }}>No hay archivos todavía</div>
+            <div style={{ fontSize:12 }}>Subí fotos, PDFs o documentos del proyecto</div>
+          </div>
+        ) : (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))', gap:10 }}>
+            {files.map(f => (
+              <div key={f.id} style={{ background:'var(--bg-secondary)', borderRadius:12, overflow:'hidden', border:'1px solid var(--border-light)' }}>
+                <div onClick={()=>downloadFile(f)} style={{ cursor:'pointer' }}>
+                  {f.type && f.type.startsWith('image/') ? (
+                    <img src={f.data} alt={f.name} style={{ width:'100%', height:110, objectFit:'cover', display:'block' }}/>
+                  ) : (
+                    <div style={{ height:110, display:'flex', alignItems:'center', justifyContent:'center', fontSize:36, background:'var(--bg-tertiary)' }}>📄</div>
+                  )}
+                </div>
+                <div style={{ padding:'8px 10px' }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</div>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:4 }}>
+                    <span style={{ fontSize:9, color:'var(--text-tertiary)' }}>{new Date(f.ts).toLocaleDateString()}</span>
+                    <button onClick={()=>deleteFile(f.id)} style={{ background:'none', border:'none', color:'var(--text-tertiary)', fontSize:14, cursor:'pointer', padding:2 }} title="Eliminar">✕</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  JUEGO SECRETO — Minesweeper disfrazado de Planilla de Rodaje
+// ═══════════════════════════════════════════════════════════
+function SecretGameView({ onBack }) {
+  const COLS = 7, ROWS = 8, MINES = 10;
+  const COL_HEADERS = ['#','DÍA','ESC','HORA','LOC','ELENCO','ESTADO'];
+  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const LOCS = ['EXT.Parque','INT.Oficina','EXT.Calle','INT.Casa','EXT.Playa','INT.Bar','EST.Puente'];
+  const HOURS = ['06:00','07:30','08:00','09:00','10:30','12:00','14:00','15:30','16:00','17:00'];
+
+  const initBoard = () => {
+    const total = COLS * ROWS;
+    const cells = Array(total).fill(null).map((_, i) => ({
+      mine: false, revealed: false, flagged: false, adjacent: 0, idx: i
+    }));
+    const positions = Array.from({length:total}, (_,i)=>i);
+    for (let i = positions.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];
+    }
+    positions.slice(0, MINES).forEach(p => { cells[p].mine = true; });
+    cells.forEach((c, i) => {
+      if (c.mine) return;
+      const r = Math.floor(i/COLS), col = i%COLS;
+      let adj = 0;
+      for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) {
+        if (!dr && !dc) continue;
+        const nr=r+dr, nc=col+dc;
+        if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && cells[nr*COLS+nc].mine) adj++;
+      }
+      c.adjacent = adj;
+    });
+    return cells;
+  };
+
+  const [board, setBoard] = useState(initBoard);
+  const [gameOver, setGameOver] = useState(false);
+  const [won, setWon] = useState(false);
+  const flagCount = board.filter(c=>c.flagged).length;
+
+  const reveal = (idx) => {
+    if (gameOver || won || board[idx].revealed || board[idx].flagged) return;
+    const nb = [...board];
+    if (nb[idx].mine) {
+      nb.forEach(c => { if (c.mine) c.revealed = true; });
+      setBoard(nb); setGameOver(true); return;
+    }
+    const flood = (i) => {
+      if (i<0||i>=COLS*ROWS||nb[i].revealed||nb[i].flagged||nb[i].mine) return;
+      nb[i].revealed = true;
+      if (nb[i].adjacent === 0) {
+        const r=Math.floor(i/COLS), c=i%COLS;
+        for (let dr=-1;dr<=1;dr++) for (let dc=-1;dc<=1;dc++){
+          const nr=r+dr,nc=c+dc;
+          if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) flood(nr*COLS+nc);
+        }
+      }
+    };
+    flood(idx);
+    setBoard(nb);
+    if (nb.filter(c=>!c.mine&&!c.revealed).length===0) setWon(true);
+  };
+
+  const toggleFlag = (e, idx) => {
+    e.preventDefault();
+    if (gameOver||won||board[idx].revealed) return;
+    const nb=[...board]; nb[idx]={...nb[idx], flagged:!nb[idx].flagged}; setBoard(nb);
+  };
+
+  const restart = () => { setBoard(initBoard()); setGameOver(false); setWon(false); };
+
+  const cellText = (c) => {
+    const r = Math.floor(c.idx/COLS), col = c.idx%COLS;
+    if (col===0) return String(r+1);
+    if (col===1) return DAYS[r%7];
+    if (col===2) return `E${String(r*3+col).padStart(2,'0')}`;
+    if (col===3) return HOURS[r%HOURS.length];
+    if (col===4) return LOCS[r%LOCS.length];
+    if (col===5) return ['Ana','Luis','Sofía','Diego','Mía','Leo','Nico','Val'][r%8];
+    return '—';
+  };
+
+  const ADJ_COLORS = ['','#0B7285','#2EC4B6','#E76F51','#c0392b','#8e44ad','#d35400','#2c3e50','#7f8c8d'];
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#f0f2f0', fontFamily:'Inter, Consolas, monospace', display:'flex', flexDirection:'column' }}>
+      {/* Header tipo Excel */}
+      <div style={{ background:'#217346', padding:'calc(env(safe-area-inset-top,0px) + 8px) 12px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.8)', fontSize:16, cursor:'pointer' }}>←</button>
+        <span style={{ color:'#fff', fontSize:12, fontWeight:600, letterSpacing:'0.05em' }}>PLAN_RODAJE_2025.xlsx</span>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)' }}>🚩 {MINES - flagCount}</span>
+          <button onClick={restart} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:4, color:'#fff', fontSize:10, padding:'3px 8px', cursor:'pointer', fontWeight:600 }}>↻</button>
+        </div>
       </div>
 
-      {/* Game Canvas */}
-      <div style={{
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-light)',
-        borderRadius: '12px',
-        padding: '12px',
-        marginBottom: '20px',
-      }}>
-        <div style={{
-          position: 'relative',
-          width: GRID_WIDTH * CELL_SIZE,
-          height: GRID_HEIGHT * CELL_SIZE,
-          background: 'var(--bg-primary)',
-          border: '1px solid var(--border-tertiary)',
-          borderRadius: '6px',
-        }}>
-          {/* Comida — punto sutil */}
-          <div style={{
-            position: 'absolute',
-            left: food.x * CELL_SIZE,
-            top: food.y * CELL_SIZE,
-            width: CELL_SIZE,
-            height: CELL_SIZE,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <div style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'var(--text-secondary)',
-            }}/>
-          </div>
+      {/* Barra de fórmula */}
+      <div style={{ background:'#fff', borderBottom:'1px solid #d4d4d4', padding:'4px 8px', fontSize:10, color:'#555', display:'flex', alignItems:'center', gap:6 }}>
+        <span style={{ background:'#f0f0f0', border:'1px solid #ccc', borderRadius:2, padding:'1px 6px', fontWeight:600, fontSize:9 }}>A1</span>
+        <span style={{ color:'#888' }}>fx</span>
+        <span>={won ? '"✓ SIN CONFLICTOS"' : gameOver ? '"⚠ CONFLICTO DETECTADO"' : '"Verificar celdas..."'}</span>
+      </div>
 
-          {/* Snake */}
-          {snake.map((segment, idx) => (
-            <div
-              key={idx}
-              style={{
-                position: 'absolute',
-                left: segment.x * CELL_SIZE + 2,
-                top: segment.y * CELL_SIZE + 2,
-                width: CELL_SIZE - 4,
-                height: CELL_SIZE - 4,
-                background: idx === 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                borderRadius: '2px',
-                opacity: idx === 0 ? 1 : 0.6,
-              }}
-            />
+      {/* Tabla */}
+      <div style={{ flex:1, overflow:'auto', padding:'0 4px 16px' }}>
+        {/* Header columns */}
+        <div style={{ display:'grid', gridTemplateColumns:`32px repeat(${COLS}, 1fr)`, position:'sticky', top:0, zIndex:2 }}>
+          <div style={{ background:'#e8e8e8', border:'1px solid #bbb', fontSize:9, textAlign:'center', padding:'5px 2px', color:'#555' }}></div>
+          {COL_HEADERS.map((h,i) => (
+            <div key={i} style={{ background:'#e8e8e8', border:'1px solid #bbb', fontSize:9, fontWeight:700, textAlign:'center', padding:'5px 2px', color:'#333', letterSpacing:'0.03em' }}>{h}</div>
           ))}
         </div>
-      </div>
 
-      {/* Score */}
-      <div style={{
-        fontSize: '14px',
-        color: 'var(--text-primary)',
-        marginBottom: '20px',
-        fontFamily: 'inherit',
-        fontWeight: 600,
-      }}>
-        {score} puntos
-      </div>
+        {/* Rows */}
+        {Array.from({length:ROWS}).map((_, row) => (
+          <div key={row} style={{ display:'grid', gridTemplateColumns:`32px repeat(${COLS}, 1fr)` }}>
+            <div style={{ background:'#e8e8e8', border:'1px solid #bbb', fontSize:9, textAlign:'center', padding:'4px 2px', color:'#555', fontWeight:600 }}>{row+1}</div>
+            {Array.from({length:COLS}).map((_, col) => {
+              const c = board[row*COLS+col];
+              let bg = row%2===0 ? '#fff' : '#f7f9f7';
+              let content = '';
+              let color = '#333';
+              let fontWeight = 400;
 
-      {/* Game Over Modal */}
-      {gameOver && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-        }}>
-          <div style={{
-            background: 'var(--bg-secondary)',
-            padding: '28px',
-            borderRadius: '14px',
-            textAlign: 'center',
-            border: '1px solid var(--border-light)',
-            maxWidth: '280px',
-            fontFamily: 'inherit',
-          }}>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
-              Game Over
-            </div>
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Puntuación: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{score}</span>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => window.location.reload()}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: 'var(--text-primary)',
-                  color: 'var(--bg-primary)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontFamily: 'inherit',
-                }}>
-                Reintentar
-              </button>
-              <button onClick={onBack}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontFamily: 'inherit',
-                }}>
-                Salir
-              </button>
-            </div>
+              if (c.revealed) {
+                if (c.mine) {
+                  bg = '#ffcccc'; content = '⚠'; color = '#c0392b'; fontWeight = 700;
+                } else if (c.adjacent > 0) {
+                  bg = '#e8f6ef'; content = cellText(c); color = ADJ_COLORS[c.adjacent]; fontWeight = 600;
+                } else {
+                  bg = '#e8f6ef'; content = cellText(c); color = '#888';
+                }
+              } else if (c.flagged) {
+                bg = '#fff3cd'; content = '🚩'; fontWeight = 700;
+              } else {
+                content = '';
+              }
+
+              return (
+                <div key={col}
+                  onClick={()=>reveal(row*COLS+col)}
+                  onContextMenu={(e)=>toggleFlag(e, row*COLS+col)}
+                  style={{
+                    border:'1px solid #d4d4d4', fontSize:9, textAlign:'center', padding:'5px 2px',
+                    background:bg, color, fontWeight, cursor:'pointer', userSelect:'none',
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                    minHeight:28, display:'flex', alignItems:'center', justifyContent:'center',
+                    transition:'background 0.1s'
+                  }}>
+                  {content}
+                </div>
+              );
+            })}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Botón back en header */}
-      <button onClick={onBack} className="tap" style={{
-        position: 'absolute',
-        top: 16,
-        left: 16,
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-light)',
-        color: 'var(--text-primary)',
-        fontSize: 18,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-      }}>
-        ←
-      </button>
+      {/* Status bar tipo Excel */}
+      <div style={{ background:'#217346', padding:'6px 12px calc(env(safe-area-inset-bottom,0px) + 6px)', display:'flex', justifyContent:'space-between', fontSize:10, color:'rgba(255,255,255,0.8)' }}>
+        <span>{won ? '✓ Planilla verificada — 0 conflictos' : gameOver ? '⚠ Conflicto de horario encontrado' : 'Clic para verificar · Mantener para marcar 🚩'}</span>
+        <span>Hoja 1</span>
+      </div>
     </div>
   );
 }
@@ -11392,7 +11326,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [adminError, setAdminError] = useState('');
-  const [showSnakeGame, setShowSnakeGame] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
   const [pinnedList, setPinnedList] = useState(() => getPinnedProjects());
   const [pinTarget, setPinTarget] = useState(null); // proyecto pineado a desbloquear
   const ADMIN_PASSWORD = '4862';
@@ -11441,16 +11375,19 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   });
 
   const LANDING_THEMES = {
-    celeste:  'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)',
-    naranja:  '#C24400',
-    amarillo: '#C89500',
-    gris:     'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
+    celeste:   'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
+    turquesa:  '#2EC4B6',
+    arena:     '#F4A261',
+    coral:     '#E76F51',
+    oscuro:    'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
+    // Compat viejos keys
+    naranja:   '#F4A261', gris:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', amarillo:'#F4A261',
   };
   const [landingTheme, setLandingTheme] = React.useState(() => localStorage.getItem('landing-theme') || 'celeste');
   const landingGrad = LANDING_THEMES[landingTheme];
 
   // ── JUEGO DE SNAKE (NOKIA) ──
-  if (showSnakeGame) return <SnakeGameView onBack={() => setShowSnakeGame(false)} />;
+  if (showSecret) return <SecretGameView onBack={() => setShowSecret(false)} />;
 
   if (!modo) return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:landingGrad, fontFamily:'Inter, sans-serif', transition:'background 0.4s ease' }}>
@@ -11466,7 +11403,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
               {pinnedList.map(proj => (
                 <button key={proj.id} onClick={()=>handleOpenPinned(proj)} className="tap" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', border:'none', borderRadius:14, background:'rgba(255,255,255,0.12)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-                  <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0092B8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
+                  <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0B7285', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
                     <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>Abrir proyecto</div>
@@ -11516,7 +11453,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
       <div style={{ padding:'20px 24px 28px', maxWidth:'480px', margin:'0 auto', width:'100%' }}>
         {/* Color picker */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:20 }}>
-          {Object.entries(LANDING_THEMES).map(([key, grad]) => (
+          {Object.entries(LANDING_THEMES).filter(([key]) => ['celeste','turquesa','arena','coral','oscuro'].includes(key)).map(([key, grad]) => (
             <button key={key} onClick={() => { setLandingTheme(key); localStorage.setItem('landing-theme', key); }}
               style={{ width: landingTheme===key ? 32 : 22, height: landingTheme===key ? 32 : 22,
                 borderRadius:'50%', background: grad, border: landingTheme===key ? '3px solid #fff' : '2px solid rgba(255,255,255,0.3)',
@@ -11525,16 +11462,15 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
               title={key.charAt(0).toUpperCase()+key.slice(1)}/>
           ))}
           {/* Botón secreto de Snake Game */}
-          <button onClick={() => setShowSnakeGame(true)}
-            style={{ width: 22, height: 22,
-              borderRadius:'50%', background: 'linear-gradient(165deg, #9B59B6 0%, #8E44AD 100%)',
-              border: '2px solid rgba(255,255,255,0.3)',
+          <button onClick={() => setShowSecret(true)}
+            style={{ width: 18, height: 18,
+              borderRadius:'50%', background: 'linear-gradient(145deg, #9B59B6, #6C3483)',
+              border: 'none',
               cursor:'pointer', transition:'all 0.2s ease', flexShrink:0, padding:0, outline:'none',
-              fontSize: 11, fontWeight: 'bold', color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
+              boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
             }}
-            title="Juego Secreto 🐍"
-          >🕹️</button>
+            title=""
+          ></button>
         </div>
         <p style={{ margin:0, fontSize:11, color:'rgba(255,255,255,0.3)', textAlign:'center' }}>Hecho en Asunción, Paraguay 🇵🇾</p>
         <div style={{ textAlign:'center' }}>
@@ -11581,7 +11517,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   if (modo === 'marketplace') return <MarketplaceView onBack={()=>setModo(null)}/>;
 
   if (modo === 'complejo') return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', fontFamily:'Inter, sans-serif' }}>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily:'Inter, sans-serif' }}>
       <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', padding:'48px 20px 32px', display:'flex', flexDirection:'column' }}>
         <button onClick={()=>setModo(null)}
           style={{ alignSelf:'flex-start', background:'none', border:'none', color:'rgba(255,255,255,0.6)', fontSize:14, cursor:'pointer', padding:'0 0 28px', fontFamily:'Inter, sans-serif' }}>
@@ -11660,7 +11596,7 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
 
   if (notFound) {
     return (
-      <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', gap:14, padding:32, fontFamily:'Inter, sans-serif' }}>
+      <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', gap:14, padding:32, fontFamily:'Inter, sans-serif' }}>
         <div style={{ fontSize:48 }}>🔍</div>
         <div style={{ fontSize:20, fontWeight:800, color:'#fff', textAlign:'center' }}>Productora no encontrada</div>
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', textAlign:'center', lineHeight:1.6, maxWidth:300 }}>
@@ -11687,7 +11623,7 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', padding:32, fontFamily:'Inter, sans-serif' }}>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding:32, fontFamily:'Inter, sans-serif' }}>
       <button onClick={onBack} style={{ position:'absolute', top:20, left:20, background:'none', border:'none', fontSize:13, color:'rgba(255,255,255,0.55)', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>‹ Inicio</button>
       <div style={{ width:'100%', maxWidth:340 }}>
         <div style={{ textAlign:'center', marginBottom:32 }}>
@@ -11709,7 +11645,7 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
               fontWeight:900, 
               letterSpacing:'0.02em',
               background: pin ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.12)', 
-              color: pin ? '#005a72' : 'rgba(255,255,255,0.3)', 
+              color: pin ? '#0B7285' : 'rgba(255,255,255,0.3)', 
               border:'none', 
               borderRadius:0, 
               padding:'14px', 
@@ -11774,7 +11710,7 @@ function NewProductoraView({ onCreated, onCancel }) {
   const baseUrl = window.location.origin + window.location.pathname;
 
   return (
-    <div style={{ minHeight:'100vh', background:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', padding:'0 20px 40px', fontFamily:'Inter, sans-serif' }}>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding:'0 20px 40px', fontFamily:'Inter, sans-serif' }}>
       <div style={{ maxWidth:'480px', margin:'0 auto', paddingTop:52 }}>
         <button onClick={onCancel} style={{ background:'none', border:'none', fontSize:13, color:'rgba(255,255,255,0.55)', cursor:'pointer', fontFamily:'Inter, sans-serif', marginBottom:20 }}>✕ Cancelar</button>
         <div style={{ fontSize:26, fontWeight:800, color:'#fff', marginBottom:8, letterSpacing:'-0.5px' }}>Crea el nombre de la carpeta o productora</div>
@@ -11825,7 +11761,7 @@ function NewProductoraView({ onCreated, onCancel }) {
                 fontWeight:900, 
                 letterSpacing:'0.02em',
                 background: creating ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.9)', 
-                color: creating ? 'rgba(255,255,255,0.4)' : '#005a72', 
+                color: creating ? 'rgba(255,255,255,0.4)' : '#0B7285', 
                 border:'none', 
                 borderRadius:0, 
                 padding:'14px', 
@@ -11858,15 +11794,20 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
   const [colorPinOk, setColorPinOk] = useState(false);
 
   const PRODUCTORA_THEMES = {
-    celeste:  { grad:'linear-gradient(165deg, #006B8C 0%, #0092B8 50%, #12B8E0 100%)', label:'Celeste' },
-    naranja:  { grad:'#C24400', label:'Naranja' },
-    amarillo: { grad:'#C89500', label:'Amarillo' },
-    gris:     { grad:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label:'Oscuro' },
-    verde:    { grad:'linear-gradient(165deg, #0D4A2A 0%, #1A6B3A 50%, #237A44 100%)', label:'Verde' },
-    violeta:  { grad:'#3A106A', label:'Violeta' },
-    rojo:     { grad:'#C00A0A', label:'Rojo' },
-    rosado:   { grad:'#8C1050', label:'Rosado' },
-    claro:    { grad:'#F0EDE8', label:'Claro' },
+    celeste:   { grad:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', label:'Teal' },
+    turquesa:  { grad:'#2EC4B6', label:'Turquesa' },
+    arena:     { grad:'#F4A261', label:'Arena' },
+    coral:     { grad:'#E76F51', label:'Coral' },
+    oscuro:    { grad:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label:'Oscuro' },
+    claro:     { grad:'#F1FAEE', label:'Claro' },
+    // backward compat: viejos keys
+    naranja:   { grad:'#F4A261', label:'Arena' },
+    amarillo:  { grad:'#F4A261', label:'Arena' },
+    gris:      { grad:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label:'Oscuro' },
+    verde:     { grad:'#0B7285', label:'Teal' },
+    violeta:   { grad:'#E76F51', label:'Coral' },
+    rojo:      { grad:'#E76F51', label:'Coral' },
+    rosado:    { grad:'#E76F51', label:'Coral' },
   };
   
   const currentThemeKey = productora.colorTheme || 'celeste';
@@ -11938,14 +11879,14 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
                     } else {
                       setColorPinError('Código incorrecto. Usá el ID o la contraseña de la productora.');
                     }
-                  }} style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#005a72', border:'none', borderRadius:8, padding:'9px', cursor:'pointer' }}>Verificar</button>
+                  }} style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#0B7285', border:'none', borderRadius:8, padding:'9px', cursor:'pointer' }}>Verificar</button>
                 </div>
               </div>
             ) : (
               <div>
                 <div style={{ fontSize:12, color:'rgba(255,255,255,0.7)', marginBottom:12 }}>Elegí el color para esta productora:</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:14 }}>
-                  {Object.entries(PRODUCTORA_THEMES).map(([key, th]) => (
+                  {Object.entries(PRODUCTORA_THEMES).filter(([key]) => ['celeste','turquesa','arena','coral','oscuro','claro'].includes(key)).map(([key, th]) => (
                     <button key={key} onClick={()=>{
                       if (onUpdateProductora) onUpdateProductora({ ...productora, colorTheme: key });
                       setShowColorPicker(false);
@@ -12139,9 +12080,9 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
           width:'100%',
           boxShadow:'4px 4px 0px rgba(0,0,0,0.4)'
         }}>
-          <div style={{ width:44, height:44, background:'rgba(0,82,114,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:700, color:'#005a72', flexShrink:0, borderRadius:10 }}>+</div>
+          <div style={{ width:44, height:44, background:'rgba(0,82,114,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:700, color:'#0B7285', flexShrink:0, borderRadius:10 }}>+</div>
           <div>
-            <div style={{ fontSize:16, fontWeight:700, color:'#005a72', fontFamily:'Inter, sans-serif' }}>NUEVO PROYECTO</div>
+            <div style={{ fontSize:16, fontWeight:700, color:'#0B7285', fontFamily:'Inter, sans-serif' }}>NUEVO PROYECTO</div>
             <div style={{ fontSize:11, color:'rgba(0,82,114,0.7)', fontFamily:'Inter, sans-serif', marginTop:2 }}>Crear y obtener link para compartir</div>
           </div>
         </button>
@@ -12548,7 +12489,11 @@ function ProjectAppShell({ project, save, view, setView, activeDayId, setActiveD
           onOpenCitaciones={()=>setView('citaciones')}
           onOpenScouting={()=>setView('scouting')}
           onOpenTools={()=>setView('tools-menu')}
+          onOpenDropbox={()=>setView('dropbox')}
         />
+      )}
+      {view==='dropbox' && project && (
+        <DropboxView project={project} onBack={()=>setView('home')}/>
       )}
       {view==='scouting' && project && (
         <ScoutingView project={project} onBack={()=>setView('home')}/>
