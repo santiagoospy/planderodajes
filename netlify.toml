@@ -3,7 +3,7 @@
   publish = "."
 
 [functions]
-  directory = "planderodajes/functions"
+  directory = "functions"
   node_bundler = "esbuild"
 
 [[redirects]]
