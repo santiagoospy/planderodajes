@@ -1,84 +1,84 @@
-const CACHE_NAME = 'planderodajes-v1';
-const API_ROUTES = [
-  '/.netlify/functions/',
-];
+/* ───────────────────────────────────────────────────────────────
+   Service Worker — planderodajes.com
+   Estrategia anti-caché-viejo:
+   • HTML / navegación → NETWORK-FIRST (siempre trae lo último si hay red,
+     cae al caché solo si estás offline). Esto elimina el "no aparecen los cambios".
+   • Otros recursos (JS/CSS/fuentes/imágenes) → STALE-WHILE-REVALIDATE
+     (carga rápido del caché y actualiza en segundo plano).
+   • Subí el número de versión cada vez que querés forzar limpieza de caché.
+   ─────────────────────────────────────────────────────────────── */
+const VERSION    = 'v3';                         // ← subí esto en cada deploy importante
+const CACHE_NAME = 'pdr-' + VERSION;
 
-// Instalación
+// Instalar: activar de inmediato sin esperar.
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
   self.skipWaiting();
 });
 
-// Activación
+// Activar: borrar cachés viejas y tomar control de las pestañas abiertas.
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
-// Fetch - manejo cuidadoso sin crashear
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+// El index.html pide saltar la espera → activamos la versión nueva ya.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
-  // ── Requests a Netlify functions: pasar directo a red ────────
-  if (API_ROUTES.some(route => url.pathname.startsWith(route))) {
-    event.respondWith(
-      fetch(request)
-        .then(response => response)
-        .catch(err => {
-          console.warn('[SW] Fetch error:', request.url, err.message);
-          // No retornar error — dejar que el navegador maneje
-          return new Response(
-            JSON.stringify({ error: 'Network error', message: err.message }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          );
-        })
-    );
+function isNavigation(req) {
+  return req.mode === 'navigate' ||
+    (req.method === 'GET' && req.headers.get('accept')?.includes('text/html'));
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;                 // no cachear POST/PUT/etc.
+
+  const url = new URL(req.url);
+
+  // Nunca cachear las funciones de Netlify (datos en vivo).
+  if (url.pathname.startsWith('/.netlify/')) return;
+
+  // HTML / navegación → network-first.
+  if (isNavigation(req)) {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req, { cache: 'no-store' });
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, fresh.clone());
+        return fresh;
+      } catch {
+        const cached = await caches.match(req);
+        return cached || caches.match('/index.html') || Response.error();
+      }
+    })());
     return;
   }
 
-  // ── Requests a recursos externos (Cloudflare, etc): ignorar ────
-  if (!url.origin.includes(self.location.origin)) {
-    return; // Dejar que el navegador lo maneje normalmente
-  }
-
-  // ── Recursos locales (HTML, CSS, JS): cache-first ────────────
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request)
-        .then(response => {
-          if (response && response.status === 200) {
-            const respToCache = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, respToCache));
-          }
-          return response;
-        })
-        .catch(err => {
-          console.warn('[SW] Fallback to cached or offline:', request.url);
-          // Si offline y no hay cache, retornar página offline
-          return caches.match('/offline.html')
-            .then(r => r || new Response('Offline', { status: 503 }));
-        });
-    })
-  );
+  // Resto de recursos GET → stale-while-revalidate.
+  event.respondWith((async () => {
+    const cache  = await caches.open(CACHE_NAME);
+    const cached = await cache.match(req);
+    const network = fetch(req).then(res => {
+      if (res && res.status === 200 && (res.type === 'basic' || res.type === 'cors')) {
+        cache.put(req, res.clone());
+      }
+      return res;
+    }).catch(() => cached);
+    return cached || network;
+  })());
 });
 
-// ── Background Sync ────────────────────────────────────────
+// Mantener el comportamiento de sync que usa la app.
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-data') {
-    console.log('[SW] Background sync triggered');
-    // En el futuro: sincronizar datos pendientes con el servidor
-    event.waitUntil(Promise.resolve());
+    event.waitUntil((async () => {
+      const clients = await self.clients.matchAll();
+      clients.forEach(c => c.postMessage({ type: 'SYNC_AVAILABLE' }));
+    })());
   }
 });
-
-// ── Messages desde el cliente ────────────────────────────────
-self.addEventListener('message', (event) => {
-  console.log('[SW] Message received:', event.data);
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-console.log('[SW] Service Worker loaded at', new Date().toISOString());

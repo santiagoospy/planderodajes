@@ -7220,6 +7220,30 @@ function SunARView({ project, onBack }) {
   const headingRef = React.useRef(180);
   const pitchRef   = React.useRef(0);
   const locationRef= React.useRef(null);
+  // Calibración manual de brújula (corrige declinación magnética y desvíos del sensor).
+  // Se guarda por dispositivo. El usuario alinea una vez con el sol real y queda fijo.
+  const [calib, setCalib] = useState(() => {
+    const v = parseFloat(localStorage.getItem('sunar-calib')); return isNaN(v) ? 0 : v;
+  });
+  const calibRef = React.useRef(0);
+  React.useEffect(() => { calibRef.current = calib; }, [calib]);
+  const [compassAcc, setCompassAcc] = useState(null); // precisión reportada por iOS
+  const adjustCalib = (delta) => {
+    setCalib(prev => {
+      let v = Math.round((prev + delta) * 10) / 10;
+      if (v > 90) v = 90; if (v < -90) v = -90;
+      try { localStorage.setItem('sunar-calib', String(v)); } catch {}
+      calibRef.current = v;
+      setHeading(Math.round((headingRef.current + v + 360) % 360));
+      return v;
+    });
+  };
+  const resetCalib = () => {
+    try { localStorage.setItem('sunar-calib', '0'); } catch {}
+    calibRef.current = 0;
+    setCalib(0);
+    setHeading(Math.round((headingRef.current + 360) % 360));
+  };
 
   // Cámara
   useEffect(() => {
@@ -7246,13 +7270,39 @@ function SunARView({ project, onBack }) {
 
   // Brújula + pitch (beta = inclinación hacia adelante)
   useEffect(() => {
+    // Suavizado angular (low-pass circular): toma el camino corto entre ángulos
+    const smoothAngle = (prev, next, f) => {
+      let diff = ((next - prev + 540) % 360) - 180;
+      return (prev + diff * f + 360) % 360;
+    };
+    const screenAngle = () => {
+      try {
+        if (screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
+        if (typeof window.orientation === 'number') return window.orientation;
+      } catch {}
+      return 0;
+    };
     const handle = (e) => {
-      let h = headingRef.current;
-      if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
-      else if (e.alpha != null)           h = (360 - e.alpha + 360) % 360;
-      headingRef.current = h;
-      setHeading(Math.round(h));
-      if (e.beta != null) { pitchRef.current = e.beta; setPitch(e.beta); }
+      let raw = null;
+      if (e.webkitCompassHeading != null) {
+        // iOS: heading magnético ya corregido por orientación de pantalla.
+        raw = e.webkitCompassHeading;
+        if (e.webkitCompassAccuracy != null) setCompassAcc(e.webkitCompassAccuracy);
+      } else if (e.alpha != null) {
+        // Android/otros: compensar la rotación de pantalla manualmente.
+        raw = (360 - e.alpha + screenAngle() + 360) % 360;
+      }
+      if (raw != null) {
+        // Suavizar para quitar tembleque del magnetómetro
+        headingRef.current = smoothAngle(headingRef.current, raw, 0.25);
+        const eff = (headingRef.current + calibRef.current + 360) % 360;
+        setHeading(Math.round(eff));
+      }
+      if (e.beta != null) {
+        // Suavizar también la inclinación
+        pitchRef.current = pitchRef.current + (e.beta - pitchRef.current) * 0.3;
+        setPitch(pitchRef.current);
+      }
     };
     const setup = async () => {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -7316,7 +7366,7 @@ function SunARView({ project, onBack }) {
 
       const HFOV = 62;   // FOV horizontal aproximado de cámara trasera
       const VFOV = 48;   // FOV vertical
-      const hdg  = headingRef.current;
+      const hdg  = (headingRef.current + calibRef.current + 360) % 360; // + calibración manual
 
       // ── PITCH: convertir beta (0=plano, 90=vertical) en "ángulo donde apunta el centro de cámara"
       // Cuando el teléfono está vertical apuntando al horizonte (beta≈90), cámara apunta a alt=0°.
@@ -7570,6 +7620,22 @@ function SunARView({ project, onBack }) {
         </div>
       </div>
 
+      {/* Calibración de brújula + aviso de precisión */}
+      <div style={{ position:'absolute', top:'calc(env(safe-area-inset-top,44px) + 50px)', left:'50%', transform:'translateX(-50%)', zIndex:20, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:2, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:20, padding:'4px 4px' }}>
+          <button onClick={()=>adjustCalib(-2)} className="tap" style={{ width:30, height:30, borderRadius:'50%', border:'none', background:'rgba(255,255,255,0.12)', color:'#fff', fontSize:18, fontWeight:700, cursor:'pointer', lineHeight:1 }}>−</button>
+          <button onClick={resetCalib} className="tap" title="Tocá para reiniciar la calibración" style={{ background:'none', border:'none', color: calib!==0 ? '#FFD050' : 'rgba(255,255,255,0.7)', fontSize:11, fontFamily:'monospace', fontWeight:700, cursor:'pointer', minWidth:78, textAlign:'center' }}>
+            cal {calib>0?'+':''}{calib}°
+          </button>
+          <button onClick={()=>adjustCalib(2)} className="tap" style={{ width:30, height:30, borderRadius:'50%', border:'none', background:'rgba(255,255,255,0.12)', color:'#fff', fontSize:18, fontWeight:700, cursor:'pointer', lineHeight:1 }}>+</button>
+        </div>
+        {(compassAcc != null && (compassAcc < 0 || compassAcc > 20)) && (
+          <div style={{ background:'rgba(200,80,30,0.85)', color:'#fff', fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:8, fontFamily:'inherit', textAlign:'center', maxWidth:240 }}>
+            ↺ Movés el teléfono en forma de 8 para calibrar la brújula
+          </div>
+        )}
+      </div>
+
       {/* Chip info Sol actual */}
       <div style={{ position:'absolute', bottom:245, left:'50%', transform:'translateX(-50%)', zIndex:11, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(14px)', border:'1px solid rgba(255,208,80,0.35)', borderRadius:14, padding:'8px 14px', display:'flex', alignItems:'center', gap:14 }}>
         <div style={{ width:10, height:10, borderRadius:'50%', background: sunInfo.belowHorizon ? '#666' : '#FFD050', boxShadow: sunInfo.belowHorizon ? 'none' : '0 0 8px rgba(255,208,80,0.9)' }}/>
@@ -7631,6 +7697,7 @@ function ColorTempView({ project, onBack }) {
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [camError, setCamError]       = useState(false);
   const [flash, setFlash]             = useState(false);
+  const [wbLocked, setWbLocked]       = useState(null); // null=desconocido, true=bloqueado, false=no soportado
   const videoRef  = React.useRef(null);
   const canvasRef = React.useRef(null);
   const streamRef = React.useRef(null);
@@ -7639,7 +7706,7 @@ function ColorTempView({ project, onBack }) {
   const RECT_W_PCT = 0.55;  // 55% del ancho
   const RECT_H_PCT = 0.32;  // 32% del alto — zona cuadrada-ish centrada
 
-  // Cámara real
+  // Cámara real — intenta BLOQUEAR el balance de blancos para medir la luz real
   useEffect(() => {
     (async () => {
       try {
@@ -7648,6 +7715,34 @@ function ColorTempView({ project, onBack }) {
         });
         streamRef.current = stream;
         if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+
+        // Intentar fijar el balance de blancos para que NO auto-corrija el color.
+        try {
+          const track = stream.getVideoTracks()[0];
+          const caps  = track.getCapabilities ? track.getCapabilities() : {};
+          const adv = [];
+          if (caps.whiteBalanceMode && caps.whiteBalanceMode.includes('manual')) {
+            adv.push({ whiteBalanceMode: 'manual' });
+            // Fijar a una referencia luz día para que el sensor responda de forma consistente
+            if (caps.colorTemperature) {
+              const mid = Math.round((caps.colorTemperature.min + caps.colorTemperature.max) / 2);
+              adv.push({ colorTemperature: Math.min(caps.colorTemperature.max, Math.max(caps.colorTemperature.min, 5500 || mid)) });
+            }
+          }
+          // Exposición fija ayuda a la consistencia (no afecta el color, pero estabiliza)
+          if (caps.exposureMode && caps.exposureMode.includes('continuous')) {
+            // dejar continuo está bien; solo bloqueamos WB
+          }
+          if (adv.length) {
+            await track.applyConstraints({ advanced: adv });
+            setWbLocked(true);
+          } else {
+            setWbLocked(false); // el dispositivo (ej. iPhone/Safari) no permite fijar el WB
+          }
+        } catch (err) {
+          console.warn('WB lock no soportado:', err);
+          setWbLocked(false);
+        }
       } catch(e) { console.warn('Cam:', e); setCamError(true); }
     })();
     return () => { if (streamRef.current) streamRef.current.getTracks().forEach(t=>t.stop()); };
@@ -7688,31 +7783,38 @@ function ColorTempView({ project, onBack }) {
           ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
           const data = ctx.getImageData(0, 0, sw, sh).data;
           let R=0, G=0, B=0, count=0;
-          // Sub-muestreo: 1 de cada 4 píxeles para performance
+          // Sub-muestreo + descartar píxeles quemados (>=250) o muy oscuros (<=18)
+          // que sesgan la medición de color.
           for (let i=0; i<data.length; i+=16) {
-            R += data[i]; G += data[i+1]; B += data[i+2]; count++;
+            const r=data[i], g=data[i+1], b=data[i+2];
+            const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+            if (mx >= 250 || mx <= 18) continue;
+            R += r; G += g; B += b; count++;
           }
-          if (count > 0) { R/=count; G/=count; B/=count; }
-          // Temperatura de color vía proporción R/B (método McCamy simplificado)
-          const rb = R / Math.max(B, 1);
-          const rg = R / Math.max(G, 1);
-          // Curva calibrada para luz natural y artificial
-          if      (rb > 3.2)  temp = 1700 + Math.round((rb-3.2)*200);
-          else if (rb > 2.4)  temp = 2200 + Math.round((3.2-rb)/(3.2-2.4)*800);
-          else if (rb > 1.8)  temp = 3000 + Math.round((2.4-rb)/(2.4-1.8)*700);
-          else if (rb > 1.4)  temp = 3700 + Math.round((1.8-rb)/(1.8-1.4)*1300);
-          else if (rb > 1.15) temp = 5000 + Math.round((1.4-rb)/(1.4-1.15)*1000);
-          else if (rb > 0.92) temp = 6000 + Math.round((1.15-rb)/(1.15-0.92)*1500);
-          else if (rb > 0.75) temp = 7500 + Math.round((0.92-rb)/(0.92-0.75)*1500);
-          else                temp = 9000 + Math.round((0.75-rb)*6000);
-          temp = Math.max(1700, Math.min(12000, temp));
+          if (count > 30) {
+            R/=count; G/=count; B/=count;
+            // sRGB (0-255) → lineal
+            const lin = (c) => { c/=255; return c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+            const rl = lin(R), gl = lin(G), bl = lin(B);
+            // lineal sRGB → XYZ (matriz D65)
+            const X = rl*0.4124 + gl*0.3576 + bl*0.1805;
+            const Y = rl*0.2126 + gl*0.7152 + bl*0.0722;
+            const Z = rl*0.0193 + gl*0.1192 + bl*0.9505;
+            const sum = X+Y+Z;
+            if (sum > 0) {
+              const x = X/sum, y = Y/sum;
+              // McCamy: temperatura de color correlacionada (CCT)
+              const n = (x - 0.3320) / (0.1858 - y);
+              temp = 437*n*n*n + 3601*n*n + 6861*n + 5517;
+              temp = Math.max(1700, Math.min(12000, Math.round(temp)));
+            }
+          }
         }
       } catch(e) { console.warn('Pixel analysis:', e); }
-      if (!temp) {
-        const temps = [2500, 3200, 5500, 6500, 7500];
-        temp = temps[Math.floor(Math.random()*temps.length)] + Math.floor(Math.random()*200-100);
+      if (temp) {
+        setCurrentTemp(temp);
       }
-      setCurrentTemp(Math.round(temp));
+      // Si no se pudo medir (sin video / zona muy oscura o quemada), mantener el valor anterior.
       setIsMeasuring(false);
     }, 700);
   };
@@ -7805,7 +7907,11 @@ function ColorTempView({ project, onBack }) {
       {/* Header — respeta notch */}
       <div style={{ position:'absolute', top:0, left:0, right:0, paddingTop:'env(safe-area-inset-top,44px)', zIndex:20, background:'linear-gradient(180deg,rgba(0,0,0,0.6) 0%,transparent 100%)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 20px' }}>
-          <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.1em' }}>Color Temp</div>
+          <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, fontFamily:'inherit', textTransform:'uppercase', letterSpacing:'0.1em' }}>
+            Color Temp
+            {wbLocked === true && <span style={{ marginLeft:8, color:'#7dffa9', fontSize:10, letterSpacing:'0.04em' }}>· WB fijo ✓</span>}
+            {wbLocked === false && <span style={{ marginLeft:8, color:'#ff9a6a', fontSize:10, letterSpacing:'0.04em', textTransform:'none' }}>· auto-WB (aprox.)</span>}
+          </div>
           <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
@@ -7907,6 +8013,16 @@ const DV_RATIOS  = [
   { id:'1.00', label:'1:1',      value: 1      },
 ];
 
+// FOV horizontal aproximado de la cámara PRINCIPAL (1×, ~26mm equiv) del teléfono.
+// Es el ancla para simular el encuadre de los lentes de cine sobre el sensor elegido.
+const DV_BASE_MAIN_HFOV = 68;
+// Un lente físico con factor de zoom z respecto a la principal ve 1/z del ancho.
+// Derivamos su FOV horizontal real desde ese factor (consistente para ultra/tele).
+const dvHfovFromZoom = (zoom) => {
+  const half = Math.atan(Math.tan(DV_BASE_MAIN_HFOV * Math.PI / 360) / zoom);
+  return Math.round(2 * half * 180 / Math.PI);
+};
+
 function DirectorViewfinderView({ project, onBack }) {
   const [sensorKey, setSensorKey]   = useState('full-frame');
   const [focal,     setFocal]       = useState(35);
@@ -7936,21 +8052,27 @@ function DirectorViewfinderView({ project, onBack }) {
   // Cuando hay más de una cámara, intentamos estimarlo a partir del label
   // (Apple devuelve "Back Ultra Wide", "Back Camera", "Back Telephoto", etc.).
   const activeCam = cameras.find(c => c.deviceId === activeCamId);
-  const camHFOV   = (activeCam && activeCam.hfov) || 65; // fallback razonable
+  const camHFOV   = (activeCam && activeCam.hfov) || DV_BASE_MAIN_HFOV; // fallback: cámara principal
 
-  // Heurística: deducir rol y FOV nominal a partir del label de la cámara
-  const classifyCamera = (label, idx) => {
+  // Clasifica un lente SOLO por su etiqueta (sin adivinar por índice, que produce
+  // entradas falsas tipo "#4 cam"). Devuelve null si no se reconoce con certeza.
+  const classifyCamera = (label) => {
     const l = (label || '').toLowerCase();
-    // iPhone labels: "Back Ultra Wide Camera", "Back Camera", "Back Dual Wide Camera",
-    //                "Back Telephoto Camera", "Back Triple Camera"
-    if (/ultra\s*wide|ultrawide|0\.5x/.test(l))      return { role:'ultrawide', hfov:103, short:'0.5×' };
-    if (/tele|2x|3x|5x|telephoto/.test(l))           return { role:'tele',      hfov:32,  short:'2×'   };
-    if (/wide|main|back camera|environment/.test(l)) return { role:'wide',      hfov:65,  short:'1×'   };
-    // Si no hay label (permiso aún no aceptado por completo) → ordenar por índice típico
-    if (idx === 0) return { role:'wide',      hfov:65,  short:'1×' };
-    if (idx === 1) return { role:'ultrawide', hfov:103, short:'0.5×' };
-    if (idx === 2) return { role:'tele',      hfov:32,  short:'2×' };
-    return { role:'cam'+(idx+1), hfov:65, short:`#${idx+1}` };
+    // Descartar cámaras "virtuales"/combinadas (no son un lente físico individual)
+    if (/dual|triple|trial|virtual|continuity|desk/.test(l)) return null;
+    // Ultra gran angular (0.5×)
+    if (/ultra\s*wide|ultrawide|0\.5/.test(l))
+      return { role:'ultrawide', zoom:0.5, short:'0.5×', hfov:dvHfovFromZoom(0.5) };
+    // Teleobjetivo — extraer el factor real (2×, 3×, 5×…) del label si está presente
+    if (/tele|telephoto/.test(l)) {
+      const m = l.match(/(\d+(?:\.\d+)?)\s*x/);
+      const z = m ? parseFloat(m[1]) : 2;
+      return { role:'tele', zoom:z, short:`${z}×`, hfov:dvHfovFromZoom(z) };
+    }
+    // Principal / gran angular (1×)
+    if (/wide|back camera|rear camera|main/.test(l))
+      return { role:'wide', zoom:1, short:'1×', hfov:DV_BASE_MAIN_HFOV };
+    return null; // etiqueta no reconocible → no adivinamos
   };
 
   // Cambiar de lente: para el stream anterior y abrir uno nuevo con ese deviceId
@@ -7990,26 +8112,34 @@ function DirectorViewfinderView({ project, onBack }) {
         if (navigator.mediaDevices.enumerateDevices) {
           const devs = await navigator.mediaDevices.enumerateDevices();
           const vids = devs.filter(d => d.kind === 'videoinput');
-          // Filtrar a cámaras traseras (en iOS los labels traseros contienen "Back" o no contienen "Front"/"User")
-          const backs = vids.filter(d => {
+          const haveLabels = vids.some(d => d.label && d.label.trim());
+
+          // Clasificar SOLO por etiqueta confiable; descartar frontales y virtuales,
+          // y quedarnos con un lente por rol (evita recortes duplicados como "2x").
+          const classified = [];
+          const seenRole = new Set();
+          for (const d of vids) {
             const l = (d.label || '').toLowerCase();
-            if (/front|user|selfie|cara/.test(l)) return false;
-            return true;
-          });
-          const list = backs.length ? backs.map((d, i) => {
-            const cls = classifyCamera(d.label, i);
-            return { deviceId: d.deviceId, label: d.label || ('Cámara '+(i+1)), ...cls };
-          }) : vids.map((d, i) => {
-            const cls = classifyCamera(d.label, i);
-            return { deviceId: d.deviceId, label: d.label || ('Cámara '+(i+1)), ...cls };
-          });
-          // Orden lógico: ultra → wide → tele → resto
+            if (/front|user|selfie|cara/.test(l)) continue;
+            const cls = classifyCamera(d.label);
+            if (!cls) continue;
+            if (seenRole.has(cls.role)) continue;
+            seenRole.add(cls.role);
+            classified.push({ deviceId: d.deviceId, label: d.label || cls.role, ...cls });
+          }
           const order = { ultrawide:0, wide:1, tele:2 };
-          list.sort((a,b) => (order[a.role] ?? 9) - (order[b.role] ?? 9));
-          setCameras(list);
-          // Marcar como activa la que coincide, o la primera "wide"
-          const matched = list.find(c => c.deviceId === currentId);
-          setActiveCamId(matched ? matched.deviceId : (list.find(c=>c.role==='wide') || list[0] || {}).deviceId);
+          classified.sort((a,b) => (order[a.role] ?? 9) - (order[b.role] ?? 9));
+
+          // Solo mostramos el selector si pudimos identificar >=2 lentes físicos POR ETIQUETA.
+          // Si no (sin labels o detección incierta) → cámara principal sola, lectura más confiable.
+          if (haveLabels && classified.length >= 2) {
+            setCameras(classified);
+            const matched = classified.find(c => c.deviceId === currentId);
+            setActiveCamId(matched ? matched.deviceId : (classified.find(c=>c.role==='wide') || classified[0]).deviceId);
+          } else {
+            setCameras([]);
+            setActiveCamId(currentId || null);
+          }
         }
       } catch(e) { console.warn('Cam:', e); setCamError(true); }
     })();
@@ -8971,7 +9101,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               <div style={{ width:34, height:34, borderRadius:9, background: pinned ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{pinned ? '📌' : '📍'}</div>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:14, fontWeight:600, color:'#fff' }}>{pinned ? 'Quitar del inicio' : 'Pinear en el inicio'}</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>{pinned ? 'Ya aparece en la pantalla de inicio' : 'Acceso directo desde el inicio (con PIN)'}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>{pinned ? 'Ya aparece en la pantalla de inicio' : 'Acceso directo desde el inicio'}</div>
               </div>
               <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
             </button>
@@ -11268,9 +11398,9 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
   const ADMIN_PASSWORD = '4862';
 
   const handleOpenPinned = (proj) => {
-    // Si no tiene PIN guardado, entra directo. Si tiene, pide PIN.
-    if (!proj.pin) { window.location.href = buildProjectUrl(proj.id); return; }
-    setPinTarget(proj);
+    // El pineo es local a este dispositivo (localStorage). Quien lo pineó ya tuvo
+    // acceso, así que abrimos directo sin volver a pedir el PIN del proyecto.
+    window.location.href = buildProjectUrl(proj.id);
   };
   const removePinned = (id, e) => {
     e.stopPropagation();
@@ -11339,23 +11469,13 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
                   <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0092B8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
-                    <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>{proj.pin ? '🔒 Requiere PIN' : 'Abrir proyecto'}</div>
+                    <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>Abrir proyecto</div>
                   </div>
                   <span onClick={(e)=>removePinned(proj.id, e)} style={{ fontSize:16, color:'rgba(255,255,255,0.4)', padding:'4px 8px', cursor:'pointer', borderRadius:8 }} title="Quitar">✕</span>
                 </button>
               ))}
             </div>
           </div>
-        )}
-
-        {pinTarget && (
-          <PinModal
-            title={pinTarget.nombre}
-            subtitle="Ingresá el PIN del proyecto"
-            correctPin={pinTarget.pin}
-            onSuccess={()=>{ window.location.href = buildProjectUrl(pinTarget.id); }}
-            onCancel={()=>setPinTarget(null)}
-          />
         )}
 
         <div style={{ display:'flex', flexDirection:'column', padding:'0 20px', gap:0 }}>
@@ -12493,44 +12613,49 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      // updateViaCache:'none' → el navegador NO cachea el propio sw.js (por defecto lo
+      // guarda hasta 24h), así detecta versiones nuevas en cada visita.
+      const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
       console.log('[App] SW registrado:', reg.scope);
 
-      // Cuando hay una nueva versión disponible, avisar al usuario
+      let refreshing = false;
+      // Cuando el SW nuevo toma control, recargar UNA vez para mostrar lo último.
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+
+      // Activar de inmediato cualquier worker que ya esté esperando.
+      const activateWaiting = (worker) => {
+        if (worker) { try { worker.postMessage({ type: 'SKIP_WAITING' }); } catch {} }
+      };
+      if (reg.waiting) activateWaiting(reg.waiting);
+
+      // Cuando hay una nueva versión instalada, aplicarla automáticamente.
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
+        if (!newWorker) return;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Hay nueva versión — mostrar banner de actualización
-            const banner = document.createElement('div');
-            banner.innerHTML = `
-              <div style="
-                position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-                background:rgba(255,255,255,0.9); color:#005a72; 
-                padding:12px 20px; 
-                font-family:'Inter',sans-serif; font-size:13px; font-weight:700;
-                box-shadow: 4px 4px 0px rgba(0,0,0,0.4);
-                z-index:99999; display:flex; align-items:center; gap:12px;
-                letter-spacing:0.02em;
-              ">
-                ✦ NUEVA VERSIÓN DISPONIBLE
-                <button onclick="window.location.reload()" style="
-                  background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); border:none;
-                  padding:6px 14px; font-family:'Inter',sans-serif;
-                  font-size:12px; font-weight:900; cursor:pointer;
-                  letter-spacing:0.05em;
-                ">ACTUALIZAR</button>
-              </div>
-            `;
-            document.body.appendChild(banner);
+            // Hay nueva versión — pedir al SW que se active ya (dispara controllerchange → reload).
+            activateWaiting(newWorker);
           }
         });
       });
 
+      // Chequear updates al abrir y cada vez que la app vuelve a primer plano.
+      const checkUpdate = () => { reg.update().catch(()=>{}); };
+      checkUpdate();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') checkUpdate();
+      });
+      window.addEventListener('focus', checkUpdate);
+
       // Escuchar mensajes del SW (sync disponible, etc.)
       navigator.serviceWorker.addEventListener('message', event => {
         if (event.data?.type === 'SYNC_AVAILABLE') {
-          console.log('[App] Conexión restaurada — sincronizando con Firebase...');
+          console.log('[App] Conexión restaurada — sincronizando...');
         }
       });
 
