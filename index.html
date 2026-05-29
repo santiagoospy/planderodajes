@@ -398,31 +398,50 @@
   function cleanupStorage(freeBytes = 0, protectKey = null) {
     try {
       let freed = 0;
-      // 1. Primero: borrar caches re-fetcheables (cola vieja, archivos de mensajes, chats)
+      // Claves críticas que NUNCA se borran (solo se alivian)
+      const currentProjectId = new URLSearchParams(window.location.search).get('p') || '';
+      const critical = new Set(['pinnedProjects', '_migratedBase64',
+        ...(currentProjectId ? [`project:${currentProjectId}`] : [])]);
+
+      // 1. Primero: borrar caches re-fetcheables (cola, mensajes archivados, chat)
       const trashFirst = Object.keys(localStorage).filter(k =>
         k === '_syncQueue' || k.startsWith('msgarchive:') || k.startsWith('chat:')
       );
       for (const k of trashFirst) {
-        if (k === protectKey) continue;
+        if (k === protectKey || critical.has(k)) continue;
         freed += itemSize(k);
         localStorage.removeItem(k);
       }
 
-      // 2. Si aún falta espacio: borrar los items MÁS GRANDES primero.
-      //    Los archivos base64 viejos son lo más pesado y bloquean todo.
+      // 2. Alivianar items grandes (strip base64 in-place, sin borrarlos)
+      //    Prioridad: dept: > project:/productora: > resto grande
       if (freeBytes === 0 || freed < freeBytes) {
         const sized = Object.keys(localStorage)
-          .filter(k => k !== protectKey && k !== '_syncQueue')
+          .filter(k => k !== protectKey)
           .map(k => ({ key: k, size: itemSize(k) }))
-          .sort((a, b) => b.size - a.size); // más grande primero
+          .sort((a, b) => b.size - a.size);
 
         for (const { key, size } of sized) {
           if (freeBytes > 0 && freed >= freeBytes) break;
-          // Solo borrar items realmente grandes (> 100KB = casi seguro base64)
-          if (size < 100000 && freeBytes > 0 && freed > 0) break;
-          freed += size;
-          localStorage.removeItem(key);
-          console.warn(`[Storage] Borrado ${key} (${Math.round(size/1024)}KB)`);
+          if (size < 30000) break; // items pequeños: ignorar
+          try {
+            const obj = JSON.parse(localStorage.getItem(key));
+            const stripped = JSON.stringify(stripHeavyData(obj));
+            const newSize = stripped.length;
+            if (newSize < size - 1000) { // liberó algo significativo
+              localStorage.setItem(key, stripped);
+              const delta = size - newSize;
+              freed += delta;
+              console.warn(`[Storage] Alivianado ${key}: -${Math.round(delta/1024)}KB`);
+              continue;
+            }
+          } catch {}
+          // Si no mejoró con stripping y no es crítico → borrar
+          if (!critical.has(key)) {
+            freed += size;
+            localStorage.removeItem(key);
+            console.warn(`[Storage] Borrado ${key} (${Math.round(size/1024)}KB)`);
+          }
         }
       }
       console.log(`[Storage] Liberados ${Math.round(freed/1024)}KB`);
@@ -435,23 +454,26 @@
   // Los archivos nuevos van a Netlify Blobs; los viejos base64 se eliminan para destrabar.
   function migrateStripBase64() {
     try {
-      if (localStorage.getItem('_migratedBase64') === '1') return;
+      // Ejecutar siempre (no solo una vez) — alivi todos los items con base64 >= 50KB
       let cleaned = 0;
+      let totalFreed = 0;
       Object.keys(localStorage).forEach(k => {
-        if (!k.startsWith('dept:') && !k.startsWith('project:')) return;
+        if (k === '_syncQueue' || k === '_migratedBase64' || k === 'pinnedProjects') return;
         try {
           const raw = localStorage.getItem(k);
-          // Si el item tiene base64 incrustado y es grande, alivianarlo
-          if (raw && raw.length > 500000 && raw.includes('base64,')) {
-            const obj = JSON.parse(raw);
-            const stripped = stripHeavyData(obj);
-            localStorage.setItem(k, JSON.stringify(stripped));
+          if (!raw || !raw.includes('base64,')) return;
+          // Solo procesar items con base64 significativo
+          if (raw.length < 50000) return;
+          const obj = JSON.parse(raw);
+          const stripped = JSON.stringify(stripHeavyData(obj));
+          if (stripped.length < raw.length - 1000) {
+            localStorage.setItem(k, stripped);
+            totalFreed += raw.length - stripped.length;
             cleaned++;
           }
         } catch {}
       });
-      localStorage.setItem('_migratedBase64', '1');
-      if (cleaned) console.log(`[Storage] Migración: alivianados ${cleaned} items con base64`);
+      if (cleaned) console.log(`[Storage] Migración base64: ${cleaned} items, liberados ${Math.round(totalFreed/1024)}KB`);
     } catch {}
   }
 
@@ -461,10 +483,9 @@
     if (obj && typeof obj === 'object') {
       const out = {};
       for (const [k, v] of Object.entries(obj)) {
-        if (typeof v === 'string' && v.length > 200000 && v.includes('base64,')) {
-          // Archivo base64 viejo sin URL → marcarlo como no disponible
+        // base64 > ~35KB: guardar solo URL, vaciar data
+        if (typeof v === 'string' && v.length > 50000 && v.includes('base64,')) {
           out[k] = '';
-          out._archivoLocalPerdido = true;
         } else {
           out[k] = stripHeavyData(v);
         }
@@ -624,7 +645,7 @@
       }
     },
     async saveProductora(prod) {
-      localSet(`productora:${prod.id}`, prod);
+      localSet(`productora:${prod.id}`, stripHeavyData(prod));
       notifyUI({ type: 'sync-pending', message: 'Guardando productora...' });
       addToSyncQueue({
         store: 'productoras',
@@ -706,7 +727,7 @@
       }
     },
     async saveProject(proj) {
-      localSet(`project:${proj.id}`, proj);
+      localSet(`project:${proj.id}`, stripHeavyData(proj));
       notifyUI({ type: 'sync-pending', message: 'Guardando proyecto...' });
       addToSyncQueue({
         store: 'projects',
@@ -739,8 +760,10 @@
     async saveDeptData(projectId, deptKey, section, items) {
       const storeKey = `${projectId}_${deptKey}_${section}`;
       const data = { items, updatedAt: new Date().toISOString() };
-      // 1. Guardar localmente PRIMERO (offline-first)
-      localSet(`dept:${storeKey}`, data);
+      // 1. Guardar localmente SIN base64 grandes (evita llenar localStorage)
+      //    Los archivos con URL (Netlify Blobs) se conservan. Solo se vacía el base64 > 35KB.
+      const dataLight = { items: stripHeavyData(items), updatedAt: data.updatedAt };
+      localSet(`dept:${storeKey}`, dataLight);
       notifyUI({ type: 'sync-pending', message: `${section}: guardando...` });
       // 2. Agregar a cola de sync (solo referencia; datos en localStorage)
       addToSyncQueue({
@@ -5540,64 +5563,53 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
   const [linkName, setLinkName] = useState('');
   const [progress, setProgress] = useState({});
 
-  const CHUNK_SIZE = 5 * 1024 * 1024;  // 5 MB por chunk
-  const PARALLEL   = 4;                 // 4 chunks simultáneos
-  const IMG_LIMIT  = 1.5 * 1024 * 1024; // imágenes < 1.5MB → base64 local
+  const IMG_LIMIT = 1.5 * 1024 * 1024;
 
-  const uploadChunk = async (fileId, fileName, fileType, chunk, index, total, attempt = 0) => {
+  const uploadToR2 = (file, fid) => new Promise(async (resolve, reject) => {
     try {
-      const res = await fetch('/.netlify/functions/upload', {
+      const res = await fetch('/.netlify/functions/r2-presign', {
         method: 'POST',
-        headers: {
-          'X-File-Name': fileName,
-          'X-File-Type': fileType || 'application/octet-stream',
-          'X-Chunk-Index': String(index),
-          'X-Total-Chunks': String(total),
-          'X-File-Id': fileId,
-        },
-        body: chunk,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'upload', fileName: file.name, fileType: file.type || 'application/octet-stream', fileSize: file.size }),
       });
-      if (!res.ok) { const t = await res.text(); throw new Error(`Chunk ${index}: HTTP ${res.status} ${t}`); }
-      return await res.json();
-    } catch (err) {
-      if (attempt < 2) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); return uploadChunk(fileId, fileName, fileType, chunk, index, total, attempt + 1); }
-      throw err;
-    }
-  };
+      if (!res.ok) throw new Error(`Presign error: ${res.status}`);
+      const { uploadUrl, key, serveUrl } = await res.json();
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          const mb  = (e.loaded / 1048576).toFixed(1);
+          const tot = (e.total  / 1048576).toFixed(1);
+          setProgress(p => ({ ...p, [fid]: { ...p[fid], pct, mb, tot } }));
+        }
+      };
+      xhr.onload  = () => xhr.status < 400 ? resolve({ key, url: serveUrl }) : reject(new Error(`R2 PUT ${xhr.status}`));
+      xhr.onerror = () => reject(new Error('Error de red al subir'));
+      xhr.send(file);
+    } catch (err) { reject(err); }
+  });
 
   const uploadFile = async (f) => {
-    const fileId = `${Date.now()}_${Math.random().toString(36).slice(2)}_${f.name}`;
+    const fid   = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const isImg = f.type.startsWith('image/');
     const isVid = f.type.startsWith('video/');
     const isPdf = f.type === 'application/pdf';
-
-    // Imágenes chicas → base64 local (rápido, sin red)
     if (isImg && f.size < IMG_LIMIT) {
-      try { const data = await window.compressImageStrong(f); return { id: fileId, data, nombre: f.name, tipo: 'imagen' }; } catch {}
+      try { const data = await window.compressImageStrong(f); return { id: fid, data, nombre: f.name, tipo: 'imagen' }; } catch {}
     }
-
-    // Todo lo demás → chunking a Netlify Blobs
-    const totalChunks = Math.ceil(f.size / CHUNK_SIZE);
-    setProgress(p => ({ ...p, [fileId]: { name: f.name, sent: 0, total: totalChunks, done: false, error: false } }));
-
-    const chunks = [];
-    for (let i = 0; i < totalChunks; i++) chunks.push({ index: i, blob: f.slice(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, f.size)) });
-
-    let sentCount = 0, lastJson = null;
-    const runChunk = async ({ index, blob }) => {
-      const json = await uploadChunk(fileId, f.name, f.type, blob, index, totalChunks);
-      sentCount++;
-      setProgress(p => ({ ...p, [fileId]: { ...p[fileId], sent: sentCount } }));
-      lastJson = json;
-    };
-    for (let i = 0; i < chunks.length; i += PARALLEL) {
-      await Promise.all(chunks.slice(i, i + PARALLEL).map(runChunk));
+    const sizeMB = (f.size / 1048576).toFixed(1);
+    setProgress(p => ({ ...p, [fid]: { name: f.name, pct: 0, mb: '0', tot: sizeMB, done: false, error: false } }));
+    try {
+      const { key, url } = await uploadToR2(f, fid);
+      setProgress(p => ({ ...p, [fid]: { ...p[fid], pct: 100, done: true } }));
+      const tipo = isVid ? 'video' : isPdf ? 'pdf' : isImg ? 'imagen' : 'archivo';
+      return { id: fid, key, url, nombre: f.name, tipo, size: f.size };
+    } catch (err) {
+      setProgress(p => ({ ...p, [fid]: { ...p[fid], error: true, msg: err.message } }));
+      throw err;
     }
-
-    setProgress(p => ({ ...p, [fileId]: { ...p[fileId], sent: totalChunks, done: true } }));
-    const url = lastJson?.url || `/.netlify/functions/serve?key=${encodeURIComponent('files/' + fileId)}`;
-    const tipo = isVid ? 'video' : isPdf ? 'pdf' : isImg ? 'imagen' : 'archivo';
-    return { id: fileId, url, nombre: f.name, tipo, size: f.size };
   };
 
   const handle = async (e) => {
@@ -5607,16 +5619,16 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
     const nuevos = [];
     for (const f of list) {
       try { nuevos.push(await uploadFile(f)); }
-      catch (err) {
-        const fid = Object.keys(progress).find(k => progress[k]?.name === f.name);
-        if (fid) setProgress(p => ({ ...p, [fid]: { ...p[fid], error: true, msg: err.message } }));
-        console.warn('Upload falló:', f.name, err.message);
-      }
+      catch (err) { console.warn('Upload falló:', f.name, err.message); }
     }
     setFiles([...files, ...nuevos]);
     setUploading(false);
     e.target.value = '';
-    setTimeout(() => setProgress(p => { const n = { ...p }; Object.keys(n).forEach(k => { if (n[k].done || n[k].error) delete n[k]; }); return n; }), 3000);
+    setTimeout(() => setProgress(p => {
+      const n = { ...p };
+      Object.keys(n).forEach(k => { if (n[k].done || n[k].error) delete n[k]; });
+      return n;
+    }), 3500);
   };
 
   const addLink = () => {
@@ -5624,12 +5636,11 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
     let url = linkUrl.trim();
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     const nombre = linkName.trim() || url;
-    // Detectar tipo de link para icono
-    let linkIcon = '🔗';
-    if (/youtube\.com|youtu\.be/i.test(url)) linkIcon = '▶️';
-    else if (/drive\.google\.com/i.test(url)) linkIcon = '📁';
-    else if (/dropbox\.com/i.test(url)) linkIcon = '📦';
-    else if (/vimeo\.com/i.test(url)) linkIcon = '🎬';
+    let linkIcon = '\u{1F517}';
+    if (/youtube\.com|youtu\.be/i.test(url)) linkIcon = '\u25B6\uFE0F';
+    else if (/drive\.google\.com/i.test(url)) linkIcon = '\u{1F4C1}';
+    else if (/dropbox\.com/i.test(url)) linkIcon = '\u{1F4E6}';
+    else if (/vimeo\.com/i.test(url)) linkIcon = '\u{1F3AC}';
     setFiles([...files, { id: Date.now()+Math.random(), url, nombre, tipo: 'link', linkIcon }]);
     setLinkUrl(''); setLinkName(''); setShowLinkForm(false);
   };
@@ -5680,12 +5691,12 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
               {p.error ? '❌' : p.done ? '✅' : '⬆️'} {p.name}
             </span>
             <span style={{ flexShrink:0 }}>
-              {p.error ? (p.msg||'').slice(0,28) : p.done ? 'Listo' : `${p.sent}/${p.total} chunks`}
+              {p.error ? (p.msg||'Error').slice(0,28) : p.done ? 'Listo' : `${p.mb}/${p.tot} MB`}
             </span>
           </div>
           {!p.error && (
             <div style={{ height:4, background:'var(--border-light)', borderRadius:2, overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${p.total>0?Math.round((p.sent/p.total)*100):0}%`, background: p.done ? '#4caf50' : color, borderRadius:2, transition:'width 0.3s ease' }}/>
+              <div style={{ height:'100%', width:`${p.pct||0}%`, background: p.done ? '#4caf50' : color, borderRadius:2, transition:'width 0.25s ease' }}/>
             </div>
           )}
         </div>
