@@ -923,6 +923,31 @@ window.compressImage = function(file, maxPx, quality) {
     reader.readAsDataURL(file);
   });
 };
+
+// ── Subida global a R2 — disponible antes de React ──────────────
+window.uploadFileToR2 = async function(file) {
+  const res = await fetch('/.netlify/functions/r2-presign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'upload',
+      fileName: file.name,
+      fileType: file.type || 'application/octet-stream',
+      fileSize: file.size,
+    }),
+  });
+  if (!res.ok) throw new Error('Presign error: ' + res.status);
+  const { uploadUrl, key, serveUrl } = await res.json();
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    xhr.onload  = () => xhr.status < 400 ? resolve() : reject(new Error('R2 PUT ' + xhr.status));
+    xhr.onerror = () => reject(new Error('Error de red al subir'));
+    xhr.send(file);
+  });
+  return { key, url: serveUrl };
+};
 </script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -1246,21 +1271,19 @@ function DeptMuralTab({ color, deptKey, projectId }) {
     setUploading(true);
     const isImg = file.type.startsWith('image/');
     const isVid = file.type.startsWith('video/');
+    const isPdf = file.type === 'application/pdf';
     try {
-      let data;
-      if (isImg) {
-        data = await window.compressImage(file, 1200, 0.80);
+      // Imágenes pequeñas (<1.5MB): comprimir y guardar como base64
+      if (isImg && file.size < 1.5 * 1024 * 1024) {
+        const data = await window.compressImage(file, 1200, 0.80);
+        setAdjunto({ tipo: 'imagen', nombre: file.name, data });
       } else {
-        data = await new Promise((res, rej) => {
-          const r = new FileReader();
-          r.onload = ev => res(ev.target.result);
-          r.onerror = rej;
-          r.readAsDataURL(file);
-        });
+        // Todo lo demás (PDFs, videos, imágenes grandes): subir a R2
+        const { key, url } = await window.uploadFileToR2(file);
+        const tipo = isVid ? 'video' : isPdf ? 'pdf' : isImg ? 'imagen' : 'archivo';
+        setAdjunto({ tipo, nombre: file.name, key, url });
       }
-      const tipo = isImg ? 'imagen' : (isVid ? 'video' : 'archivo');
-      setAdjunto({ tipo, nombre: file.name, data });
-    } catch { alert('Error al subir archivo'); }
+    } catch (err) { alert('Error al subir archivo: ' + err.message); }
     setUploading(false);
   };
 
@@ -1296,11 +1319,11 @@ function DeptMuralTab({ color, deptKey, projectId }) {
         {/* Adjunto preview */}
         {adjunto && (
           <div style={{ marginBottom:10, position:'relative', background:'var(--bg-card-dark)', borderRadius:10, padding:'8px', border:`1px solid ${color}30` }}>
-            {adjunto.tipo==='imagen' && <img src={adjunto.data} alt="adjunto" style={{ width:'100%', borderRadius:8, maxHeight:220, objectFit:'cover' }}/>}
-            {adjunto.tipo==='video'  && <video src={adjunto.data} controls style={{ width:'100%', borderRadius:8, maxHeight:220 }}/>}
-            {adjunto.tipo==='archivo' && (
+            {adjunto.tipo==='imagen' && <img src={adjunto.data || adjunto.url} alt="adjunto" style={{ width:'100%', borderRadius:8, maxHeight:220, objectFit:'cover' }}/>}
+            {adjunto.tipo==='video'  && <video src={adjunto.data || adjunto.url} controls style={{ width:'100%', borderRadius:8, maxHeight:220 }}/>}
+            {(adjunto.tipo==='archivo' || adjunto.tipo==='pdf') && (
               <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 4px' }}>
-                <span style={{ fontSize:22 }}>📄</span>
+                <span style={{ fontSize:22 }}>{adjunto.tipo==='pdf' ? '📄' : '📎'}</span>
                 <span style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit' }}>{adjunto.nombre}</span>
               </div>
             )}
@@ -1360,22 +1383,22 @@ function DeptMuralTab({ color, deptKey, projectId }) {
           </div>
           {m.adjunto && m.adjunto.tipo==='imagen' && (
             <div style={{ position:'relative' }}>
-              <img src={m.adjunto.data} alt={m.adjunto.nombre} style={{ width:'100%', borderRadius:8, maxHeight:260, objectFit:'cover' }}/>
-              <a href={m.adjunto.data} download={m.adjunto.nombre||'imagen.jpg'} style={{ position:'absolute', bottom:8, right:8, background:'rgba(0,0,0,0.65)', border:'none', borderRadius:8, color:'#fff', fontSize:12, fontWeight:700, padding:'6px 12px', cursor:'pointer', textDecoration:'none', display:'flex', alignItems:'center', gap:5 }}>⬇ Descargar</a>
+              <img src={m.adjunto.data || m.adjunto.url} alt={m.adjunto.nombre} style={{ width:'100%', borderRadius:8, maxHeight:260, objectFit:'cover' }}/>
+              <a href={m.adjunto.data || m.adjunto.url} download={m.adjunto.nombre||'imagen.jpg'} style={{ position:'absolute', bottom:8, right:8, background:'rgba(0,0,0,0.65)', border:'none', borderRadius:8, color:'#fff', fontSize:12, fontWeight:700, padding:'6px 12px', cursor:'pointer', textDecoration:'none', display:'flex', alignItems:'center', gap:5 }}>⬇ Descargar</a>
             </div>
           )}
           {m.adjunto && m.adjunto.tipo==='video' && (
             <div style={{ position:'relative' }}>
-              <video src={m.adjunto.data} controls style={{ width:'100%', borderRadius:8, maxHeight:260 }}/>
-              <a href={m.adjunto.data} download={m.adjunto.nombre||'video.mp4'} style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:8, padding:'7px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12, marginTop:4, border:'1px solid var(--border-light)' }}>
+              <video src={m.adjunto.data || m.adjunto.url} controls style={{ width:'100%', borderRadius:8, maxHeight:260 }}/>
+              <a href={m.adjunto.data || m.adjunto.url} download={m.adjunto.nombre||'video.mp4'} style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:8, padding:'7px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12, marginTop:4, border:'1px solid var(--border-light)' }}>
                 <span style={{ fontSize:16 }}>⬇</span>
                 <span style={{ flex:1 }}>Descargar video</span>
               </a>
             </div>
           )}
-          {m.adjunto && m.adjunto.tipo==='archivo' && (
-            <a href={m.adjunto.data} download={m.adjunto.nombre} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
-              <span style={{ fontSize:20 }}>📄</span>
+          {m.adjunto && (m.adjunto.tipo==='archivo' || m.adjunto.tipo==='pdf') && (
+            <a href={m.adjunto.data || m.adjunto.url} download={m.adjunto.nombre} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
+              <span style={{ fontSize:20 }}>{m.adjunto.tipo==='pdf' ? '📄' : '📎'}</span>
               <span style={{ flex:1 }}>{m.adjunto.nombre}</span>
               <span style={{ color, fontWeight:700 }}>↓ Descargar</span>
             </a>
@@ -2337,7 +2360,7 @@ function LocacionesTab({ color, deptKey, projectId, project }) {
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
                     {fotosCard.map(f => (
                       <div key={f.id} onClick={()=>setViewerPhoto({ locId:l.id, photo:f })} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden', cursor:'pointer' }}>
-                        <img src={f.data} alt={f.nombre||''} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
+                        <img src={f.data || f.url} alt={f.nombre||''} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
                       </div>
                     ))}
                   </div>
@@ -2352,7 +2375,7 @@ function LocacionesTab({ color, deptKey, projectId, project }) {
                     {archivosCard.map(a => (
                       <a key={a.id} href={a.data} download={a.nombre} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card-dark)', borderRadius:8, padding:'7px 10px', border:'1px solid var(--border-light)', textDecoration:'none' }}>
                         {a.tipo === 'imagen'
-                          ? <img src={a.data} alt={a.nombre} style={{ width:28, height:28, borderRadius:5, objectFit:'cover', flexShrink:0 }}/>
+                          ? <img src={a.data || a.url} alt={a.nombre} style={{ width:28, height:28, borderRadius:5, objectFit:'cover', flexShrink:0 }}/>
                           : <span style={{ fontSize:18 }}>📄</span>
                         }
                         <span style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.nombre}</span>
@@ -3952,10 +3975,21 @@ function ContinuidadFotosTab({ color, deptKey, projectId }) {
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const base64 = await convertToBase64(file);
-      set('data', base64);
-    }
+    if (!file) return;
+    try {
+      // Fotos de continuidad: comprimir si es imagen pequeña, sino subir a R2
+      if (file.type.startsWith('image/') && file.size < 1.5 * 1024 * 1024) {
+        const data = await window.compressImage(file, 1200, 0.80);
+        set('data', data);
+        set('url', '');
+        set('key', '');
+      } else {
+        const { key, url } = await window.uploadFileToR2(file);
+        set('data', '');
+        set('key', key);
+        set('url', url);
+      }
+    } catch (err) { alert('Error al subir foto: ' + err.message); }
   };
 
   const startCamera = async () => {
@@ -4904,8 +4938,10 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
   const handleStoryImg = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    try { saveStoryboard([...storyboard, { id:Date.now(), img:await window.compressImage(file, 1200, 0.80) }]); }
-    catch {}
+    try {
+      const { key, url } = await window.uploadFileToR2(file);
+      saveStoryboard([...storyboard, { id:Date.now(), key, url }]);
+    } catch(err) { alert('Error al subir imagen: ' + err.message); }
   };
 
   const handleSavePlano = (form) => {
@@ -5081,7 +5117,7 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
               : <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {storyboard.map((f,i)=>(
                     <div key={f.id} style={{ position:'relative', borderRadius:12, overflow:'hidden' }}>
-                      <img src={f.img} alt={`Frame ${i+1}`} style={{ width:'100%', display:'block', borderRadius:12, border:'1px solid #e5e2dd' }}/>
+                      <img src={f.url || f.img} alt={`Frame ${i+1}`} style={{ width:'100%', display:'block', borderRadius:12, border:'1px solid #e5e2dd' }}/>
                       <div style={{ position:'absolute', top:8, left:8, fontSize:11, color:'#fff', fontFamily:'inherit', fontWeight:700, background:'rgba(0,0,0,0.5)', borderRadius:6, padding:'2px 8px' }}>Frame {i+1}</div>
                       <button onClick={()=>saveStoryboard(storyboard.filter(x=>x.id!==f.id))} style={{ position:'absolute', top:8, right:8, width:24, height:24, borderRadius:'50%', background:'rgba(0,0,0,0.5)', border:'none', color:'#fff', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
                     </div>
@@ -5539,7 +5575,7 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
           {fotos.map(f => (
             <div key={f.id} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden' }}>
-              <img src={f.data} alt={f.nombre||''} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
+              <img src={f.data || f.url} alt={f.nombre||''} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
               <button onClick={()=>eliminar(f.id)} style={{ position:'absolute', top:3, right:3, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }}>✕</button>
             </div>
           ))}
@@ -10385,9 +10421,11 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
             📎 Agregar archivos
             <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={async (e)=>{
               const file = e.target.files[0]; if(!file) return;
-              const reader = new FileReader();
-              const data = await new Promise((res,rej)=>{ reader.onload=ev=>res(ev.target.result); reader.onerror=rej; reader.readAsDataURL(file); });
-              onUpdateProject({ ...project, importantFiles: [...(project.importantFiles||[]), { id:Date.now(), nombre:file.name, data }] });
+              try {
+                const { key, url } = await window.uploadFileToR2(file);
+                const tipo = file.type.startsWith('image/') ? 'imagen' : file.type.startsWith('video/') ? 'video' : file.type === 'application/pdf' ? 'pdf' : 'archivo';
+                onUpdateProject({ ...project, importantFiles: [...(project.importantFiles||[]), { id:Date.now(), nombre:file.name, key, url, tipo }] });
+              } catch(err) { alert('Error al subir: ' + err.message); }
             }} style={{ display:'none' }}/>
           </label>
         </div>
