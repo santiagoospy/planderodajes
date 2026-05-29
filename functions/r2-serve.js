@@ -13,25 +13,37 @@ const s3 = new S3Client({
   },
 });
 
+const CORS = {
+  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+};
+
 export const config = { path: "/.netlify/functions/r2-serve" };
 
 export default async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+
   const url = new URL(req.url);
   const key = url.searchParams.get("key");
 
-  if (!key) return new Response("Missing ?key=", { status: 400 });
+  if (!key) {
+    return new Response(JSON.stringify({ error: "key requerida" }), {
+      status: 400,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
 
   try {
-    const cmd       = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-    // Generar presigned GET URL válida 7 días
+    const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+    // URL presigned GET válida 7 días — redirigimos al cliente directo a R2
     const signedUrl = await getSignedUrl(s3, cmd, { expiresIn: 604800 });
-    // Redirigir al browser directamente a R2 (sin proxy de datos por Netlify)
     return Response.redirect(signedUrl, 302);
   } catch (err) {
     console.error("[r2-serve] error:", err.message);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...CORS, "Content-Type": "application/json" },
     });
   }
 };

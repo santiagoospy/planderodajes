@@ -3,6 +3,9 @@
   functions = "functions"
   publish = "."
 
+[functions]
+  node_bundler = "esbuild"    ← AGREGAR ESTO
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
