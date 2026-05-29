@@ -1,21 +1,16 @@
 /* ───────────────────────────────────────────────────────────────
    Service Worker — planderodajes.com
    Estrategia anti-caché-viejo:
-   • HTML / navegación → NETWORK-FIRST (siempre trae lo último si hay red,
-     cae al caché solo si estás offline). Esto elimina el "no aparecen los cambios".
-   • Otros recursos (JS/CSS/fuentes/imágenes) → STALE-WHILE-REVALIDATE
-     (carga rápido del caché y actualiza en segundo plano).
-   • Subí el número de versión cada vez que querés forzar limpieza de caché.
+   • HTML / navegación → NETWORK-FIRST (siempre trae lo último si hay red)
+   • Recursos LOCALES (JS/CSS/fuentes) → STALE-WHILE-REVALIDATE
+   • Recursos EXTERNOS (CDN, analytics) → pasar directo sin cachear
+   • Netlify Functions → pasar directo sin cachear
    ─────────────────────────────────────────────────────────────── */
-const VERSION    = 'v3';                         // ← subí esto en cada deploy importante
+const VERSION    = 'v3';
 const CACHE_NAME = 'pdr-' + VERSION;
 
-// Instalar: activar de inmediato sin esperar.
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-});
+self.addEventListener('install', () => { self.skipWaiting(); });
 
-// Activar: borrar cachés viejas y tomar control de las pestañas abiertas.
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -24,7 +19,6 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
-// El index.html pide saltar la espera → activamos la versión nueva ya.
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
@@ -36,14 +30,18 @@ function isNavigation(req) {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return;                 // no cachear POST/PUT/etc.
+  if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
 
-  // Nunca cachear las funciones de Netlify (datos en vivo).
+  // ── Netlify Functions (datos vivos): pasar directo ──
   if (url.pathname.startsWith('/.netlify/')) return;
 
-  // HTML / navegación → network-first.
+  // ── Recursos EXTERNOS (CDN, analytics, etc.): pasar directo ──
+  // El SW no debe intentar cachear estos; dejar al navegador.
+  if (url.origin !== self.location.origin) return;
+
+  // ── Navegación / HTML: NETWORK-FIRST ──
   if (isNavigation(req)) {
     event.respondWith((async () => {
       try {
@@ -53,27 +51,32 @@ self.addEventListener('fetch', (event) => {
         return fresh;
       } catch {
         const cached = await caches.match(req);
-        return cached || caches.match('/index.html') || Response.error();
+        return cached || caches.match('/index.html') || new Response('Offline', { status: 503 });
       }
     })());
     return;
   }
 
-  // Resto de recursos GET → stale-while-revalidate.
+  // ── Recursos locales GET: STALE-WHILE-REVALIDATE ──
   event.respondWith((async () => {
     const cache  = await caches.open(CACHE_NAME);
     const cached = await cache.match(req);
-    const network = fetch(req).then(res => {
-      if (res && res.status === 200 && (res.type === 'basic' || res.type === 'cors')) {
+    // Actualizar en segundo plano (no esperamos)
+    const networkPromise = fetch(req).then(res => {
+      if (res && res.ok && res.type === 'basic') {
         cache.put(req, res.clone());
       }
       return res;
-    }).catch(() => cached);
-    return cached || network;
+    }).catch(() => null);
+
+    if (cached) return cached;
+    // Sin caché: esperar la red
+    const netRes = await networkPromise;
+    return netRes || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
   })());
 });
 
-// Mantener el comportamiento de sync que usa la app.
+// ── Background Sync ──
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-data') {
     event.waitUntil((async () => {

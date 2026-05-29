@@ -8606,7 +8606,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
       fb().getProductora(project.productoraId).then(prod => {
         if (prod && prod.colorTheme && PRODUCTORA_THEMES_MAP[prod.colorTheme]) {
           setProductoraGrad(PRODUCTORA_THEMES_MAP[prod.colorTheme]);
-          setIsLightTheme(prod.colorTheme === 'claro');
+          setIsLightTheme(['claro','arena','coral','naranja','amarillo'].includes(prod.colorTheme));
         }
       }).catch(()=>{});
     }
@@ -8764,83 +8764,93 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
   return (
     <div style={{ minHeight:'100vh', background:productoraGrad, display:'flex', flexDirection:'column' }} className="slide-r">
       <div style={{ flex:1, overflowY:'auto' }}>
-        {/* ═══ HERO: Portada + Nombre + Progreso fusionados ═══ */}
-        <div style={{ position:'relative', width:'100%', minHeight:260, overflow:'hidden' }}>
-          {/* Fondo: foto o gradiente */}
-          {project.logo ? (
-            <img src={project.logo} alt="Portada" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }}/>
-          ) : (
-            <div style={{ position:'absolute', inset:0, background:productoraGrad }}/>
-          )}
-
-          {/* Scrim oscuro inferior para legibilidad */}
-          <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'70%', background:'linear-gradient(transparent, rgba(0,0,0,0.65))', pointerEvents:'none' }}/>
-
-          {/* Botones superiores */}
-          <div style={{ position:'absolute', top:'env(safe-area-inset-top,44px)', right:16, display:'flex', gap:6, zIndex:10 }}>
-            <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', fontSize:16, cursor:'pointer', padding:'6px 8px', borderRadius:8, color:'#fff' }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
-              {isAdmin ? '🔓' : '🔒'}
-            </button>
-            {project.productoraId && (
-              <button onClick={() => { window.history.length > 1 ? window.history.back() : (window.location.href = `/?pid=${project.productoraId}`); }} className="tap" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', fontSize:11, color:'rgba(255,255,255,0.9)', cursor:'pointer', fontFamily:'inherit', padding:'6px 10px', borderRadius:8 }}>← Productora</button>
-            )}
-            <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', border:'none', fontSize:14, cursor:'pointer', padding:'6px 8px', borderRadius:8, color:'#fff' }}>🏠</button>
+        {/* Header con nombre y botones */}
+        <div style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 14px', position:'sticky', top:0, zIndex:10, background:productoraGrad }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+            <h1 style={{ fontSize:24, fontWeight:800, color:isLightTheme?'#1a1714':'#fff', fontFamily:'inherit', margin:0, letterSpacing:'-0.5px', display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0 }}>
+              {editingProjectName ? (
+                <input type="text" value={newProjectName} onChange={e => setNewProjectName(e.target.value)}
+                  onBlur={() => { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }); }}
+                  onKeyDown={e => { if(e.key==='Enter'){ setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }); } }}
+                  autoFocus style={{ fontFamily:'inherit', fontSize:22, fontWeight:800, border:'none', borderBottom:'2px solid rgba(255,255,255,0.5)', borderRadius:0, padding:'2px 0', background:'transparent', color:isLightTheme?'#1a1714':'#fff', outline:'none', width:'100%' }}/>
+              ) : (
+                <span onClick={() => setEditingProjectName(true)} style={{ cursor:'pointer', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {project.name || 'Sin nombre'}
+                  <span style={{ fontSize:14, opacity:0.5, marginLeft:6 }}>✏️</span>
+                </span>
+              )}
+            </h1>
+            <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
+              <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:16, cursor:'pointer', padding:'6px 8px', borderRadius:8 }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
+                {isAdmin ? '🔓' : '🔒'}
+              </button>
+              {project.productoraId && (
+                <button onClick={() => { window.history.length > 1 ? window.history.back() : (window.location.href = `/?pid=${project.productoraId}`); }} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:11, color:isLightTheme?'rgba(0,0,0,0.6)':'rgba(255,255,255,0.85)', cursor:'pointer', fontFamily:'inherit', padding:'6px 10px', borderRadius:8 }}>← Prod</button>
+              )}
+              <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:14, cursor:'pointer', padding:'6px 8px', borderRadius:8 }}>🏠</button>
+            </div>
           </div>
+          <div style={{ fontSize:12, color:isLightTheme?'rgba(0,0,0,0.45)':'rgba(255,255,255,0.6)', fontFamily:'inherit' }}>{project.client||''}{project.client?' · ':''}{project.days.length} días · {project.days.reduce((s,d)=>s+d.scenes.length,0)} escenas</div>
+        </div>
 
-          {/* Botón subir/cambiar foto (admin) */}
-          {isAdmin && (
-            <label style={{ position:'absolute', top:'env(safe-area-inset-top,44px)', left:16, zIndex:10, background:'rgba(0,0,0,0.35)', backdropFilter:'blur(10px)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:11, color:'rgba(255,255,255,0.9)', fontFamily:'inherit', fontWeight:600 }}>
-              📸 {project.logo ? 'Cambiar' : 'Portada'}
+        {/* Contenido principal */}
+        <div style={{ padding:'16px 16px 48px' }}>
+
+          {/* 📸 FOTO DE PORTADA */}
+          {project.logo ? (
+            <div style={{ position:'relative', width:'100%', marginBottom:16, height:200, overflow:'hidden', borderRadius:14 }}>
+              <img src={project.logo} alt="Portada" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+              {isAdmin && (
+                <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
+                  <label className="tap" style={{ background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:11, color:'#fff', fontWeight:600, fontFamily:'inherit' }}>
+                    📸 Cambiar
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
+                      onChange={async (e) => {
+                        const f = e.target.files[0]; if (!f) return;
+                        try {
+                          const data = await window.compressImage(f, 1200, 0.80);
+                          onUpdateProject({ ...project, logo: data });
+                        } catch(err) {
+                          console.error('Upload foto:', err);
+                          try { const r = new FileReader(); r.onload = ev => onUpdateProject({ ...project, logo: ev.target.result }); r.readAsDataURL(f); } catch(e2) { console.error('Fallback:', e2); }
+                        }
+                      }}/>
+                  </label>
+                  <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:14, cursor:'pointer', fontWeight:700, borderRadius:8, padding:'5px 8px' }}>✕</button>
+                </div>
+              )}
+            </div>
+          ) : isAdmin ? (
+            <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'rgba(255,255,255,0.12)', border:'1.5px dashed rgba(255,255,255,0.3)', borderRadius:14, padding:'32px 20px', cursor:'pointer', fontFamily:'Inter, sans-serif', fontSize:14, fontWeight:600, color:isLightTheme?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.8)', width:'100%', marginBottom:16, minHeight:100, boxSizing:'border-box' }}>
+              📸 SUBIR FOTO DE PORTADA
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
                 onChange={async (e) => {
                   const f = e.target.files[0]; if (!f) return;
                   try {
                     const data = await window.compressImage(f, 1200, 0.80);
                     onUpdateProject({ ...project, logo: data });
-                  } catch {
-                    const r = new FileReader();
-                    r.onload = ev => onUpdateProject({ ...project, logo: ev.target.result });
-                    r.readAsDataURL(f);
+                  } catch(err) {
+                    console.error('Upload foto:', err);
+                    try { const r = new FileReader(); r.onload = ev => onUpdateProject({ ...project, logo: ev.target.result }); r.readAsDataURL(f); } catch(e2) { console.error('Fallback:', e2); }
                   }
                 }}/>
             </label>
-          )}
-          {isAdmin && project.logo && (
-            <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ position:'absolute', top:'calc(env(safe-area-inset-top,44px) + 36px)', left:16, zIndex:10, background:'rgba(200,50,50,0.6)', border:'none', color:'#fff', fontSize:10, fontWeight:700, padding:'4px 8px', borderRadius:6, cursor:'pointer', fontFamily:'inherit' }}>✕ Quitar</button>
-          )}
+          ) : null}
 
-          {/* Overlay inferior: Nombre + Info + Progreso */}
-          <div style={{ position:'relative', zIndex:5, display:'flex', flexDirection:'column', justifyContent:'flex-end', minHeight:260, padding:'16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)' }}>
-            <h1 style={{ fontSize:28, fontWeight:800, color:'#fff', fontFamily:'inherit', margin:'0 0 4px', letterSpacing:'-0.5px', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>
-              {editingProjectName ? (
-                <input type="text" value={newProjectName} onChange={e => setNewProjectName(e.target.value)}
-                  onBlur={() => { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }); }}
-                  autoFocus style={{ fontFamily:'inherit', fontSize:24, fontWeight:800, border:'none', borderBottom:'2px solid rgba(255,255,255,0.5)', borderRadius:0, padding:'4px 0', background:'transparent', color:'#fff', outline:'none', width:'100%', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}/>
-              ) : (
-                <span onClick={() => setEditingProjectName(true)} style={{ cursor:'pointer' }}>{project.name}</span>
-              )}
-            </h1>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.7)', fontFamily:'inherit', marginBottom:12, textShadow:'0 1px 4px rgba(0,0,0,0.4)' }}>{project.client||''}{project.client?' · ':''}{project.days.length} días · {project.days.reduce((s,d)=>s+d.scenes.length,0)} escenas</div>
-
-            {/* Progress inline */}
-            <div style={{ display:'flex', alignItems:'center', gap:12, background:'rgba(0,0,0,0.3)', backdropFilter:'blur(10px)', borderRadius:12, padding:'10px 14px' }}>
-              <div style={{ position:'relative', width:42, height:42, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <ProgressRing pct={pct} size={42} stroke={4} color='rgba(255,255,255,0.9)'/>
-                <div style={{ position:'absolute', textAlign:'center' }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:'#fff', lineHeight:1 }}>{doneAll}</div>
-                  <div style={{ fontSize:6, color:'rgba(255,255,255,0.6)' }}>/{allScenes.length}</div>
-                </div>
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:9, color:'rgba(255,255,255,0.55)', letterSpacing:'0.08em', fontWeight:600 }}>GRABACIÓN</div>
-                <div style={{ fontSize:22, fontWeight:800, color:'#fff', lineHeight:1 }}>{Math.round(pct*100)}%</div>
+          {/* PROGRESO — transparente, solo círculo y % */}
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, padding:'0 4px' }}>
+            <div style={{ position:'relative', width:44, height:44, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <ProgressRing pct={pct} size={44} stroke={4} color={isLightTheme?'rgba(0,0,0,0.6)':'rgba(255,255,255,0.9)'}/>
+              <div style={{ position:'absolute', textAlign:'center' }}>
+                <div style={{ fontSize:11, fontWeight:700, color:isLightTheme?'#1a1714':'#fff', lineHeight:1 }}>{doneAll}</div>
+                <div style={{ fontSize:6, color:isLightTheme?'rgba(0,0,0,0.4)':'rgba(255,255,255,0.5)' }}>/{allScenes.length}</div>
               </div>
             </div>
+            <div style={{ fontSize:22, fontWeight:800, color:isLightTheme?'#1a1714':'#fff', lineHeight:1 }}>
+              {Math.round(pct*100)}%
+              <span style={{ fontSize:10, fontWeight:600, color:isLightTheme?'rgba(0,0,0,0.4)':'rgba(255,255,255,0.45)', marginLeft:6 }}>completado</span>
+            </div>
           </div>
-        </div>
-
-        {/* Contenido principal */}
-        <div style={{ padding:'16px 16px 48px' }}>
 
           {/* 💬 CHAT DEL EQUIPO */}
           <IMessageChat project={project} isAdmin={isAdmin} />
@@ -11813,7 +11823,7 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
   const currentThemeKey = productora.colorTheme || 'celeste';
   const currentTheme = PRODUCTORA_THEMES[currentThemeKey] || PRODUCTORA_THEMES.celeste;
   const productoraGrad = currentTheme.grad;
-  const isLight = currentThemeKey === 'claro';
+  const isLight = ['claro','arena','coral','naranja','amarillo'].includes(currentThemeKey);
   const tc = (light, dark) => isLight ? dark : light; // text color helper
 
   const productoraUrl = buildProductoraUrl(productora.id);
