@@ -1,12 +1,17 @@
 [build]
-  command = "npm install"
-  publish = "."
+  command   = "npm install && npm run build"
+  publish   = "dist"
+
+[dev]
+  command    = "npm run dev"
+  port       = 5173
+  targetPort = 5173
 
 [functions]
-  directory = "functions"
+  directory    = "functions"
   node_bundler = "esbuild"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from   = "/*"
+  to     = "/index.html"
   status = 200

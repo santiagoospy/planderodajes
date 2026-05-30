@@ -1,0 +1,11 @@
+// Barrel export for all UI primitives
+export { Icon }       from './Icon'
+export { Button }     from './Button'
+export { TabBar }     from './TabBar'
+export { Modal }      from './Modal'
+export { PinModal }   from './PinModal'
+export { DeptAvatar } from './DeptAvatar'
+export { ProgressBar }   from './ProgressBar'
+export { ProgressRing }  from './ProgressRing'
+export { SectionLabel }  from './SectionLabel'
+export { LoadingScreen } from './LoadingScreen'

@@ -1,168 +1,77 @@
-import { getStore } from "@netlify/blobs";
+/**
+ * Main CRUD function — reads and writes to Netlify Blobs.
+ *
+ * GET  /data?store=<s>&key=<k>        → read one item
+ * GET  /data?store=<s>&list=true      → list all items in store
+ * POST /data { store, key, value }    → write item
+ * POST /data { store, key, delete:true } → delete item
+ */
 
-export default async (req, context) => {
+import { getStore } from '@netlify/blobs'
+import { json, error, parseBody, handleOptions, requireFields } from './_utils.js'
+
+const MAX_SIZE_BYTES = 1024 * 1024 // 1 MB
+
+export default async (req) => {
+  if (req.method === 'OPTIONS') return handleOptions()
+
   try {
-    const url = new URL(req.url);
+    // ── GET ───────────────────────────────────────────────────
+    if (req.method === 'GET') {
+      const url    = new URL(req.url)
+      const store  = url.searchParams.get('store')
+      const key    = url.searchParams.get('key')
+      const isList = url.searchParams.get('list') === 'true'
 
-    // ── POST ─────────────────────────────────────────────────────
-    if (req.method === "POST") {
-      let body;
-      try {
-        body = await req.json();
-      } catch (e) {
-        console.error("Invalid JSON body:", e.message);
-        return new Response(JSON.stringify({ error: "Invalid JSON in body" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" }
-        });
+      if (!store) return error('Missing store param')
+
+      const blob = getStore(store)
+
+      if (isList) {
+        const { blobs } = await blob.list()
+        const items = await Promise.all(
+          blobs.map(async ({ key: k }) => {
+            try { return await blob.get(k, { type: 'json' }) }
+            catch { return null }
+          })
+        )
+        return json({ items: items.filter(Boolean) })
       }
 
-      const storeName = body.store;
-      const itemKey   = body.key;
-      const data      = body.data;
-
-      if (!storeName) return new Response(JSON.stringify({ error: "Missing store" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-      if (!itemKey) return new Response(JSON.stringify({ error: "Missing key" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-
-      try {
-        const store = getStore(storeName);
-
-        if (body.delete) {
-          await store.delete(itemKey);
-          return Response.json({ ok: true });
-        }
-
-        if (!data) {
-          return new Response(JSON.stringify({ error: "Missing data in body" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" }
-          });
-        }
-
-        // Validar que sea serializable
-        try {
-          JSON.stringify(data);
-        } catch (e) {
-          console.error("Data not JSON serializable:", e.message);
-          return new Response(JSON.stringify({ error: "Data is not JSON serializable" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" }
-          });
-        }
-
-        // Validar tamaño (máximo 1MB por item)
-        const dataSize = JSON.stringify(data).length;
-        if (dataSize > 1024 * 1024) {
-          console.warn(`Data too large: ${dataSize} bytes for key ${itemKey}`);
-          return new Response(JSON.stringify({ error: `Data too large (${Math.round(dataSize / 1024)}KB), max 1MB` }), {
-            status: 413,
-            headers: { "Content-Type": "application/json" }
-          });
-        }
-
-        await store.setJSON(itemKey, data);
-        return Response.json({ ok: true, stored: itemKey });
-
-      } catch (storeErr) {
-        console.error(`Blob store error (${storeName}/${itemKey}):`, storeErr.message);
-        return new Response(JSON.stringify({ 
-          error: "Failed to store data",
-          details: storeErr.message 
-        }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" }
-        });
-      }
+      if (!key) return error('Missing key param')
+      const val = await blob.get(key, { type: 'json' })
+      if (val === null) return error('Not found', 404)
+      return json(val)
     }
 
-    // ── GET ──────────────────────────────────────────────────────
-    if (req.method === "GET") {
-      const storeName = url.searchParams.get("store");
-      const key       = url.searchParams.get("key");
-      const isList    = url.searchParams.get("list") === "true";
+    // ── POST ──────────────────────────────────────────────────
+    if (req.method === 'POST') {
+      const body = await parseBody(req)
+      requireFields(body, ['store', 'key'])
 
-      if (!storeName) return new Response(JSON.stringify({ error: "Missing store param" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
+      const { store: storeName, key, value, delete: shouldDelete } = body
+      const blob = getStore(storeName)
 
-      try {
-        const store = getStore(storeName);
-
-        if (isList) {
-          try {
-            const { blobs } = await store.list();
-            const items = await Promise.all(
-              blobs.map(async ({ key: k }) => {
-                try { 
-                  const val = await store.get(k, { type: "json" });
-                  return val !== null ? val : null;
-                } catch (e) { 
-                  console.warn(`Failed to read blob ${k}:`, e.message);
-                  return null;
-                }
-              })
-            );
-            return Response.json({ items: items.filter(Boolean) });
-          } catch (listErr) {
-            console.error("Failed to list blobs:", listErr.message);
-            return new Response(JSON.stringify({ error: "Failed to list data" }), {
-              status: 500,
-              headers: { "Content-Type": "application/json" }
-            });
-          }
-        }
-
-        if (!key) return new Response(JSON.stringify({ error: "Missing key param" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" }
-        });
-
-        try {
-          const val = await store.get(key, { type: "json" });
-          if (val === null) {
-            return new Response(JSON.stringify({ error: "Not found" }), { 
-              status: 404,
-              headers: { "Content-Type": "application/json" }
-            });
-          }
-          return Response.json(val);
-        } catch (getErr) {
-          console.error(`Failed to get blob ${key}:`, getErr.message);
-          return new Response(JSON.stringify({ error: "Not found" }), { 
-            status: 404,
-            headers: { "Content-Type": "application/json" }
-          });
-        }
-
-      } catch (storeErr) {
-        console.error(`Blob store error (${storeName}):`, storeErr.message);
-        return new Response(JSON.stringify({ error: "Store access failed" }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" }
-        });
+      if (shouldDelete) {
+        await blob.delete(key)
+        return json({ ok: true })
       }
+
+      if (value === undefined || value === null) return error('Missing value')
+
+      const serialized = JSON.stringify(value)
+      if (serialized.length > MAX_SIZE_BYTES) {
+        return error(`Data too large (${Math.round(serialized.length / 1024)}KB, max 1MB)`, 413)
+      }
+
+      await blob.setJSON(key, value)
+      return json({ ok: true, key })
     }
 
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { 
-      status: 405,
-      headers: { "Content-Type": "application/json" }
-    });
+    return error('Method not allowed', 405)
 
   } catch (err) {
-    console.error("Unhandled error in data function:", err);
-    return new Response(JSON.stringify({ 
-      error: "Internal server error",
-      message: err.message
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    console.error('[data]', err.message)
+    return error(err.message || 'Internal server error', 500)
   }
-};
+}

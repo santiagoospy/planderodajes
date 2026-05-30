@@ -1,0 +1,67 @@
+/**
+ * Department definitions — icons are Lucide icon names
+ */
+export const DEPT_DEFAULTS = {
+  produccion:  { label: 'Producción',  icon: 'ClipboardList', color: '#F97316' },
+  direccion:   { label: 'Dirección',   icon: 'Clapperboard',  color: 'var(--color-primary)' },
+  locaciones:  { label: 'Locaciones',  icon: 'MapPin',        color: '#2f7ed8' },
+  arte:        { label: 'Arte',        icon: 'Palette',       color: '#7c3fbf' },
+  fotografia:  { label: 'DF',          icon: 'Aperture',      color: '#d48c0e' },
+  camara:      { label: 'Cámara',      icon: 'Video',         color: '#2f7ed8' },
+  drone:       { label: 'Drone',       icon: 'Navigation',    color: 'var(--color-success)' },
+  sonido:      { label: 'Sonido',      icon: 'Mic',           color: 'var(--color-success)' },
+  fotofija:    { label: 'Foto fija',   icon: 'Camera',        color: '#d48c0e' },
+  tecnica:     { label: 'Técnica',     icon: 'Wrench',        color: '#2f7ed8' },
+  casting:     { label: 'Casting',     icon: 'Users',         color: '#7c3fbf' },
+  catering:    { label: 'Catering',    icon: 'Utensils',      color: '#d48c0e' },
+  continuidad: { label: 'Continuidad', icon: 'Film',          color: '#e91e63' },
+  cliente:     { label: 'Cliente',     icon: 'Briefcase',     color: '#555555' },
+}
+
+/** Full icon picker palette for AddDeptModal */
+export const DEPT_ICONS = [
+  'Clapperboard', 'Camera',    'Mic',          'Palette',    'MapPin',
+  'Users',        'Utensils',  'ClipboardList', 'Wrench',    'Navigation',
+  'Film',         'Scissors',  'Monitor',       'Lightbulb', 'Drama',
+  'FileText',     'Brush',     'Shirt',         'Music',     'Mic2',
+  'Car',          'Gauge',     'Video',         'Radio',     'Plug',
+  'Laptop',       'Smartphone','Sparkles',      'Star',      'Eye',
+  'Glasses',      'Target',    'Ruler',         'Printer',   'Gamepad2',
+  'Rocket',       'TestTube',  'Zap',           'Microscope','Settings2',
+  'Package',      'FolderOpen','Briefcase',     'Handshake', 'Trophy',
+]
+
+export const DEPT_COLORS = [
+  '#d94f2b', '#2f7ed8', '#0fa87e', '#7c3fbf',
+  '#d48c0e', '#e91e8c', '#00bcd4',
+]
+
+export const DAY_COLORS = ['#2f7ed8', '#d48c0e', '#0fa87e', '#d94f2b', '#7c3fbf']
+
+/** Sections available when creating a custom department */
+export const DEPT_SECTION_OPTIONS = [
+  { key: 'checklist',   label: 'Checklist',   desc: 'Lista de tareas y pendientes' },
+  { key: 'gastos',      label: 'Gastos',      desc: 'Control de presupuesto' },
+  { key: 'citaciones',  label: 'Citación',    desc: 'Horarios y call times' },
+  { key: 'mural',       label: 'Archivos',    desc: 'Fotos, videos y documentos' },
+  { key: 'integrantes', label: 'Crew',        desc: 'Integrantes del departamento' },
+  { key: 'info',        label: 'General',     desc: 'Info, notas y responsable' },
+]
+
+/** Tab layouts per department type */
+export const TABS_BY_DEPT = {
+  locaciones:  [['locaciones','LOCACIONES'],['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  direccion:   [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['adcomentarios','AD'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  produccion:  [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['crew_total','CREW TOTAL'],['pedidos','PEDIDOS'],['rental','RENTAL'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  tecnica:     [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  casting:     [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['elenco','ELENCO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  catering:    [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['menu','PARTICIPANTES'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  camara:      [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['tarjetas','TARJETAS'],['checklist_equipo','EQUIPO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  drone:       [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['tarjetas','TARJETAS SD'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+  continuidad: [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['continuidad_notas','NOTAS'],['continuidad_fotos','FOTOS'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+}
+
+export const DEFAULT_TABS = [
+  ['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],
+  ['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS'],
+]

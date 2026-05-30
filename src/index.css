@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+
+/* ─── Design tokens ─────────────────────────────────────── */
+:root {
+  --color-primary:   #d94f2b;
+  --color-secondary: #2f7ed8;
+  --color-success:   #0fa87e;
+  --color-error:     #ef4444;
+
+  /* Light theme (default) */
+  --bg-primary:          #f7f5f2;
+  --bg-secondary:        #ffffff;
+  --bg-card-dark:        #f0ede8;
+  --bg-card-dark-secondary: #e8e5e0;
+  --bg-header:           rgba(247,245,242,0.95);
+  --bg-error:            #fff0ee;
+
+  --text-primary:    #1a1714;
+  --text-secondary:  #4a4540;
+  --text-tertiary:   #7a7570;
+  --text-muted:      #a09a94;
+  --text-light:      #c0bab4;
+  --text-on-dark-bg: #f0ede8;
+
+  --border-light:    #e5e2dd;
+
+  /* Responsive layout */
+  --app-max-width: 480px;
+  --app-padding:   20px;
+  --grid-cols:     1;
+}
+
+/* Dark theme */
+.dark, [data-theme="dark"] {
+  --bg-primary:          #0f0e0c;
+  --bg-secondary:        #1a1816;
+  --bg-card-dark:        #252220;
+  --bg-card-dark-secondary: #2e2b28;
+  --bg-header:           rgba(15,14,12,0.95);
+  --bg-error:            #2d1a18;
+
+  --text-primary:    #f5f0eb;
+  --text-secondary:  #c5bfb8;
+  --text-tertiary:   #8a847e;
+  --text-muted:      #5a5550;
+  --text-light:      #3a3530;
+  --text-on-dark-bg: #f0ede8;
+
+  --border-light:    #2e2b28;
+}
+
+/* ─── Responsive breakpoints ────────────────────────────── */
+@media (max-width: 479px) {
+  :root { --app-max-width: 100%; --app-padding: 16px; --grid-cols: 1; }
+  body { font-size: 13px; }
+  input, textarea, select { font-size: 16px !important; }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  :root { --app-max-width: 100%; --app-padding: 20px; --grid-cols: 2; }
+  body { font-size: 14px; }
+}
+
+/* iPad — fill the full screen width */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --app-max-width: 100%; --app-padding: 28px; --grid-cols: 2; }
+  body { font-size: 14px; }
+  input, textarea, select { font-size: 16px !important; }
+}
+
+@media (min-width: 1024px) {
+  :root { --app-max-width: 1200px; --app-padding: 32px; --grid-cols: 3; }
+  body { font-size: 15px; }
+}
+
+@media (min-width: 1400px) {
+  :root { --app-max-width: 1400px; --app-padding: 40px; --grid-cols: 4; }
+}
+
+/* ─── Base styles ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  min-height: 100vh;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+#root { width: 100%; min-height: 100vh; }
+
+/* ─── Layout utilities ──────────────────────────────────── */
+.app-container {
+  width: 100%;
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  padding: 0 var(--app-padding);
+}
+
+.app-full {
+  width: 100%;
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+}
+
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols), 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+@media (min-width: 480px) { .responsive-grid { gap: 16px; } }
+@media (min-width: 1024px) { .responsive-grid { gap: 20px; } }
+
+/* ─── Tap / touch feedback ──────────────────────────────── */
+.tap {
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.tap:active { opacity: 0.7; transform: scale(0.97); }
+
+/* ─── Animations ────────────────────────────────────────── */
+@keyframes fadeOut {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes slideLeft {
+  from { transform: translateX(32px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.slide-up { animation: slideUp 0.22s ease both; }
+.slide-l  { animation: slideLeft 0.2s ease both; }
+
+/* ─── Scrollbars (webkit) ───────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+/* ─── Print ─────────────────────────────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; font-size: 11px; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
