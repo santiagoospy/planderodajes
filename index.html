@@ -1270,7 +1270,7 @@ function InfoTab({ color, deptKey, projectId }) {
       <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:6, fontFamily:'inherit' }}>NOTAS GENERALES DEL DEPARTAMENTO</div>
       <textarea value={info.notas||''} onChange={e=>set('notas', e.target.value)} placeholder="Notas, observaciones, recordatorios del departamento..." rows={10}
         style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid #e5e2dd', borderRadius:12, padding:'14px 16px', color:'var(--text-primary)', outline:'none', resize:'vertical', lineHeight:1.6, minHeight:220 }}/>
-      <div style={{ fontSize:10, color:'var(--color-success)', fontFamily:'inherit', textAlign:'right', marginTop:4 }}>💾 Se guarda automáticamente</div>
+      <div style={{ fontSize:10, color:'var(--color-success)', fontFamily:'inherit', textAlign:'right', marginTop:4 }}><Icon name="Save" size={10} color="var(--color-success)"/> Se guarda automáticamente</div>
     </div>
   );
 }
@@ -1319,11 +1319,11 @@ function DeptMuralTab({ color, deptKey, projectId }) {
     let url = linkUrl.trim();
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     const nombre = linkName.trim() || url;
-    let linkIcon = '🔗';
-    if (/youtube\.com|youtu\.be/i.test(url)) linkIcon = '▶️';
-    else if (/drive\.google\.com/i.test(url)) linkIcon = '📁';
-    else if (/dropbox\.com/i.test(url)) linkIcon = '📦';
-    else if (/vimeo\.com/i.test(url)) linkIcon = '🎬';
+    let linkIcon = 'Link';
+    if (/youtube\.com|youtu\.be/i.test(url)) linkIcon = 'Play';
+    else if (/drive\.google\.com/i.test(url)) linkIcon = 'FolderOpen';
+    else if (/dropbox\.com/i.test(url)) linkIcon = 'Package';
+    else if (/vimeo\.com/i.test(url)) linkIcon = 'Clapperboard';
     setAdjunto({ tipo: 'link', nombre, url, linkIcon });
     setLinkUrl(''); setLinkName(''); setShowLinkForm(false);
   };
@@ -1370,7 +1370,7 @@ function DeptMuralTab({ color, deptKey, projectId }) {
         {/* Form para agregar link */}
         {showLinkForm && (
           <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px', border:`1px solid ${color}33`, marginBottom:10 }}>
-            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>🔗 PEGAR LINK</div>
+            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}><Icon name="Link" size={11} color="#aaa"/> PEGAR LINK</div>
             <input value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} placeholder="URL (YouTube, Google Drive, Vimeo...)" autoFocus
               style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid #e5e2dd', borderRadius:8, padding:'9px 10px', color:'var(--text-primary)', outline:'none', marginBottom:6, boxSizing:'border-box' }}/>
             <input value={linkName} onChange={e=>setLinkName(e.target.value)} placeholder="Nombre del link (opcional)"
@@ -1405,7 +1405,7 @@ function DeptMuralTab({ color, deptKey, projectId }) {
             <div style={{ fontSize:11, fontWeight:700, color, fontFamily:'inherit' }}>{m.autor}</div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>{fmt(m.ts)}</div>
-              <button onClick={()=>del(m.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:14, cursor:'pointer', padding:0 }}>✕</button>
+              <button onClick={()=>del(m.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0 }}>✕</button>
             </div>
           </div>
           {m.adjunto && m.adjunto.tipo==='imagen' && (
@@ -1418,7 +1418,7 @@ function DeptMuralTab({ color, deptKey, projectId }) {
             <div style={{ position:'relative' }}>
               <video src={m.adjunto.data || m.adjunto.url} controls style={{ width:'100%', borderRadius:8, maxHeight:260 }}/>
               <a href={m.adjunto.data || m.adjunto.url} download={m.adjunto.nombre||'video.mp4'} style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:8, padding:'7px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12, marginTop:4, border:'1px solid var(--border-light)' }}>
-                <span style={{ fontSize:16 }}>⬇</span>
+                <Icon name="Download" size={16} color="currentColor"/>
                 <span style={{ flex:1 }}>Descargar video</span>
               </a>
             </div>
@@ -1624,10 +1624,10 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
   if (requirePin && !pinUnlocked && !isAdmin) {
     return (
       <div style={{ textAlign:'center', padding:'40px 20px' }}>
-        <div style={{ fontSize:36, marginBottom:12 }}>🔒</div>
+        <div style={{ }}><Icon name="Lock" size={36} color="var(--text-primary)"/></div>
         <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:8 }}>Gastos protegidos</div>
         <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginBottom:20 }}>Ingresá el PIN del proyecto para ver los gastos</div>
-        <button onClick={()=>setShowPinModal(true)} style={{ fontFamily:'inherit', fontSize:14, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:14, padding:'12px 28px', cursor:'pointer' }}>🔑 Ingresar PIN</button>
+        <button onClick={()=>setShowPinModal(true)} style={{ fontFamily:'inherit', fontSize:14, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:14, padding:'12px 28px', cursor:'pointer' }}><Icon name="KeyRound" size={14} color="#fff" style={{marginRight:6}}/> Ingresar PIN</button>
         {showPinModal && <PinModal title="Gastos" subtitle="Ingresá el PIN del proyecto" correctPin={project?.pin} onSuccess={()=>{ setPinUnlocked(true); setShowPinModal(false); }} onCancel={()=>setShowPinModal(false)}/>}
       </div>
     );
@@ -1637,7 +1637,7 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
     <div>
       {/* 1. PRESUPUESTO GENERAL DEL PROYECTO */}
       <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'14px 16px', border:'1px solid var(--border-light)', marginBottom:12 }}>
-        <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>💵 PRESUPUESTO GENERAL DEL PROYECTO</div>
+        <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}><Icon name="DollarSign" size={11} color="#aaa"/> PRESUPUESTO GENERAL DEL PROYECTO</div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <span style={{ fontSize:12, color:'var(--text-tertiary)', fontFamily:'inherit' }}>Gs.</span>
           <input type="number" value={presupGeneral??''} onChange={e=>savePresupGeneral(e.target.value?parseFloat(e.target.value):null)} placeholder="0"
@@ -1662,7 +1662,7 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
           {presupGeneral != null && dineroEntregado != null && (
             <>
               <div style={{ background:'var(--bg-primary)', borderRadius:10, padding:'12px 14px', marginTop:8, marginBottom:8, border:'1px solid #0fa87e22' }}>
-                <div style={{ fontSize:10, color:'#0fa87e', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>⏳ FALTA POR COBRAR</div>
+                <div style={{ fontSize:10, color:'#0fa87e', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}><Icon name="Hourglass" size={10} color="#0fa87e"/> FALTA POR COBRAR</div>
                 <div style={{ fontSize:16, fontWeight:700, color:'#0fa87e', fontFamily:'inherit' }}>
                   {gs(Math.max(0, presupGeneral - dineroEntregado))}
                 </div>
@@ -1681,7 +1681,7 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
                     border: `1px solid ${montoEnCaja >= 0 ? '#0fa87e33' : '#d94f2b33'}`
                   }}>
                     <div style={{ fontSize:10, color: montoEnCaja >= 0 ? '#0fa87e' : '#d94f2b', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>
-                      {montoEnCaja >= 0 ? '💰 MONTO EN CAJA' : '⚠️ DÉFICIT EN CAJA'}
+                      {montoEnCaja >= 0 ? <><Icon name='DollarSign' size={11} color='currentColor'/> MONTO EN CAJA</> : <><Icon name='AlertTriangle' size={11} color='currentColor'/> DÉFICIT EN CAJA</>}
                     </div>
                     <div style={{ fontSize:16, fontWeight:700, color: montoEnCaja >= 0 ? '#0fa87e' : '#d94f2b', fontFamily:'inherit' }}>
                       {montoEnCaja >= 0 ? '+' : ''}{gs(montoEnCaja)}
@@ -1701,7 +1701,7 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
                     border: `1px solid ${montoNeto >= 0 ? '#0fa87e33' : '#d94f2b33'}`
                   }}>
                     <div style={{ fontSize:10, color: montoNeto >= 0 ? '#0fa87e' : '#d94f2b', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>
-                      {montoNeto >= 0 ? '✓ MONTO NETO PROYECTADO' : '⚠️ PÉRDIDA PROYECTADA'}
+                      {montoNeto >= 0 ? <><Icon name='TrendingUp' size={11} color='currentColor'/> MONTO NETO</> : <><Icon name='TrendingDown' size={11} color='currentColor'/> PÉRDIDA PROYECTADA</>}
                     </div>
                     <div style={{ fontSize:16, fontWeight:700, color: montoNeto >= 0 ? '#0fa87e' : '#d94f2b', fontFamily:'inherit' }}>
                       {montoNeto >= 0 ? '+' : ''}{gs(montoNeto)}
@@ -1727,7 +1727,7 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
             <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:8 }}>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', fontWeight:700 }}>{e.desc}</div>
-                {e.fecha && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}>📅 {e.fecha}</div>}
+                {e.fecha && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}><Icon name="Calendar" size={10} color="var(--text-muted)" style={{flexShrink:0}}/> {e.fecha}</div>}
               </div>
               <div style={{ display:'flex', gap:5, alignItems:'center', flexShrink:0 }}>
                 <div onClick={()=>toggleEstado(e.id)} style={{ fontSize:10, fontWeight:700, padding:'3px 7px', borderRadius:10, cursor:'pointer', fontFamily:'inherit',
@@ -1896,7 +1896,7 @@ function GastosTabSimple({ color, deptKey, projectId, project }) {
               <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', fontWeight:700 }}>{e.desc}</div>
               <div style={{ display:'flex', gap:8, marginTop:2, alignItems:'center' }}>
                 <span style={{ fontSize:13, fontWeight:700, color:color, fontFamily:'inherit' }}>{gs(parseFloat(e.monto)||0)}</span>
-                {e.fecha && <span style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit' }}>📅 {e.fecha}</span>}
+                {e.fecha && <span style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit' }}><Icon name="Calendar" size={10} color="var(--text-muted)" style={{flexShrink:0}}/> {e.fecha}</span>}
               </div>
             </div>
             <div style={{ display:'flex', gap:5, alignItems:'center', flexShrink:0 }}>
@@ -1946,7 +1946,7 @@ function GastosTabSimple({ color, deptKey, projectId, project }) {
       {/* 4. GASTOS DE OTROS DEPARTAMENTOS - Al final */}
       {deptKey === 'produccion' && Object.keys(gastosDepts).length > 0 && (
         <div style={{ marginTop:24 }}>
-          <SectionLabel>📊 GASTOS DE OTROS DEPARTAMENTOS</SectionLabel>
+          <SectionLabel>GASTOS DE OTROS DEPARTAMENTOS</SectionLabel>
           <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'16px', border:'1px solid var(--border-light)', marginBottom:12 }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
               {Object.entries(gastosDepts).map(([dept, gastos]) => {
@@ -1977,7 +1977,7 @@ function GastosTabSimple({ color, deptKey, projectId, project }) {
       {/* 5. RESUMEN FINAL - GANANCIA TOTAL */}
       {deptKey === 'produccion' && presupGeneral != null && (
         <div style={{ marginTop:24 }}>
-          <SectionLabel>💰 RESUMEN FINANCIERO TOTAL</SectionLabel>
+          <SectionLabel>RESUMEN FINANCIERO TOTAL</SectionLabel>
           <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'16px', border:'1px solid var(--border-light)' }}>
             {/* Fila 1: Presupuesto vs Dinero Entregado */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
@@ -2010,7 +2010,7 @@ function GastosTabSimple({ color, deptKey, projectId, project }) {
             {/* Fila 3: Falta cobrar */}
             {dineroEntregado != null && (
               <div style={{ background:'#fff8ec', borderRadius:10, padding:'12px 14px', border:'1px solid #d48c0e22', marginBottom:12 }}>
-                <div style={{ fontSize:10, color:'#d48c0e', fontFamily:'inherit', marginBottom:4, letterSpacing:'0.05em', fontWeight:600 }}>⏳ FALTA POR COBRAR</div>
+                <div style={{ fontSize:10, color:'#d48c0e', fontFamily:'inherit', marginBottom:4, letterSpacing:'0.05em', fontWeight:600 }}><Icon name="Hourglass" size={10} color="#0fa87e"/> FALTA POR COBRAR</div>
                 <div style={{ fontSize:15, fontWeight:700, color:'#d48c0e', fontFamily:'inherit' }}>{gs(Math.max(0, presupGeneral - dineroEntregado))}</div>
               </div>
             )}
@@ -2032,7 +2032,7 @@ function GastosTabSimple({ color, deptKey, projectId, project }) {
                   textAlign:'center'
                 }}>
                   <div style={{ fontSize:10, color: ganancia >= 0 ? '#0fa87e' : '#d94f2b', fontFamily:'inherit', marginBottom:6, letterSpacing:'0.05em', fontWeight:700, textTransform:'uppercase' }}>
-                    {ganancia >= 0 ? '✓ GANANCIA TOTAL' : '⚠️ PÉRDIDA TOTAL'}
+                    {ganancia >= 0 ? <><Icon name='TrendingUp' size={11} color='currentColor'/> GANANCIA TOTAL</> : <><Icon name='TrendingDown' size={11} color='currentColor'/> PÉRDIDA TOTAL</>}
                   </div>
                   <div style={{ fontSize:20, fontWeight:700, color: ganancia >= 0 ? '#0fa87e' : '#d94f2b', fontFamily:'inherit', marginBottom:4 }}>
                     {ganancia >= 0 ? '+' : ''}{gs(ganancia)}
@@ -2188,8 +2188,8 @@ function CitacionesTab({ color, deptKey, projectId, project }) {
                             <div style={{ flex:1 }}>
                               <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginBottom:1 }}>{c.hora}</div>
                               <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{c.tipo}</div>
-                              {c.lugar ? <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:2 }}>📍 {c.lugar}</div> : null}
-                              {c.notas ? <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}>📝 {c.notas}</div> : null}
+                              {c.lugar ? <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:2 }}><Icon name="MapPin" size={11} color="currentColor" style={{flexShrink:0}}/> {c.lugar}</div> : null}
+                              {c.notas ? <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}><Icon name="FileText" size={11} color="currentColor" style={{flexShrink:0}}/> {c.notas}</div> : null}
                             </div>
                             <div style={{ display:'flex', gap:4, flexShrink:0 }}>
                               <button onClick={()=>openEdit(c)} style={{ background:'var(--bg-card-dark-secondary)', border:'none', borderRadius:7, color:'var(--text-tertiary)', fontSize:12, cursor:'pointer', padding:'3px 7px' }}>✎</button>
@@ -2227,16 +2227,16 @@ function CitacionesTab({ color, deptKey, projectId, project }) {
               style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color: form.lugar ? 'var(--text-primary)' : 'var(--text-muted)', outline:'none', marginBottom:8, cursor:'pointer' }}>
               <option value="">— Lugar / punto de encuentro</option>
               {lugaresDeLocaciones.length > 0 && (
-                <optgroup label="📍 Locaciones del proyecto">
+                <optgroup label="Locaciones del proyecto">
                   {lugaresDeLocaciones.map(l => <option key={'loc_'+l} value={l}>{l}</option>)}
                 </optgroup>
               )}
               {lugaresDeHistorial.filter(l => !lugaresDeLocaciones.includes(l)).length > 0 && (
-                <optgroup label="🕐 Lugares anteriores">
+                <optgroup label="Lugares anteriores">
                   {lugaresDeHistorial.filter(l => !lugaresDeLocaciones.includes(l)).map(l => <option key={'his_'+l} value={l}>{l}</option>)}
                 </optgroup>
               )}
-              <option value="__nuevo__">✏️ Escribir nuevo lugar...</option>
+              <option value="__nuevo__">Escribir nuevo lugar...</option>
             </select>
             {form.lugar === '__nuevo__' && (
               <input value={lugarCustom} onChange={e=>setLugarCustom(e.target.value)} placeholder="Escribí el lugar..."
@@ -2363,8 +2363,8 @@ function LocacionesTab({ color, deptKey, projectId, project }) {
                       ))}
                     </div>
                   )}
-                  {l.url && <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize:11, color, fontFamily:'inherit', display:'block', marginTop:4 }}>🔗 Ver en Maps</a>}
-                  {l.notas && <div style={{ fontSize:13.75, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:4 }}>📝 {l.notas}</div>}
+                  {l.url && <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize:11, color, fontFamily:'inherit', display:'block', marginTop:4 }}><Icon name="Link" size={10} color="currentColor" style={{marginRight:3}}/> Ver en Maps</a>}
+                  {l.notas && <div style={{ fontSize:13.75, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:4 }}><Icon name="FileText" size={11} color="currentColor" style={{flexShrink:0}}/> {l.notas}</div>}
                   {l.comentarioReview && <div style={{ fontSize:11, color:'#666', fontFamily:'inherit', marginTop:6, background:'var(--bg-card-dark)', borderRadius:8, padding:'7px 10px', border:'1px solid var(--border-light)', lineHeight:1.4, fontStyle:'italic' }}>“{l.comentarioReview}”</div>}
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end', flexShrink:0 }}>
@@ -2383,7 +2383,7 @@ function LocacionesTab({ color, deptKey, projectId, project }) {
               {/* Grid de fotos — tap para abrir visor con anotación */}
               {fotosCard.length > 0 && (
                 <div style={{ marginTop:12 }}>
-                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>📷 FOTOS ({fotosCard.length}) · TOCAR PARA DIBUJAR</div>
+                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}><Icon name="Camera" size={10} color="#aaa"/> FOTOS ({fotosCard.length}) · TOCAR PARA DIBUJAR</div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
                     {fotosCard.map(f => (
                       <div key={f.id} onClick={()=>setViewerPhoto({ locId:l.id, photo:f })} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden', cursor:'pointer' }}>
@@ -2397,13 +2397,13 @@ function LocacionesTab({ color, deptKey, projectId, project }) {
               {/* Archivos adjuntos */}
               {archivosCard.length > 0 && (
                 <div style={{ marginTop:12 }}>
-                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>📎 ARCHIVOS ({archivosCard.length})</div>
+                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}><Icon name="Paperclip" size={10} color="#aaa"/> ARCHIVOS ({archivosCard.length})</div>
                   <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
                     {archivosCard.map(a => (
                       <a key={a.id} href={a.data} download={a.nombre} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card-dark)', borderRadius:8, padding:'7px 10px', border:'1px solid var(--border-light)', textDecoration:'none' }}>
                         {a.tipo === 'imagen'
                           ? <img src={a.data || a.url} alt={a.nombre} style={{ width:28, height:28, borderRadius:5, objectFit:'cover', flexShrink:0 }}/>
-                          : <span style={{ fontSize:18 }}>📄</span>
+                          : <Icon name="FileText" size={18} color="var(--text-secondary)"/>
                         }
                         <span style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.nombre}</span>
                       </a>
@@ -2559,8 +2559,8 @@ function ChecklistTab({ color, deptKey, projectId, project }) {
       {todasEscenas.length > 0 && (
         <select value={filterEscena} onChange={e=>setFilterEscena(e.target.value)}
           style={{ width:'100%', fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'8px 12px', color:'var(--text-secondary)', outline:'none', marginBottom:14 }}>
-          <option value="todas">📋 Todas las escenas</option>
-          <option value="general">🗂 General</option>
+          <option value="todas">Todas las escenas</option>
+          <option value="general">General</option>
           {todasEscenas.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
       )}
@@ -2578,10 +2578,10 @@ function ChecklistTab({ color, deptKey, projectId, project }) {
               <div style={{ fontSize:13, color:item.done?'var(--text-muted)':'var(--text-primary)', fontFamily:'inherit', textDecoration:item.done?'line-through':'none' }}>{item.texto}</div>
               {escenaLabels.length > 0 && (
                 <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:4 }}>
-                  {escenaLabels.map((lb,i)=><span key={i} style={{ fontSize:10, color, background:color+'15', borderRadius:6, padding:'1px 6px', fontFamily:'inherit' }}>🎬 {lb}</span>)}
+                  {escenaLabels.map((lb,i)=><span key={i} style={{ fontSize:10, color, background:color+'15', borderRadius:6, padding:'1px 6px', fontFamily:'inherit' }}><Icon name="Clapperboard" size={10} color={color} style={{flexShrink:0}}/> {lb}</span>)}
                 </div>
               )}
-              {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:3 }}>🕐 {fmtTs(item.ts)}</div>}
+              {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:3 }}><Icon name="Clock" size={9} color="var(--text-muted)"/> {fmtTs(item.ts)}</div>}
             </div>
             <button onClick={()=>del(item.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:16, cursor:'pointer', padding:0, flexShrink:0 }}>✕</button>
           </div>
@@ -2706,7 +2706,7 @@ function CastingTab({ color, projectId, project }) {
   return (
     <div>
       <div style={{ display:'flex', gap:8, marginBottom:20 }}>
-        {[['principales','🎭 Principales'],['extras','👥 Extras']].map(([k,l])=>(
+        {[['principales','Principales'],['extras','Extras']].map(([k,l])=>(
           <button key={k} onClick={()=>setSubTab(k)} style={{ flex:1, fontFamily:'inherit', fontSize:13, fontWeight:700, padding:'12px 8px', borderRadius:14, cursor:'pointer', border:'none', background:subTab===k?color:'#f0ede8', color:subTab===k?'#fff':'#888' }}>{l}</button>
         ))}
       </div>
@@ -2770,16 +2770,16 @@ function CastingPrincipales({ color, projectId, project }) {
             <div style={{ width:'100%', aspectRatio:'3/4', background:'var(--bg-card-dark-secondary)', overflow:'hidden' }}>
               {a.foto
                 ? <img src={a.foto} alt={a.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:36 }}>🎭</div>
+                : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', }}><Icon name="Theater" size={36} color="rgba(255,255,255,0.4)"/></div>
               }
             </div>
             <div style={{ padding:'10px 10px 12px' }}>
               <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:2 }}>{a.nombre}</div>
               {a.personaje && <div style={{ fontSize:11, color, fontFamily:'inherit', marginBottom:4, fontStyle:'italic' }}>"{a.personaje}"</div>}
-              {a.altura    && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>📏 {a.altura}</div>}
-              {a.talla     && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>👕 {a.talla}</div>}
-              {a.telefono  && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>📱 {a.telefono}</div>}
-              {a.citacion  && <div style={{ fontSize:11, color:color, fontFamily:'inherit', marginTop:4 }}>🕐 {a.citacion}</div>}
+              {a.altura    && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}><Icon name="Ruler" size={11} color="currentColor" style={{flexShrink:0}}/> {a.altura}</div>}
+              {a.talla     && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}><Icon name="Shirt" size={11} color="currentColor" style={{flexShrink:0}}/> {a.talla}</div>}
+              {a.telefono  && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}><Icon name="Smartphone" size={11} color="currentColor" style={{flexShrink:0}}/> {a.telefono}</div>}
+              {a.citacion  && <div style={{ fontSize:11, color:color, fontFamily:'inherit', marginTop:4 }}><Icon name="Clock" size={11} color={color} style={{flexShrink:0}}/> {a.citacion}</div>}
               {(a.escenas||[]).length > 0 && (
                 <div style={{ marginTop:6 }}>
                   <div style={{ fontSize:9, color:'var(--text-muted)', fontFamily:'inherit', marginBottom:3 }}>ESCENAS</div>
@@ -2812,7 +2812,7 @@ function CastingPrincipales({ color, projectId, project }) {
                     <button onClick={()=>set('foto','')} style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:26, height:26, color:'#fff', fontSize:13, cursor:'pointer' }}>✕</button>
                   </div>
                 : <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'16px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'#aaa' }}>
-                    📷 Foto del actor
+                    <><Icon name="Camera" size={13} color="var(--text-tertiary)" style={{marginRight:5}}/> Foto del actor</>
                     <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFoto} style={{ display:'none' }}/>
                   </label>
               }
@@ -2822,7 +2822,7 @@ function CastingPrincipales({ color, projectId, project }) {
                 style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
             ))}
             <div style={{ marginBottom:10 }}>
-              <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>🕐 CITACIÓN (CALL TIME INDIVIDUAL)</div>
+              <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}><Icon name="Clock" size={10} color="#aaa"/> CITACIÓN (CALL TIME INDIVIDUAL)</div>
               <input value={form.citacion} onChange={e=>set('citacion',e.target.value)} placeholder="Ej: 08:30hs - Locación principal"
                 style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
             </div>
@@ -2919,7 +2919,7 @@ function CastingExtras({ color, projectId, project }) {
         <textarea value={infoTexto} onChange={e=>saveInfo(e.target.value)}
           placeholder='Ej: "Nadie lleve ropa roja. Calzado cómodo. Call time 07:00hs."'
           rows={3} style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #f5e8c0', borderRadius:12, padding:'12px 14px', color:'var(--text-primary)', outline:'none', resize:'none', lineHeight:1.6 }}/>
-        <div style={{ fontSize:10, color:'var(--color-success)', fontFamily:'inherit', textAlign:'right', marginTop:4 }}>💾 Se guarda automáticamente</div>
+        <div style={{ fontSize:10, color:'var(--color-success)', fontFamily:'inherit', textAlign:'right', marginTop:4 }}><Icon name="Save" size={10} color="var(--color-success)"/> Se guarda automáticamente</div>
       </div>
 
       <SectionLabel>EXTRAS REGISTRADOS — {extras.length} personas</SectionLabel>
@@ -2931,13 +2931,13 @@ function CastingExtras({ color, projectId, project }) {
               <div style={{ width:'100%', aspectRatio:'1', background:'var(--bg-card-dark-secondary)', overflow:'hidden' }}>
                 {e.foto
                   ? <img src={e.foto} alt={e.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>👤</div>
+                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', }}><Icon name="User" size={28} color="rgba(255,255,255,0.4)"/></div>
                 }
               </div>
               <div style={{ padding:'8px' }}>
                 <div style={{ fontSize:11, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{e.nombre}</div>
                 {e.notas && <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>{e.notas}</div>}
-                {e.citacion && <div style={{ fontSize:10, color, fontFamily:'inherit', marginTop:2 }}>🕐 {e.citacion}</div>}
+                {e.citacion && <div style={{ fontSize:10, color, fontFamily:'inherit', marginTop:2 }}><Icon name="Clock" size={11} color={color} style={{flexShrink:0}}/> {e.citacion}</div>}
                 {escenaLabels.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:4 }}>
                     {escenaLabels.map((lb,i)=>(
@@ -2967,7 +2967,7 @@ function CastingExtras({ color, projectId, project }) {
                     <button onClick={()=>set('foto','')} style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:24, height:24, color:'#fff', fontSize:12, cursor:'pointer' }}>✕</button>
                   </div>
                 : <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'14px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'#aaa' }}>
-                    📷 Foto (opcional)
+                    <><Icon name="Camera" size={13} color="var(--text-tertiary)" style={{marginRight:5}}/> Foto (opcional)</>
                     <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFoto} style={{ display:'none' }}/>
                   </label>
               }
@@ -2977,7 +2977,7 @@ function CastingExtras({ color, projectId, project }) {
             <input value={form.notas} onChange={e=>set('notas',e.target.value)} placeholder="Notas adicionales"
               style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
             <div style={{ marginBottom:10 }}>
-              <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>🕐 CITACIÓN (CALL TIME INDIVIDUAL)</div>
+              <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}><Icon name="Clock" size={10} color="#aaa"/> CITACIÓN (CALL TIME INDIVIDUAL)</div>
               <input value={form.citacion} onChange={e=>set('citacion',e.target.value)} placeholder="Ej: 09:00hs - Entrada del set"
                 style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
             </div>
@@ -3156,7 +3156,7 @@ function CateringTab({ color, projectId, project }) {
           ))}
           {asignados < todos.length && (
             <div style={{ marginTop:8, fontSize:11, color:'#aaa', fontFamily:'inherit', fontStyle:'italic' }}>
-              ⚠ {todos.length - asignados} {todos.length - asignados === 1 ? 'persona no cargó' : 'personas no cargaron'} su condición — pueden hacerlo desde su depto o acá.
+              <Icon name="AlertTriangle" size={12} color="#d48c0e" style={{marginRight:5}}/> {todos.length - asignados} {todos.length - asignados === 1 ? 'persona no cargó' : 'personas no cargaron'} su condición — pueden hacerlo desde su depto o acá.
             </div>
           )}
         </div>
@@ -3210,7 +3210,7 @@ function CateringTab({ color, projectId, project }) {
                       {cond ? '✎' : 'Elegir'}
                     </button>
                     {isExtra && (
-                      <button onClick={()=>delExtra(p.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:14, cursor:'pointer', padding:0, marginLeft:4 }}>✕</button>
+                      <button onClick={()=>delExtra(p.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0, marginLeft:4 }}>✕</button>
                     )}
                   </div>
                   {isOpen && (
@@ -3295,10 +3295,10 @@ function ADComentariosTab({ color, deptKey, projectId, project, isAdmin }) {
   if (!pinOk) {
     return (
       <div style={{ textAlign:'center', padding:'48px 24px' }}>
-        <div style={{ fontSize:36, marginBottom:12 }}>🎬</div>
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Icon name="Clapperboard" size={36} color="var(--text-primary)"/></div>
         <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:8 }}>Notas de Dirección</div>
         <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginBottom:20 }}>Estas notas son internas del equipo de dirección. Ingresá el PIN del proyecto para verlas.</div>
-        <button onClick={()=>setShowPin(true)} style={{ fontFamily:'inherit', fontSize:14, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:14, padding:'12px 28px', cursor:'pointer' }}>🔑 Ingresar PIN</button>
+        <button onClick={()=>setShowPin(true)} style={{ fontFamily:'inherit', fontSize:14, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:14, padding:'12px 28px', cursor:'pointer' }}><Icon name="KeyRound" size={14} color="#fff" style={{marginRight:6}}/> Ingresar PIN</button>
         {showPin && <PinModal title="Notas de Dirección" subtitle="PIN del proyecto" correctPin={project?.pin} onSuccess={()=>{ setPinOk(true); setShowPin(false); }} onCancel={()=>setShowPin(false)}/>}
       </div>
     );
@@ -3320,7 +3320,7 @@ function ADComentariosTab({ color, deptKey, projectId, project, isAdmin }) {
           <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', marginBottom:6 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>{fmt(c.ts)}</div>
-              <button onClick={()=>del(c.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:14, cursor:'pointer', padding:0 }}>✕</button>
+              <button onClick={()=>del(c.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0 }}>✕</button>
             </div>
           </div>
           <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.5 }}>{c.texto}</div>
@@ -3373,12 +3373,12 @@ function RentalTab({ color, projectId }) {
       {items.map(i => (
         <div key={i.id} style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:'1px solid var(--border-light)' }}>
           <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
-            <div style={{ width:36, height:36, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>📦</div>
+            <div style={{ width:36, height:36, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Package" size={18} color="rgba(255,255,255,0.9)"/></div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{i.desc}</div>
-              {i.proveedor && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:2 }}>🏢 {i.proveedor}</div>}
-              {(i.fechaDesde || i.fechaHasta) && <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>📅 {i.fechaDesde||'—'} → {i.fechaHasta||'—'}</div>}
-              {i.notas && <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', fontStyle:'italic', marginTop:3 }}>📝 {i.notas}</div>}
+              {i.proveedor && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:2 }}><Icon name="Building2" size={11} color="currentColor" style={{flexShrink:0}}/> {i.proveedor}</div>}
+              {(i.fechaDesde || i.fechaHasta) && <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', marginTop:2 }}><Icon name="Calendar" size={11} color="#aaa" style={{flexShrink:0}}/> {i.fechaDesde||'—'} → {i.fechaHasta||'—'}</div>}
+              {i.notas && <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', fontStyle:'italic', marginTop:3 }}><Icon name="FileText" size={11} color="#aaa" style={{flexShrink:0}}/> {i.notas}</div>}
               <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:6 }}>
                 <button onClick={()=>toggleEstado(i.id)} style={{ fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:10, border:'none', cursor:'pointer', color:estadoColor(i.estado), background:estadoBg(i.estado), fontFamily:'inherit' }}>
                   {i.estado==='confirmado'?'✓ CONFIRMADO':(i.estado==='devuelto'?'↩ DEVUELTO':'⌛ PENDIENTE')}
@@ -3480,7 +3480,7 @@ function TarjetasTab({ color, deptKey, projectId, project }) {
           <div key={t.id} style={{ background:'var(--bg-secondary)', borderRadius:14, marginBottom:12, border:`1px solid ${color}25`, overflow:'hidden' }}>
             {/* Header: ícono + nombre + 3 checks + eliminar */}
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px 12px', borderBottom:'1px solid #f5f3f0' }}>
-              <div style={{ width:40, height:40, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>💾</div>
+              <div style={{ width:40, height:40, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Save" size={20} color="rgba(255,255,255,0.9)"/></div>
               <div style={{ flex:1, minWidth:0 }}>
                 {editingName===t.id
                   ? <input autoFocus value={t.nombre} onChange={e=>updateTarjeta(t.id,{nombre:e.target.value})} onBlur={()=>setEditingName(null)} onKeyDown={e=>{ if(e.key==='Enter') setEditingName(null); }}
@@ -3488,7 +3488,7 @@ function TarjetasTab({ color, deptKey, projectId, project }) {
                   : <div onClick={()=>setEditingName(t.id)} style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', cursor:'text' }}>{t.nombre} <span style={{ color:'#ccc', fontSize:10, marginLeft:4 }}>✎</span></div>
                 }
                 <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>
-                  {escenasCount > 0 ? `🎬 ${escenasCount} escena${escenasCount!==1?'s':''} asignada${escenasCount!==1?'s':''}` : 'Sin escenas asignadas'}
+                  {escenasCount > 0 ? `${escenasCount} escena${escenasCount!==1?'s':''} asignada${escenasCount!==1?'s':''}` : 'Sin escenas asignadas'}
                 </div>
               </div>
               <button onClick={()=>delTarjeta(t.id)} style={{ background:'var(--bg-error)', border:'none', borderRadius:8, color:'var(--color-primary)', fontSize:12, cursor:'pointer', padding:'4px 8px' }}>✕</button>
@@ -3592,9 +3592,9 @@ function ChecklistEquipoTab({ color, deptKey, projectId }) {
           </div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:13, color:item.done?'var(--text-muted)':'var(--text-primary)', fontFamily:'inherit', textDecoration:item.done?'line-through':'none' }}>{item.texto}</div>
-            {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}>🕐 {fmtTs(item.ts)}</div>}
+            {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}><Icon name="Clock" size={9} color="var(--text-muted)"/> {fmtTs(item.ts)}</div>}
           </div>
-          <button onClick={()=>del(item.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:14, cursor:'pointer', padding:0 }}>✕</button>
+          <button onClick={()=>del(item.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0 }}>✕</button>
         </div>
       ))}
 
@@ -3615,7 +3615,7 @@ function ChecklistEquipoTab({ color, deptKey, projectId }) {
       <div style={{ marginTop:32, paddingTop:20, borderTop:'1px solid var(--border-light)' }}>
         <button onClick={() => { onUpdateProject(project); }} className="tap"
           style={{ width:'100%', fontFamily:'inherit', fontSize:14, fontWeight:700, background:'var(--color-primary)', color:'#fff', border:'none', borderRadius:12, padding:'14px 16px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, transition:'all 0.3s' }}>
-          <span style={{ fontSize:18 }}>💾</span> Guardar cambios
+          <Icon name="Save" size={18} color={color}/> Guardar cambios
         </button>
         <p style={{ fontSize:11, color:'var(--text-muted)', textAlign:'center', marginTop:8, fontFamily:'inherit' }}>Los cambios se guardan automáticamente</p>
       </div>
@@ -3631,21 +3631,21 @@ function ChecklistEquipoTab({ color, deptKey, projectId }) {
 function DeptDetailView({ deptKey, deptMeta, isAdmin, onBack, projectId, project, onSelectSceneFromDept, onUpdateProject }) {
   const color = deptMeta.color;
   const tabsByDept = {
-    locaciones: [['locaciones','📍 LOCACIONES'],['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    direccion:  [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['adcomentarios','💬 AD'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    produccion: [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['crew_total','📋 CREW TOTAL'],['pedidos','PEDIDOS'],['rental','📦 RENTAL'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    tecnica:    [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    casting:    [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['elenco','ELENCO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    catering:   [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['menu','PARTICIPANTES'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    camara:     [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['tarjetas','💾 TARJETAS'],['checklist_equipo','🎒 EQUIPO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    drone:      [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['tarjetas','💾 TARJETAS SD'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
-    continuidad: [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['continuidad_notas','📝 NOTAS'],['continuidad_fotos','📸 FOTOS'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']],
+    locaciones: [['locaciones','LOCACIONES'],['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    direccion:  [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['adcomentarios','AD'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    produccion: [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['crew_total','CREW TOTAL'],['pedidos','PEDIDOS'],['rental','RENTAL'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    tecnica:    [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    casting:    [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['elenco','ELENCO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    catering:   [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['menu','PARTICIPANTES'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    camara:     [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['tarjetas','TARJETAS'],['checklist_equipo','EQUIPO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    drone:      [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['tarjetas','TARJETAS SD'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
+    continuidad: [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['continuidad_notas','NOTAS'],['continuidad_fotos','FOTOS'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
   };
 
   // Detectar Cámara también por label (con o sin tilde, cualquier mayúscula)
   const labelClean = (deptMeta.label||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   const isCamara = deptKey === 'camara' || labelClean === 'camara';
-  const defaultTabs = tabsByDept[deptKey] || (isCamara ? tabsByDept.camara : null) || [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','👥 CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','📎 ARCHIVOS']];
+  const defaultTabs = tabsByDept[deptKey] || (isCamara ? tabsByDept.camara : null) || [['info','GENERAL'],['checklist','✓ CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']];
   
   // State para gestionar secciones del depto (admin puede agregar/quitar)
   const [showManageSections, setShowManageSections] = useState(false);
@@ -3761,10 +3761,10 @@ function DeptDetailView({ deptKey, deptMeta, isAdmin, onBack, projectId, project
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:11, color:scene.dayColor, fontFamily:'inherit', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>{scene.dayLabel}</div>
                       <div style={{ fontSize:14, fontWeight:700, color:scene.done?'#aaa':'#1a1714', fontFamily:'inherit', lineHeight:1.3, textDecoration:scene.done?'line-through':'none' }}>{scene.title}</div>
-                      {scene.notes ? <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', marginTop:3 }}>📝 {scene.notes}</div> : null}
+                      {scene.notes ? <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', marginTop:3 }}><Icon name="FileText" size={11} color="#aaa" style={{flexShrink:0}}/> {scene.notes}</div> : null}
                     </div>
                     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, flexShrink:0 }}>
-                      <div style={{ width:24, height:24, borderRadius:'50%', background:scene.done?'#0fa87e':'#f0ede8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:scene.done?'#fff':'#ccc' }}>{scene.done?'✓':'○'}</div>
+                      <div style={{ width:24, height:24, borderRadius:'50%', background:scene.done?'#0fa87e':'#f0ede8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:scene.done?'#fff':'#ccc' }}>{scene.done ? <Icon name="CheckCircle" size={12} color="#0fa87e"/> : <Icon name="Circle" size={12} color="#ccc"/>}</div>
                       <div style={{ fontSize:18, color:'#ccc' }}>›</div>
                     </div>
                   </button>
@@ -3855,7 +3855,7 @@ function IntegrantesTab({ color, deptKey, projectId }) {
       <SectionLabel>INTEGRANTES DEL DEPARTAMENTO ({personas.length})</SectionLabel>
       {personas.map(p=>(
         <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:'1px solid var(--border-light)' }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>👤</div>
+          <div style={{ width:38, height:38, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="User" size={18} color="rgba(255,255,255,0.9)"/></div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>
               {p.nombre}
@@ -3891,7 +3891,7 @@ function IntegrantesTab({ color, deptKey, projectId }) {
               style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:10 }}/>
 
             {/* Condición alimentaria */}
-            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>🍴 CONDICIÓN ALIMENTARIA (para catering)</div>
+            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}><Icon name="Utensils" size={10} color="#aaa"/> CONDICIÓN ALIMENTARIA (para catering)</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:10 }}>
               {CONDICIONES_PRESET.map(c => (
                 <button key={c} onClick={()=>set('condicionAlimentaria', form.condicionAlimentaria===c ? '' : c)} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none',
@@ -3942,9 +3942,9 @@ function ContinuidadNotasTab({ color, deptKey, projectId }) {
         <Card key={nota.id} style={{ marginBottom:12, border:`1px solid ${color}20` }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:color, marginBottom:4 }}>📌 Escena {nota.escena}</div>
+              <div style={{ fontSize:13, fontWeight:700, color:color, marginBottom:4 }}><Icon name="Pin" size={11} color={color} style={{flexShrink:0}}/> Escena {nota.escena}</div>
               <div style={{ fontSize:12, color:'var(--text-primary)', marginBottom:6 }}>{nota.descripcion}</div>
-              <div style={{ fontSize:10, color:'var(--text-tertiary)' }}>👤 {nota.autor} · {nota.fecha}</div>
+              <div style={{ fontSize:10, color:'var(--text-tertiary)' }}><Icon name="User" size={10} color="var(--text-tertiary)" style={{flexShrink:0}}/> {nota.autor} · {nota.fecha}</div>
             </div>
             <div style={{ display:'flex', gap:6 }}>
               <button onClick={()=>{ setEditId(nota.id); setForm(nota); setShowAdd(true); }} style={{ background:'var(--bg-card-dark)', border:'none', borderRadius:8, color:'var(--text-secondary)', fontSize:12, cursor:'pointer', padding:'4px 8px' }}>✎</button>
@@ -4069,7 +4069,7 @@ function ContinuidadFotosTab({ color, deptKey, projectId }) {
           <div key={foto.id} style={{ position:'relative', borderRadius:12, overflow:'hidden', background:'var(--bg-secondary)', border:`1px solid ${color}20` }}>
             {foto.data && <img src={foto.data} alt="continuidad" style={{ width:'100%', height:150, objectFit:'cover' }}/>}
             <div style={{ padding:10 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:color, marginBottom:4 }}>📷 Escena {foto.escena}</div>
+              <div style={{ fontSize:11, fontWeight:700, color:color, marginBottom:4 }}><Icon name="Camera" size={11} color={color} style={{flexShrink:0}}/> Escena {foto.escena}</div>
               <div style={{ fontSize:10, color:'var(--text-secondary)', marginBottom:6, minHeight:30 }}>{foto.descripcion}</div>
               <div style={{ display:'flex', gap:4 }}>
                 <button onClick={()=>{ setEditId(foto.id); setForm(foto); setShowAdd(true); }} style={{ flex:1, background:'var(--bg-card-dark)', border:'none', borderRadius:6, color:'var(--text-secondary)', fontSize:11, cursor:'pointer', padding:'4px' }}>✎</button>
@@ -4090,8 +4090,8 @@ function ContinuidadFotosTab({ color, deptKey, projectId }) {
             {!cameraMode ? (
               <div style={{ marginBottom:8 }}>
                 <div style={{ display:'flex', gap:8, marginBottom:8 }}>
-                  <button onClick={()=>fileInputRef.current?.click()} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>📁 Subir foto</button>
-                  <button onClick={startCamera} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>📷 Tomar foto</button>
+                  <button onClick={()=>fileInputRef.current?.click()} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}><Icon name="Upload" size={13} color="#fff" style={{marginRight:5}}/> Subir foto</button>
+                  <button onClick={startCamera} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}><Icon name="Camera" size={13} color="#fff" style={{marginRight:5}}/> Tomar foto</button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display:'none' }}/>
                 {form.data && <div style={{ fontSize:10, color:'#0fa87e', fontWeight:700, marginBottom:8 }}>✓ Foto seleccionada</div>}
@@ -4101,7 +4101,7 @@ function ContinuidadFotosTab({ color, deptKey, projectId }) {
                 <video ref={videoRef} autoPlay style={{ width:'100%', borderRadius:10, marginBottom:8, maxHeight:300 }}/>
                 <canvas ref={canvasRef} style={{ display:'none' }}/>
                 <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={takePhoto} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'#0fa87e', color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>📸 Tomar</button>
+                  <button onClick={takePhoto} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'#0fa87e', color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}><Icon name="Camera" size={13} color="#fff" style={{marginRight:5}}/> Tomar</button>
                   <button onClick={stopCamera} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'#888', color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar cámara</button>
                 </div>
               </div>
@@ -4186,7 +4186,7 @@ function CrewTotalTab({ color, projectId, project }) {
           <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{allCrew.length} personas</div>
         </div>
         <button onClick={exportarExcel} disabled={!loaded||allCrew.length===0} style={{ fontFamily:'inherit', fontSize:12, fontWeight:700, color:'#217346', background:'#e8f5ee', border:'1px solid #21734633', borderRadius:12, padding:'10px 16px', cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
-          <span style={{ fontSize:15 }}>📊</span> Exportar Excel
+          <Icon name="FileSpreadsheet" size={15} color={dm.color}/> Exportar Excel
         </button>
       </div>
 
@@ -4204,7 +4204,7 @@ function CrewTotalTab({ color, projectId, project }) {
             </div>
             {personas.map(p=>(
               <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg-secondary)', borderRadius:12, padding:'10px 14px', marginBottom:6, border:`1px solid ${dm.color}20` }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:dm.color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>👤</div>
+                <div style={{ width:32, height:32, borderRadius:8, background:dm.color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="User" size={14} color="rgba(255,255,255,0.9)"/></div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{p.nombre}</div>
                   <div style={{ display:'flex', gap:8, marginTop:2 }}>
@@ -4220,9 +4220,9 @@ function CrewTotalTab({ color, projectId, project }) {
 
       {loaded && allCrew.length===0 && (
         <div style={{ textAlign:'center', padding:'40px 20px', color:'#ccc', fontFamily:'inherit' }}>
-          <div style={{ fontSize:36, marginBottom:12 }}>👥</div>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Icon name="Users" size={36} color="var(--text-tertiary)"/></div>
           <div>Ningún departamento cargó integrantes todavía.</div>
-          <div style={{ fontSize:12, marginTop:6 }}>Cada depto puede agregar su crew en el tab 👥 CREW.</div>
+          <div style={{ fontSize:12, marginTop:6 }}>Cada depto puede agregar su crew en el tab CREW.</div>
         </div>
       )}
     </div>
@@ -4309,7 +4309,7 @@ function SceneDeptPanel({ projectId, sceneId, deptKey, deptMeta, isAdmin, onClos
       </div>
       <div style={{ flex:1 }}>
         <div style={{ fontSize:13, color:item.done?'var(--text-muted)':'var(--text-primary)', fontFamily:'inherit', textDecoration:item.done?'line-through':'none' }}>{item.texto}</div>
-        {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}>🕐 {fmtTs(item.ts)}</div>}
+        {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}><Icon name="Clock" size={9} color="var(--text-muted)"/> {fmtTs(item.ts)}</div>}
       </div>
       {isAdmin && <button onClick={()=>delItem(item.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:15, cursor:'pointer', padding:0 }}>✕</button>}
     </div>
@@ -4317,11 +4317,11 @@ function SceneDeptPanel({ projectId, sceneId, deptKey, deptMeta, isAdmin, onClos
 
   const subTabs = [
     ['escena', `✓ Checklist (${doneCount}/${items.length})`],
-    ['info', '👤 Info'],
-    ['citacion', '🕐 Citación'],
-    ['notas', '💬 Notas'],
+    ['info', 'Info'],
+    ['citacion', 'Citación'],
+    ['notas', 'Notas'],
   ];
-  if (deptKey === 'casting') subTabs.splice(1, 0, ['casting', `🎭 Actores (${actoresEscena.length})`]);
+  if (deptKey === 'casting') subTabs.splice(1, 0, ['casting', `Actores (${actoresEscena.length})`]);
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }} onClick={onClose}>
@@ -4382,8 +4382,8 @@ function SceneDeptPanel({ projectId, sceneId, deptKey, deptMeta, isAdmin, onClos
               {infoData.responsable && (
                 <div style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:`1px solid ${color}20` }}>
                   <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginBottom:4 }}>RESPONSABLE</div>
-                  <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>👤 {infoData.responsable}</div>
-                  {infoData.contacto && <div style={{ fontSize:12, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:4 }}>📱 {infoData.contacto}</div>}
+                  <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}><Icon name="User" size={14} color="var(--text-primary)" style={{flexShrink:0}}/> {infoData.responsable}</div>
+                  {infoData.contacto && <div style={{ fontSize:12, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:4 }}><Icon name="Smartphone" size={12} color="var(--text-tertiary)" style={{flexShrink:0}}/> {infoData.contacto}</div>}
                 </div>
               )}
               {infoData.notas && (
@@ -4406,14 +4406,14 @@ function SceneDeptPanel({ projectId, sceneId, deptKey, deptMeta, isAdmin, onClos
                 : <div>
                     {principalesEscena.length > 0 && (
                       <div style={{ marginBottom: extrasEscena.length > 0 ? 18 : 0 }}>
-                        <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:8, fontFamily:'inherit' }}>🎭 PRINCIPALES — {principalesEscena.length}</div>
+                        <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:8, fontFamily:'inherit' }}><Icon name="Theater" size={10} color="#aaa"/> PRINCIPALES — {principalesEscena.length}</div>
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                           {principalesEscena.map(a=>(
                             <div key={a.id} style={{ background:'var(--bg-secondary)', borderRadius:14, border:`1px solid ${color}20`, overflow:'hidden' }}>
                               <div style={{ width:'100%', aspectRatio:'3/4', background:'var(--bg-card-dark-secondary)', overflow:'hidden' }}>
                                 {a.foto
                                   ? <img src={a.foto} alt={a.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32 }}>🎭</div>
+                                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', }}><Icon name="Theater" size={32} color="rgba(255,255,255,0.4)"/></div>
                                 }
                               </div>
                               <div style={{ padding:'8px 10px' }}>
@@ -4427,14 +4427,14 @@ function SceneDeptPanel({ projectId, sceneId, deptKey, deptMeta, isAdmin, onClos
                     )}
                     {extrasEscena.length > 0 && (
                       <div>
-                        <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:8, fontFamily:'inherit' }}>👥 EXTRAS — {extrasEscena.length}</div>
+                        <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:8, fontFamily:'inherit' }}><Icon name="Users" size={10} color="#aaa"/> EXTRAS — {extrasEscena.length}</div>
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                           {extrasEscena.map(e=>(
                             <div key={e.id} style={{ background:'var(--bg-secondary)', borderRadius:12, border:'1px solid var(--border-light)', overflow:'hidden' }}>
                               <div style={{ width:'100%', aspectRatio:'1', background:'var(--bg-card-dark-secondary)', overflow:'hidden' }}>
                                 {e.foto
                                   ? <img src={e.foto} alt={e.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>👤</div>
+                                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', }}><Icon name="User" size={26} color="rgba(255,255,255,0.4)"/></div>
                                 }
                               </div>
                               <div style={{ padding:'6px 8px' }}>
@@ -4457,8 +4457,8 @@ function SceneDeptPanel({ projectId, sceneId, deptKey, deptMeta, isAdmin, onClos
               {citas.map(c=>(
                 <div key={c.id} style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'14px', marginBottom:10, border:`1px solid ${color}20` }}>
                   <div style={{ fontSize:22, fontWeight:700, color, fontFamily:'inherit', marginBottom:4 }}>{c.hora}</div>
-                  {c.lugar && <div style={{ fontSize:13, color:'var(--text-secondary)', fontFamily:'inherit' }}>📍 {c.lugar}</div>}
-                  {c.notas && <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginTop:4 }}>📝 {c.notas}</div>}
+                  {c.lugar && <div style={{ fontSize:13, color:'var(--text-secondary)', fontFamily:'inherit' }}><Icon name="MapPin" size={11} color="currentColor" style={{flexShrink:0}}/> {c.lugar}</div>}
+                  {c.notas && <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginTop:4 }}><Icon name="FileText" size={11} color="currentColor" style={{flexShrink:0}}/> {c.notas}</div>}
                 </div>
               ))}
               {citas.length===0 && !showAddCita && <div style={{ textAlign:'center', padding:'24px', color:'#ccc', fontFamily:'inherit', fontSize:13 }}>Sin citación para esta escena</div>}
@@ -4584,7 +4584,7 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
                   >
                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{i + 1}</span>
                     <span style={{ fontSize: 12, color: tieneEstrella ? '#ffb700' : 'var(--text-muted)' }}>
-                      {tieneEstrella ? '★' : '☆'}
+                      {tieneEstrella ? <Icon name="Star" size={14} color="#d48c0e" style={{fill:'#d48c0e'}}/> : <Icon name="Star" size={14} color="#ccc"/>}
                     </span>
                   </button>
                 );
@@ -4635,7 +4635,7 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
         {plano.duracion && (
           <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'8px 10px', border:'1px solid var(--border-light)', display:'flex', flexDirection:'column', alignItems:'center' }}>
             <div style={{ fontSize:9, color:'#d48c0e', letterSpacing:'0.06em', marginBottom:2, fontFamily:'inherit' }}>DURACIÓN EST.</div>
-            <div style={{ fontSize:13, fontWeight:700, color:'#d48c0e', fontFamily:'inherit' }}>⏱ {plano.duracion}</div>
+            <div style={{ fontSize:13, fontWeight:700, color:'#d48c0e', fontFamily:'inherit' }}><Icon name="Timer" size={12} color="#d48c0e" style={{flexShrink:0}}/> {plano.duracion}</div>
           </div>
         )}
 
@@ -4652,7 +4652,7 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
             <img src={plano.foto} alt={`Toma ${plano.numero}`} style={{ maxWidth:'100%', maxHeight:220, objectFit:'contain', display:'block' }}/>
           </div>
         : <div style={{ margin:'12px 14px 0', background:'var(--bg-primary)', borderRadius:10, padding:'16px', textAlign:'center', color:'#ccc', fontSize:11, fontFamily:'inherit', border:'1px dashed #e5e2dd' }}>
-            📷 Sin foto de la toma
+            <><Icon name="Camera" size={13} color="#aaa" style={{marginRight:5}}/> Sin foto de la toma</>
           </div>
       }
 
@@ -4733,7 +4733,7 @@ function PlanoForm({ plano, depts, allDepts, onSave, onCancel, color }) {
               <button onClick={()=>set('foto','')} style={{ position:'absolute', top:8, right:8, width:26, height:26, borderRadius:'50%', background:'rgba(0,0,0,0.5)', border:'none', color:'#fff', fontSize:13, cursor:'pointer' }}>✕</button>
             </div>
           : <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'18px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'#aaa' }}>
-              📷 Subir foto del plano
+              <><Icon name="Camera" size={13} color="var(--text-tertiary)" style={{marginRight:5}}/> Subir foto del plano</>
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFoto} style={{ display:'none' }}/>
             </label>
         }
@@ -4795,7 +4795,7 @@ function PlanoForm({ plano, depts, allDepts, onSave, onCancel, color }) {
       {/* Checkbox Estrella */}
       <div onClick={()=>set('estrella',!form.estrella)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', borderRadius:10, cursor:'pointer', background:form.estrella?color+'12':'#faf8f5', border:`1px solid ${form.estrella?color+'44':'#e5e2dd'}`, marginBottom:10 }}>
         <div style={{ width:20, height:20, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:16 }}>
-          {form.estrella ? '⭐' : '☆'}
+          {form.estrella ? <Icon name="Star" size={16} color="#d48c0e" style={{fill:'#d48c0e'}}/> : <Icon name="Star" size={16} color="#ccc"/>}
         </div>
         <span style={{ fontSize:13, color:form.estrella?color:'var(--text-secondary)', fontFamily:'inherit' }}>Marcar como best take</span>
       </div>
@@ -4859,7 +4859,7 @@ function SunPositionWidget({ lat, lng, sceneDate }) {
 
   return (
     <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'14px 16px', border:'1px solid #fdf2e3', marginBottom:16 }}>
-      <div style={{ fontSize:11, color:'#d48c0e', letterSpacing:'0.08em', fontWeight:700, marginBottom:10, fontFamily:'inherit' }}>🌅 POSICIÓN DEL SOL</div>
+      <div style={{ fontSize:11, color:'#d48c0e', letterSpacing:'0.08em', fontWeight:700, marginBottom:10, fontFamily:'inherit' }}><Icon name="Sunrise" size={11} color="#d48c0e"/> POSICIÓN DEL SOL</div>
       
       <div style={{ display:'flex', gap:16, alignItems:'center' }}>
         {/* Brújula SVG */}
@@ -4891,7 +4891,7 @@ function SunPositionWidget({ lat, lng, sceneDate }) {
         {/* Info al lado */}
         <div>
           <div style={{ fontSize:12, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:4 }}>
-            <span style={{ fontWeight:700 }}>📍</span> {lat.toFixed(3)}°, {lng.toFixed(3)}°
+            <span style={{ fontWeight:700 }}><Icon name="MapPin" size={12} color="currentColor"/></span> {lat.toFixed(3)}°, {lng.toFixed(3)}°
           </div>
           <div style={{ fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', marginBottom:8 }}>
             <span style={{ fontWeight:700, color:'#ffc107' }}>↑ Salida:</span> {fmt(sunrise)}<br/>
@@ -5042,22 +5042,22 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
             <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.3 }}>{scene.title}</div>
             <div style={{ fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', marginTop:3 }}>
               {planos.length > 0 && <span>{donePlanos}/{planos.length} planos</span>}
-              {tiempoStr && <span> · ⏱ {tiempoStr} total</span>}
+              {tiempoStr && <span> · <Icon name="Timer" size={10} color="currentColor"/> {tiempoStr} total</span>}
             </div>
           </div>
           {onOpenLocaciones && (
             <button onClick={onOpenLocaciones} title="Ver locación" style={{ width:36, height:36, borderRadius:10, background:'var(--bg-accent)', border:'1px solid var(--border-light)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0, cursor:'pointer' }}>
-              📍
+                <Icon name="MapPin" size={12} color="var(--text-tertiary)"/>
             </button>
           )}
           <div onClick={onToggleDone} className="tap" style={{ cursor:'pointer', width:36, height:36, borderRadius:'50%', background:scene.done?'#0fa87e':'var(--bg-accent)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>
-            {scene.done ? '✓' : '○'}
+            {scene.done ? <Icon name="CheckCircle" size={14} color="#0fa87e"/> : <Icon name="Circle" size={14} color="rgba(255,255,255,0.4)"/>}
           </div>
         </div>
 
         {/* Tabs de sección */}
         <div style={{ display:'flex', gap:0, marginBottom:0 }}>
-          {[['planos',`🎥 Tomas (${planos.length})`],['storyboard','🎞️ Story'],['deptos','🎬 Deptos']].map(([k,l])=>(
+          {[['planos',`Tomas (${planos.length})`],['storyboard','Story'],['deptos','Deptos']].map(([k,l])=>(
             <button key={k} onClick={()=>setSection(k)} style={{ flex:1, fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'10px 4px', border:'none', background:'none', cursor:'pointer', color:section===k?color:'var(--text-tertiary)', borderBottom:section===k?`2px solid ${color}`:'2px solid transparent', transition:'color 0.2s' }}>{l}</button>
           ))}
         </div>
@@ -5106,7 +5106,7 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
             )}
             {!showPlanoForm && planos.length===0 && (
               <div style={{ textAlign:'center', padding:'32px 20px', color:'#ccc', fontFamily:'inherit' }}>
-                <div style={{ fontSize:32, marginBottom:10 }}>🎥</div>
+                <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}><Icon name="Video" size={32} color="var(--text-tertiary)"/></div>
                 <div style={{ fontSize:14 }}>Sin tomas todavía</div>
                 <div style={{ fontSize:12, marginTop:4, color:'#ddd' }}>Creá la primera toma de la escena</div>
               </div>
@@ -5210,7 +5210,7 @@ function SceneView({ scene, depts, isAdmin, onBack, onToggleDone, onUpdateScene,
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color:'#d94f2b', fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>🎬</span>
+            <Icon name="Clapperboard" size={20} color="var(--text-secondary)"/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{scene.num}</span>
           </div>
         </div>
@@ -5356,7 +5356,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
               style={{ background:'none', border:'none', cursor:'pointer', color:color, fontSize:12, padding:'2px 4px', lineHeight:1, borderRadius:4, opacity:0.6 }}
             >✎</button>
           )}
-          {tiempoStr && <span style={{ fontSize:10, color:'var(--text-on-dark-bg)', fontFamily:'inherit', opacity:0.7 }}>· ⏱ {tiempoStr}</span>}
+          {tiempoStr && <span style={{ fontSize:10, color:'var(--text-on-dark-bg)', fontFamily:'inherit', opacity:0.7 }}>· <Icon name="Timer" size={10} color="currentColor"/> {tiempoStr}</span>}
         </div>
         {/* Cuerpo de la card — toque abre la escena */}
         <div onClick={()=>onSelectScene(scene)} className="tap" style={{ cursor:'pointer' }}>
@@ -5365,7 +5365,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
           {/* Traslado a próxima escena */}
           {trasladoInfo && (
             <div style={{ fontSize:10, color:'var(--color-secondary)', fontFamily:'inherit', marginTop:5, padding:'4px 8px', background:'var(--bg-accent)', borderRadius:6, border:`1px solid var(--border-accent)` }}>
-              🚗 Traslado: {trasladoInfo.km} km (~{trasladoInfo.minutos} min)
+              <><Icon name="Car" size={11} color="currentColor" style={{marginRight:4}}/> Traslado: {trasladoInfo.km}</> km (~{trasladoInfo.minutos} min)
             </div>
           )}
           {/* Deptos con nombre */}
@@ -5385,7 +5385,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
       </div>
       {isAdmin && <button onClick={()=>onDeleteScene(day.id, scene.id)} style={{ width:36, alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-error)', border:'none', borderLeft:'1px solid #ffe0e0', cursor:'pointer', color:'#ffb3b3', fontSize:14 }}>✕</button>}
       <div onClick={()=>onToggleScene(scene.id)} className="tap" style={{ width:50, alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center', background:scene.done?'#f5f3f0':'rgba(255,255,255,0.5)', borderLeft:'1px solid #f0ede8', cursor:'pointer', flexShrink:0, fontSize:20, color:scene.done?'#0fa87e':'#ddd' }}>
-        {scene.done?'✓':'○'}
+        {scene.done ? <Icon name="CheckCircle" size={12} color="#0fa87e"/> : <Icon name="Circle" size={12} color="#ccc"/>}
       </div>
     </div>
     );
@@ -5470,7 +5470,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color, fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>📅</span>
+            <Icon name="Calendar" size={20} color="var(--text-secondary)"/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{day.label?.toUpperCase()?.slice(0,12)}</span>
           </div>
         </div>
@@ -5491,12 +5491,12 @@ const DEPT_ICONS  = [
 const DEPT_COLORS = ['#d94f2b','#2f7ed8','#0fa87e','#7c3fbf','#d48c0e','#e91e8c','#00bcd4'];
 
 const DEPT_SECTION_OPTIONS = [
-  { key: 'checklist',  label: '✓ Checklist',       desc: 'Lista de tareas y pendientes' },
-  { key: 'gastos',     label: '💰 Gastos',          desc: 'Control de presupuesto' },
-  { key: 'citaciones', label: '🕐 Citación',        desc: 'Horarios y call times' },
-  { key: 'mural',      label: '📎 Archivos',        desc: 'Fotos, videos y documentos' },
-  { key: 'integrantes',label: '👥 Crew',            desc: 'Integrantes del departamento' },
-  { key: 'info',       label: '📋 General',         desc: 'Info, notas y responsable' },
+  { key: 'checklist',  label: 'Checklist',       desc: 'Lista de tareas y pendientes' },
+  { key: 'gastos',     label: 'Gastos',          desc: 'Control de presupuesto' },
+  { key: 'citaciones', label: 'Citación',        desc: 'Horarios y call times' },
+  { key: 'mural',      label: 'Archivos',        desc: 'Fotos, videos y documentos' },
+  { key: 'integrantes',label: 'Crew',            desc: 'Integrantes del departamento' },
+  { key: 'info',       label: 'General',         desc: 'Info, notas y responsable' },
 ];
 
 function AddDeptModal({ onAdd, onClose }) {
@@ -5562,9 +5562,9 @@ function AddDeptModal({ onAdd, onClose }) {
 //   projects/{id}/depts/scouting_scene_{sId}     → { locations: [{id,name,fotos[],mapUrl,depts:[{key,label,color,checklist[],files[]}],rating,comment}] }
 
 const SCOUT_DEPT_PRESETS = [
-  { key:'tecnica', label:'Técnica', color:'#2f7ed8', icon:'🔧',
+  { key:'tecnica', label:'Técnica', color:'#2f7ed8', icon:'Wrench',
     seed:['Energía eléctrica','Lugar para estacionar el camión','Acceso para equipos pesados','Generador disponible'] },
-  { key:'arte', label:'Arte', color:'#7c3fbf', icon:'🎨',
+  { key:'arte', label:'Arte', color:'#7c3fbf', icon:'Palette',
     seed:['Espacio para taller / preparación','Almacén para utilería','Zona de pintura','Acceso para escenografía'] },
 ];
 
@@ -5600,7 +5600,7 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
   return (
     <div>
       <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>
-        📷 {label.toUpperCase()} ({fotos.length}/{max})
+        <><Icon name="Camera" size={10} color="#aaa"/> {label.toUpperCase()} ({fotos.length}/{max})</>
       </div>
       {fotos.length > 0 && (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
@@ -5615,7 +5615,7 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
       <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'12px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color, fontWeight:700 }}>
         {uploading
           ? `⏳ Comprimiendo ${progreso.done}/${progreso.total}…`
-          : `📷 Subir fotos (se pueden seleccionar varias)`}
+          : `Subir fotos (se pueden seleccionar varias)`}
         <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple onChange={handleFiles} disabled={uploading} style={{ display:'none' }}/>
       </label>
     </div>
@@ -5717,7 +5717,7 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
   return (
     <div>
       <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>
-        📎 {label.toUpperCase()} ({files.length})
+        <><Icon name="Paperclip" size={10} color="#aaa"/> {label.toUpperCase()} ({files.length})</>
       </div>
       {files.length > 0 && (
         <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:8 }}>
@@ -5726,12 +5726,12 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
               {f.tipo === 'imagen'
                 ? <img src={f.data || f.url} alt={f.nombre} style={{ width:36, height:36, borderRadius:6, objectFit:'cover', flexShrink:0 }}/>
                 : f.tipo === 'link'
-                  ? <span style={{ fontSize:20, flexShrink:0 }}>{f.linkIcon||'🔗'}</span>
-                  : <span style={{ fontSize:20 }}>📄</span>
+                  ? <Icon name={f.linkIcon||'Link'} size={20} color='currentColor' style={{flexShrink:0}}/>
+                  : <Icon name="FileText" size={20} color="var(--text-secondary)"/>
               }
               {f.tipo === 'link'
                 ? <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ flex:1, minWidth:0, fontSize:11, color:color||'var(--text-secondary)', fontFamily:'inherit', textDecoration:'underline', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}</a>
-                : <a href={f.data || f.url} download={f.nombre} target={f.url && !f.data ? '_blank' : undefined} style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}{f.tipo==='video'?' 🎬':f.tipo==='pdf'?' 📄':''}</a>
+                : <a href={f.data || f.url} download={f.nombre} target={f.url && !f.data ? '_blank' : undefined} style={{ flex:1, minWidth:0, fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.nombre}''</a>
               }
               <button onClick={()=>eliminar(f.id)} style={{ background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:11, cursor:'pointer', padding:'3px 6px' }}>✕</button>
             </div>
@@ -5740,7 +5740,7 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
       )}
       {showLinkForm && (
         <div style={{ background:'var(--bg-secondary)', borderRadius:10, padding:'12px 14px', border:`1px solid ${color}33`, marginBottom:8 }}>
-          <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>🔗 AGREGAR LINK</div>
+          <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}><Icon name="Link" size={10} color="#aaa"/> AGREGAR LINK</div>
           <input value={linkUrl} onChange={e=>setLinkUrl(e.target.value)} placeholder="URL (YouTube, Drive, Vimeo...)" autoFocus
             style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:8, padding:'9px 10px', color:'var(--text-primary)', outline:'none', marginBottom:6 }}/>
           <input value={linkName} onChange={e=>setLinkName(e.target.value)} placeholder="Nombre del link (opcional)"
@@ -5755,7 +5755,7 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
         <div key={fid} style={{ marginBottom:6, background:'var(--bg-card-dark)', borderRadius:8, padding:'8px 10px', border:`1px solid ${p.error ? '#e55' : color}33` }}>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color: p.error ? '#e55' : 'var(--text-secondary)', fontFamily:'inherit', marginBottom:4, gap:8 }}>
             <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>
-              {p.error ? '❌' : p.done ? '✅' : '⬆️'} {p.name}
+              {p.error ? <Icon name="XCircle" size={12} color="var(--color-primary)"/> : p.done ? <Icon name="CheckCircle" size={12} color="var(--color-success)"/> : <Icon name="Upload" size={12} color="currentColor"/>} {p.name}
             </span>
             <span style={{ flexShrink:0 }}>
               {p.error ? (p.msg||'Error').slice(0,28) : p.done ? 'Listo' : `${p.mb}/${p.tot} MB`}
@@ -5770,11 +5770,11 @@ function FilesUploader({ files, setFiles, color, label='Archivos' }) {
       ))}
       <div style={{ display:'flex', gap:6 }}>
         <label style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color }}>
-          {uploading ? '⏳ Subiendo…' : '📎 Archivo'}
+          {uploading ? <><Icon name="Loader" size={12} color="var(--text-tertiary)"/> Subiendo…</> : <><Icon name="Paperclip" size={12} color="var(--text-tertiary)"/> Archivo</>}
           <input type="file" multiple onChange={handle} disabled={uploading} style={{ display:'none' }}/>
         </label>
         <button onClick={()=>setShowLinkForm(true)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'10px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color }}>
-          🔗 Link
+          <Icon name="Link" size={12} color={color}/> Link
         </button>
       </div>
     </div>
@@ -5985,7 +5985,7 @@ function PhotoAnnotatorModal({ photo, onClose, onSave }) {
           </div>
         </div>
         <button onClick={handleSave} style={{ width:'100%', background:'var(--color-success)', border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:700, padding:'13px', cursor:'pointer', fontFamily:'inherit' }}>
-          💾 Guardar foto anotada
+          <><Icon name="Save" size={14} color="#fff" style={{marginRight:6}}/> Guardar foto anotada</>
         </button>
       </div>
     </div>
@@ -6156,7 +6156,7 @@ function LocacionScoutCard({ loc, idx, onUpdate, onDelete, color }) {
         ) : (
           <>
             <div style={{ flex:1, fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{loc.name}</div>
-            <button onClick={()=>{ setDraftName(loc.name); setEditName(true); }} style={{ background:'none', border:'none', color:'#ccc', fontSize:14, cursor:'pointer', padding:'2px 4px' }}>✎</button>
+            <button onClick={()=>{ setDraftName(loc.name); setEditName(true); }} style={{ background:'none', border:'none', color:'#ccc', cursor:'pointer', padding:'2px 4px' }}>✎</button>
           </>
         )}
         <button onClick={()=>setCollapsed(!collapsed)} style={{ background:'none', border:'none', color:'#aaa', fontSize:18, cursor:'pointer', padding:'2px 4px' }}>{collapsed?'▸':'▾'}</button>
@@ -6172,14 +6172,14 @@ function LocacionScoutCard({ loc, idx, onUpdate, onDelete, color }) {
 
           {/* Google Maps */}
           <div style={{ marginBottom:18 }}>
-            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>📍 UBICACIÓN GOOGLE MAPS</div>
+            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}><Icon name="MapPin" size={10} color="#aaa"/> UBICACIÓN GOOGLE MAPS</div>
             <div style={{ display:'flex', gap:6 }}>
               <input value={loc.mapUrl||''} onChange={e=>updateField('mapUrl', e.target.value)}
                 placeholder="Pegá el link de Google Maps acá"
                 style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
               <button onClick={abrirMaps} disabled={!loc.mapUrl}
                 style={{ fontFamily:'inherit', fontSize:12, fontWeight:700, background: loc.mapUrl ? '#2f7ed8' : '#e5e2dd', color: loc.mapUrl ? '#fff' : '#bbb', border:'none', borderRadius:10, padding:'0 14px', cursor: loc.mapUrl ? 'pointer' : 'not-allowed', whiteSpace:'nowrap' }}>
-                🗺 Abrir
+                <><Icon name="Map" size={12} color="currentColor" style={{marginRight:4}}/> Abrir</>
               </button>
             </div>
             {loc.mapUrl && (
@@ -6289,15 +6289,15 @@ function ScoutingSceneView({ project, scene, onBack, onUpdateMeta }) {
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>‹ Volver a Scouting</button>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-          <div style={{ width:48, height:48, borderRadius:14, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>🔍</div>
+          <div style={{ width:48, height:48, borderRadius:14, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Search" size={26} color="rgba(255,255,255,0.9)"/></div>
           <div>
             <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{scene.name}</div>
             <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', letterSpacing:'0.06em' }}>SCOUTING · {locations.length} locación{locations.length!==1?'es':''}</div>
           </div>
         </div>
         <div style={{ display:'flex', gap:6 }}>
-          <button onClick={()=>setTab('locaciones')} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:tab==='locaciones'?color:'#f0ede8', color:tab==='locaciones'?'#fff':'#999' }}>📍 Locaciones</button>
-          <button onClick={()=>setTab('archivos')} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:tab==='archivos'?color:'#f0ede8', color:tab==='archivos'?'#fff':'#999' }}>📎 Archivos</button>
+          <button onClick={()=>setTab('locaciones')} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:tab==='locaciones'?color:'#f0ede8', color:tab==='locaciones'?'#fff':'#999' }}><Icon name="MapPin" size={13} color="currentColor" style={{marginRight:4}}/> Locaciones</button>
+          <button onClick={()=>setTab('archivos')} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:tab==='archivos'?color:'#f0ede8', color:tab==='archivos'?'#fff':'#999' }}><Icon name="Paperclip" size={12} color="currentColor"/> Archivos</button>
         </div>
       </div>
 
@@ -6335,7 +6335,7 @@ function ScoutingSceneView({ project, scene, onBack, onUpdateMeta }) {
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color, fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>📍</span>
+            <Icon name="MapPin" size={20} color="currentColor"/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{scene.name?.slice(0,10)?.toUpperCase()}</span>
           </div>
         </div>
@@ -6413,7 +6413,7 @@ function ScoutingView({ project, onBack }) {
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div style={{ width:48, height:48, borderRadius:14, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>🔍</div>
+          <div style={{ width:48, height:48, borderRadius:14, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Search" size={26} color="rgba(255,255,255,0.9)"/></div>
           <div>
             <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>Scouting</div>
             <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', letterSpacing:'0.06em' }}>BÚSQUEDA DE LOCACIONES · {scenes.length} escena{scenes.length!==1?'s':''}</div>
@@ -6448,7 +6448,7 @@ function ScoutingView({ project, onBack }) {
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color, fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>🗺️</span>
+            <Icon name="Map" size={20} color="currentColor"/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em' }}>SCOUTING</span>
           </div>
         </div>
@@ -6463,7 +6463,7 @@ function SceneRow({ scene, color, onOpen, onRename, onDelete }) {
   const numLocs = null; // Lo cargaríamos pero requeriría otra suscripción; por simplicidad omitimos.
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-secondary)', borderRadius:14, padding:'12px 14px', marginBottom:8, border:`1px solid ${color}25`, boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-      <div style={{ width:38, height:38, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🎬</div>
+      <div style={{ width:38, height:38, borderRadius:10, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Clapperboard" size={16} color="rgba(255,255,255,0.9)"/></div>
       {edit ? (
         <>
           <input value={draft} onChange={e=>setDraft(e.target.value)} autoFocus
@@ -6475,7 +6475,7 @@ function SceneRow({ scene, color, onOpen, onRename, onDelete }) {
         <>
           <button onClick={onOpen} style={{ flex:1, background:'none', border:'none', textAlign:'left', cursor:'pointer', padding:0 }}>
             <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{scene.name}</div>
-            {(scene.files||[]).length > 0 && <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>📎 {scene.files.length} archivo{scene.files.length!==1?'s':''}</div>}
+            {(scene.files||[]).length > 0 && <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}><Icon name="Paperclip" size={9} color="#aaa"/> {scene.files.length} archivo{scene.files.length!==1?'s':''}</div>}
           </button>
           <button onClick={()=>{ setDraft(scene.name); setEdit(true); }} style={{ background:'var(--bg-card-dark-secondary)', border:'none', borderRadius:6, color:'var(--text-tertiary)', fontSize:11, cursor:'pointer', padding:'4px 7px' }}>✎</button>
           <button onClick={onDelete} style={{ background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:11, cursor:'pointer', padding:'4px 7px' }}>✕</button>
@@ -6491,17 +6491,17 @@ function SceneRow({ scene, color, onOpen, onRename, onDelete }) {
 // ═══════════════════════════════════════════════════════════
 // Helpers: convertir code WMO a icono/descripción + color/mood plano
 function wmoToInfo(code) {
-  if (code === 0) return { ic:'☀️', txt:'Soleado',           bg:'#fff7e0', border:'#f5d76e', accent:'#c08600' };
-  if ([1,2].includes(code)) return { ic:'🌤️', txt:'Mayor. soleado', bg:'#fdf3d7', border:'#eecf6e', accent:'#a87e1f' };
-  if (code === 3) return { ic:'☁️', txt:'Nublado',            bg:'#eef0f3', border:'#d0d4da', accent:'#5a6470' };
-  if ([45,48].includes(code)) return { ic:'🌫️', txt:'Niebla',          bg:'#ecedef', border:'#cbcdd2', accent:'#6a6f78' };
-  if ([51,53,55,56,57].includes(code)) return { ic:'🌦️', txt:'Llovizna', bg:'#e3edf7', border:'#a8c4e0', accent:'#3568a0' };
-  if ([61,63,65,66,67].includes(code)) return { ic:'🌧️', txt:'Lluvia',  bg:'#dde9f5', border:'#8eb0d4', accent:'#2a5790' };
-  if ([71,73,75,77].includes(code)) return { ic:'❄️', txt:'Nieve',     bg:'#eaf2f8', border:'#bcd5e8', accent:'#3a6a92' };
-  if ([80,81,82].includes(code)) return { ic:'🌧️', txt:'Chubascos',    bg:'#dde9f5', border:'#8eb0d4', accent:'#2a5790' };
-  if ([85,86].includes(code)) return { ic:'🌨️', txt:'Nevadas',         bg:'#eaf2f8', border:'#bcd5e8', accent:'#3a6a92' };
-  if ([95,96,99].includes(code)) return { ic:'⛈️', txt:'Tormenta',     bg:'#dad6e6', border:'#9b91bc', accent:'#3e3270' };
-  return { ic:'🌥️', txt:'Variable', bg:'#eef0f3', border:'#d0d4da', accent:'#5a6470' };
+  if (code === 0) return { ic:'Sun', txt:'Soleado',           bg:'#fff7e0', border:'#f5d76e', accent:'#c08600' };
+  if ([1,2].includes(code)) return { ic:'CloudSun', txt:'Mayor. soleado', bg:'#fdf3d7', border:'#eecf6e', accent:'#a87e1f' };
+  if (code === 3) return { ic:'Cloud', txt:'Nublado',            bg:'#eef0f3', border:'#d0d4da', accent:'#5a6470' };
+  if ([45,48].includes(code)) return { ic:'CloudFog', txt:'Niebla',          bg:'#ecedef', border:'#cbcdd2', accent:'#6a6f78' };
+  if ([51,53,55,56,57].includes(code)) return { ic:'CloudDrizzle', txt:'Llovizna', bg:'#e3edf7', border:'#a8c4e0', accent:'#3568a0' };
+  if ([61,63,65,66,67].includes(code)) return { ic:'CloudRain', txt:'Lluvia',  bg:'#dde9f5', border:'#8eb0d4', accent:'#2a5790' };
+  if ([71,73,75,77].includes(code)) return { ic:'Snowflake', txt:'Nieve',     bg:'#eaf2f8', border:'#bcd5e8', accent:'#3a6a92' };
+  if ([80,81,82].includes(code)) return { ic:'CloudRain', txt:'Chubascos',    bg:'#dde9f5', border:'#8eb0d4', accent:'#2a5790' };
+  if ([85,86].includes(code)) return { ic:'CloudSnow', txt:'Nevadas',         bg:'#eaf2f8', border:'#bcd5e8', accent:'#3a6a92' };
+  if ([95,96,99].includes(code)) return { ic:'CloudLightning', txt:'Tormenta',     bg:'#dad6e6', border:'#9b91bc', accent:'#3e3270' };
+  return { ic:'CloudSun', txt:'Variable', bg:'#eef0f3', border:'#d0d4da', accent:'#5a6470' };
 }
 
 // Intenta extraer una fecha YYYY-MM-DD desde el campo "date" del día.
@@ -6593,10 +6593,10 @@ function WeatherLocationCard({ loc, projectDays, isAdmin, onUpdate, onDelete }) 
     <div style={{ background:'var(--bg-secondary)', borderRadius:12, border:'1px solid var(--border-light)', overflow:'hidden' }}>
       {/* Header de la ubicación */}
       <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', borderBottom:'1px solid #f4f1ec' }}>
-        <span style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', flex:1, fontWeight:700 }}>📍 {loc.name}</span>
+        <span style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', flex:1, fontWeight:700 }}><Icon name="MapPin" size={11} color="currentColor" style={{marginRight:4}}/> {loc.name}</span>
         {isAdmin && (
           <>
-            <button onClick={()=>setEditing(!editing)} style={{ background:'none', border:'none', color:'var(--text-muted)', fontSize:12, cursor:'pointer', padding:'2px 4px' }} title="Editar fechas">📅</button>
+            <button onClick={()=>setEditing(!editing)} style={{ background:'none', border:'none', color:'var(--text-muted)', fontSize:12, cursor:'pointer', padding:'2px 4px' }} title="Editar fechas"><Icon name="Calendar" size={14} color="currentColor"/></button>
             <button onClick={()=>{ if(confirm(`¿Quitar ${loc.name}?`)) onDelete(); }} style={{ background:'none', border:'none', color:'var(--color-primary)', fontSize:12, cursor:'pointer', padding:'2px 4px' }}>✕</button>
           </>
         )}
@@ -6632,12 +6632,12 @@ function WeatherLocationCard({ loc, projectDays, isAdmin, onUpdate, onDelete }) 
       )}
 
       {/* Contenido */}
-      {loading && <div style={{ padding:'14px', fontSize:11, color:'var(--text-muted)', textAlign:'center', fontFamily:'inherit' }}>⏳ Cargando…</div>}
-      {error && <div style={{ padding:'10px 12px', fontSize:11, color:'var(--color-primary)', fontFamily:'inherit' }}>⚠️ {error}</div>}
+      {loading && <div style={{ padding:'14px', fontSize:11, color:'var(--text-muted)', textAlign:'center', fontFamily:'inherit' }}><Icon name="Loader" size={11} color="currentColor"/> Cargando…</div>}
+      {error && <div style={{ padding:'10px 12px', fontSize:11, color:'var(--color-primary)', fontFamily:'inherit' }}><Icon name="AlertTriangle" size={11} color="var(--color-primary)"/> {error}</div>}
 
       {fechasFinales.length === 0 && (
         <div style={{ padding:'12px', fontSize:11, color:'#aaa', fontFamily:'inherit', textAlign:'center', fontStyle:'italic' }}>
-          {isAdmin ? 'Tocá 📅 para elegir fechas' : 'Sin fechas configuradas'}
+          {isAdmin ? 'Tocá para elegir fechas' : 'Sin fechas configuradas'}
         </div>
       )}
 
@@ -6677,7 +6677,7 @@ function WeatherLocationCard({ loc, projectDays, isAdmin, onUpdate, onDelete }) 
 
               return (
                 <div key={fecha} style={{ background:info.bg, borderRadius:8, padding:'7px 10px', display:'flex', alignItems:'center', gap:9, border:`1px solid ${info.border}` }}>
-                  <span style={{ fontSize:18, lineHeight:1 }}>{info.ic}</span>
+                  <span style={{ display:'flex', alignItems:'center' }}><Icon name=<Icon name={info.ic} size={20} color={info.accent}/> size={22} color={info.accent}/></span>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
                       <span style={{ fontSize:11, fontWeight:700, color:info.accent, fontFamily:'inherit' }}>{label}</span>
@@ -6687,7 +6687,7 @@ function WeatherLocationCard({ loc, projectDays, isAdmin, onUpdate, onDelete }) 
                   </div>
                   <div style={{ textAlign:'right', fontFamily:'inherit', flexShrink:0 }}>
                     <div style={{ fontSize:11, fontWeight:700, color:info.accent }}>{tMax}°<span style={{ opacity:0.5 }}>/{tMin}°</span></div>
-                    {probDia!=null && probDia > 0 && <div style={{ fontSize:9, color:info.accent, opacity:0.7 }}>💧 {probDia}%</div>}
+                    {probDia!=null && probDia > 0 && <div style={{ fontSize:9, color:info.accent, opacity:0.7 }}><Icon name="Droplets" size={9} color={info.accent}/> {probDia}%</div>}
                   </div>
                 </div>
               );
@@ -6774,7 +6774,7 @@ function WeatherWidget({ project, isAdmin, onUpdateProject }) {
   return (
     <div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-        <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.12em', fontFamily:'inherit' }}>🌤️ CLIMA EN RODAJE</div>
+        <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.12em', fontFamily:'inherit' }}><Icon name="CloudSun" size={11} color="var(--text-muted)"/> CLIMA EN RODAJE</div>
         {isAdmin && !adding && (
           <button onClick={()=>setAdding(true)} style={{ fontFamily:'inherit', fontSize:10, color:'#2f7ed8', background:'none', border:'1px solid #2f7ed844', borderRadius:14, padding:'3px 10px', cursor:'pointer', fontWeight:700 }}>
             + Ciudad
@@ -6791,13 +6791,13 @@ function WeatherWidget({ project, isAdmin, onUpdateProject }) {
               style={{ flex:1, fontFamily:'inherit', fontSize:14, background:'#1a3a50', border:'2px solid rgba(255,255,255,0.4)', borderRadius:8, padding:'9px 12px', color:'#ffffff', outline:'none', fontWeight:600 }}/>
             <button onClick={()=>{ setAdding(false); setCity(''); setSuggestions([]); setShowSuggestions(false); }} style={{ fontFamily:'inherit', fontSize:11, background:'rgba(255,255,255,0.15)', color:'#fff', border:'none', borderRadius:8, padding:'9px 12px', cursor:'pointer' }}>✕</button>
           </div>
-          {busy && <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', padding:'4px 2px', fontFamily:'inherit' }}>🔍 Buscando...</div>}
+          {busy && <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', padding:'4px 2px', fontFamily:'inherit' }}><Icon name="Search" size={11} color="rgba(255,255,255,0.6)"/> Buscando...</div>}
           {showSuggestions && suggestions.length > 0 && (
             <div style={{ position:'absolute', top:'100%', left:0, right:0, background:'#fff', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.25)', zIndex:200, overflow:'hidden', marginTop:4, border:'1px solid #e5e2dd' }}>
               {suggestions.map((s, i) => (
                 <button key={s.id} onClick={()=>selectSuggestion(s)}
                   style={{ display:'block', width:'100%', fontFamily:'inherit', fontSize:13, color:'#1a1714', background:i%2===0?'#fff':'#faf8f5', border:'none', borderBottom:i<suggestions.length-1?'1px solid #f0ede8':'none', padding:'11px 14px', cursor:'pointer', textAlign:'left', fontWeight:600 }}>
-                  📍 {s.name}
+                  <Icon name="MapPin" size={12} color="currentColor" style={{marginRight:4}}/> {s.name}
                 </button>
               ))}
             </div>
@@ -6853,7 +6853,7 @@ function IMessageChat({ project, isAdmin }) {
 
   // Participantes disponibles: depts + "Producción" si no está
   const participants = [
-    { key: 'produccion', label: 'Producción', icon: '🎬' },
+    { key: 'produccion', label: 'Producción', icon: 'Clapperboard' },
     ...Object.entries(project.depts || {})
       .filter(([k]) => k !== 'produccion')
       .map(([k, m]) => ({ key: k, label: m.label, icon: m.icon || 'User' }))
@@ -6906,7 +6906,7 @@ function IMessageChat({ project, isAdmin }) {
     <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:18, overflow:'hidden', marginBottom:16 }}>
       {/* Header del chat */}
       <div style={{ padding:'10px 14px 8px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:8 }}>
-        <span style={{ fontSize:15 }}>💬</span>
+        <Icon name="MessageSquare" size={15} color="rgba(255,255,255,0.9)"/>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.55)', letterSpacing:'0.1em' }}>CHAT DEL EQUIPO</div>
         </div>
@@ -6926,7 +6926,7 @@ function IMessageChat({ project, isAdmin }) {
       }}>
         {grouped.length === 0 && (
           <div style={{ textAlign:'center', padding:'24px 0', color:'rgba(255,255,255,0.28)', fontSize:12, fontStyle:'italic' }}>
-            Nadie habló todavía. ¡Rompan el hielo! 🎬
+            Nadie habló todavía. ¡Rompan el hielo!
           </div>
         )}
         {grouped.map((item, idx) => {
@@ -6978,7 +6978,7 @@ function IMessageChat({ project, isAdmin }) {
                 {deleteId === item.id && (isAdmin || isMe) && (
                   <button onClick={() => deleteMsg(item.id)}
                     style={{ fontSize:10, color:'#FF375F', background:'rgba(255,55,95,0.12)', border:'1px solid rgba(255,55,95,0.3)', borderRadius:10, padding:'2px 8px', cursor:'pointer', marginTop:2, fontFamily:'inherit', fontWeight:600 }}>
-                    🗑 Eliminar
+                    <Icon name="Trash2" size={13} color="currentColor" style={{marginRight:4}}/> Eliminar
                   </button>
                 )}
               </div>
@@ -7008,7 +7008,7 @@ function IMessageChat({ project, isAdmin }) {
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             {/* Cambiar autor */}
             <button onClick={() => setAuthor('')} title="Cambiar"
-              style={{ width:30, height:30, borderRadius:'50%', background: colorMap[author] + '33', border:`1.5px solid ${colorMap[author]}`, color:'#fff', fontSize:14, cursor:'pointer', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              style={{ width:30, height:30, borderRadius:'50%', background: colorMap[author] + '33', border:`1.5px solid ${colorMap[author]}`, color:'#fff', cursor:'pointer', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <Icon name={selectedAuthorObj?.icon || 'User'} size={14} color={colorMap[author]||'#fff'}/>
             </button>
             {/* Campo de texto */}
@@ -7140,7 +7140,7 @@ function ClaquetaView({ project, onBack }) {
         color: clapping ? '#000' : '#fff', fontSize:22, fontWeight:800, letterSpacing:'0.02em',
         transition:'all 0.15s', boxShadow:'0 6px 20px rgba(232,57,45,0.3)', marginBottom:16,
       }}>
-        {clapping ? '🎬 ¡MARCA!' : '🎬 ¡CLAQUETA!'}
+        {clapping ? <><Icon name="Clapperboard" size={18} color="#fff" style={{marginRight:8}}/> ¡MARCA!</> : <><Icon name="Clapperboard" size={18} color="#fff" style={{marginRight:8}}/> ¡CLAQUETA!</>}
       </button>
 
       <div style={{ display:'flex', gap:10, marginBottom:8 }}>
@@ -8752,12 +8752,12 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </h1>
             <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
               <button onClick={isAdmin ? onLock : onUnlock} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:16, cursor:'pointer', padding:'6px 8px', borderRadius:8 }} title={isAdmin ? 'Cerrar admin' : 'Modo admin'}>
-                {isAdmin ? '🔓' : '🔒'}
+                {isAdmin ? <Icon name="LockOpen" size={16} color="var(--text-primary)"/> : <Icon name="Lock" size={16} color="var(--text-primary)"/>}
               </button>
               {project.productoraId && (
                 <button onClick={() => { window.history.length > 1 ? window.history.back() : (window.location.href = `/?pid=${project.productoraId}`); }} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:11, color:isLightTheme?'rgba(0,0,0,0.6)':'rgba(255,255,255,0.85)', cursor:'pointer', fontFamily:'inherit', padding:'6px 10px', borderRadius:8 }}>← Prod</button>
               )}
-              <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', fontSize:14, cursor:'pointer', padding:'6px 8px', borderRadius:8 }}>🏠</button>
+              <button onClick={() => window.location.href = '/'} className="tap" style={{ background:'rgba(0,0,0,0.2)', border:'none', cursor:'pointer', padding:'6px 8px', borderRadius:8 }}><Icon name="Home" size={16} color="rgba(255,255,255,0.8)"/></button>
             </div>
           </div>
           <div style={{ fontSize:12, color:isLightTheme?'rgba(0,0,0,0.45)':'rgba(255,255,255,0.6)', fontFamily:'inherit' }}>{project.client||''}{project.client?' · ':''}{project.days.length} días · {project.days.reduce((s,d)=>s+d.scenes.length,0)} escenas</div>
@@ -8773,7 +8773,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               {isAdmin && (
                 <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
                   <label className="tap" style={{ background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:11, color:'#fff', fontWeight:600, fontFamily:'inherit' }}>
-                    📸 Cambiar
+                    <><Icon name="Camera" size={12} color="#fff" style={{marginRight:4}}/> Cambiar</>
                     <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
                       onChange={async (e) => {
                         const file = e.target.files[0]; if (!file) return;
@@ -8802,13 +8802,13 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                         }
                       }}/>
                   </label>
-                  <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:14, cursor:'pointer', fontWeight:700, borderRadius:8, padding:'5px 8px' }}>✕</button>
+                  <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', cursor:'pointer', fontWeight:700, borderRadius:8, padding:'5px 8px' }}>✕</button>
                 </div>
               )}
             </div>
           ) : isAdmin ? (
             <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'rgba(255,255,255,0.12)', border:'1.5px dashed rgba(255,255,255,0.3)', borderRadius:14, padding:'32px 20px', cursor:'pointer', fontFamily:'Inter, sans-serif', fontSize:14, fontWeight:600, color:isLightTheme?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.8)', width:'100%', marginBottom:16, minHeight:100, boxSizing:'border-box' }}>
-              📸 SUBIR FOTO DE PORTADA
+              <><Icon name="Camera" size={13} color="var(--text-tertiary)" style={{marginRight:4}}/> SUBIR FOTO DE PORTADA</>
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
                 onChange={async (e) => {
                   const file = e.target.files[0]; if (!file) return;
@@ -8860,7 +8860,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
           {msg ? (
             <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
               <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:10 }}>
-                <span style={{ fontSize:18 }}>📢</span>
+                <Icon name="Megaphone" size={18} color="rgba(255,255,255,0.9)"/>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', fontFamily:'Inter, sans-serif', marginBottom:3, fontWeight:600 }}>MENSAJE GENERAL</div>
                   <div style={{ fontSize:13, color:'#fff', fontFamily:'Inter, sans-serif', lineHeight:1.5 }}>{msg.text}</div>
@@ -8896,7 +8896,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.6)',
                 background:'rgba(0,0,0,0.12)', border:'1px dashed rgba(255,255,255,0.2)', borderRadius:14,
                 padding:'13px 16px', cursor:'pointer', marginBottom:16, textAlign:'left' }}>
-              📢 Escribir mensaje general
+              <><Icon name="Megaphone" size={13} color="rgba(255,255,255,0.5)" style={{marginRight:5}}/> Escribir mensaje general</>
             </button>
           ))}
           {isAdmin && showMsgForm && (
@@ -9051,44 +9051,44 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
           {/* ACCIONES - Grid 2 columnas */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
             <button onClick={onOpenDropbox} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-              <div style={{ fontSize:22 }}>📁</div>
+              <Icon name="FolderOpen" size={22} color="#fff"/>
               <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Dropbox</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Archivos del proyecto</div>
             </button>
             <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-              <div style={{ fontSize:22 }}>🕐</div>
+              <Icon name="Clock" size={22} color="#fff"/>
               <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Citaciones</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Horarios de los deptos</div>
             </button>
             <button onClick={onOpenMessages} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-              <div style={{ fontSize:22 }}>✉️</div>
+              <Icon name="Mail" size={22} color="#fff"/>
               <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Mensajes</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Comunicaciones</div>
             </button>
             <button onClick={onOpenScouting} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-              <div style={{ fontSize:22 }}>🗺️</div>
+              <Icon name="Map" size={22} color="#fff"/>
               <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Scouting</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Locaciones y fotos</div>
             </button>
             <button onClick={onOpenTools} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-              <div style={{ fontSize:22 }}>🧰</div>
+              <Icon name="Wrench" size={22} color="#fff"/>
               <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Herramientas</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Sun AR, Color Temp</div>
             </button>
             <button onClick={togglePin} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: pinned ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-              <div style={{ fontSize:22 }}>{pinned ? '📌' : '📍'}</div>
+              <div style={{ fontSize:22 }}>{pinned ? <Icon name="PinOff" size={22} color="#fff"/> : <Icon name="Pin" size={22} color="#fff"/>}</div>
               <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>{pinned ? 'Pineado' : 'Pinear'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{pinned ? 'Quitar del inicio' : 'Acceso directo'}</div>
             </button>
             {isAdmin && (
               <>
                 <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-                  <div style={{ fontSize:22 }}>📄</div>
+                  <Icon name="FileText" size={22} color="#fff"/>
                   <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Exportar PDF</div>
                   <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Resumen completo</div>
                 </button>
                 <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
-                  <div style={{ fontSize:22 }}>🎬</div>
+                  <Icon name="PlusCircle" size={22} color="#fff"/>
                   <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Nuevo proyecto</div>
                   <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Crear rodaje</div>
                 </button>
@@ -9205,7 +9205,7 @@ function CitacionesGlobalesView({ project, onBack }) {
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:24 }}>🕐</span>
+          <Icon name="Clock" size={24} color="var(--text-primary)"/>
           <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>Citaciones</div>
         </div>
         <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>{allCitas.length} citaciones en total</div>
@@ -9216,7 +9216,7 @@ function CitacionesGlobalesView({ project, onBack }) {
 
         {loaded && allCitas.length === 0 && (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'#ccc', fontFamily:'inherit' }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🕐</div>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Icon name="Clock" size={40} color="var(--text-tertiary)"/></div>
             <div style={{ fontSize:14 }}>Sin citaciones cargadas todavía.</div>
             <div style={{ fontSize:12, marginTop:6, color:'#ddd' }}>Cada departamento puede agregar sus citaciones desde su panel.</div>
           </div>
@@ -9298,8 +9298,8 @@ function CitacionesGlobalesView({ project, onBack }) {
                                   </span>
                                 </div>
                                 <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{c.tipo}</div>
-                                {c.lugar ? <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:2 }}>📍 {c.lugar}</div> : null}
-                                {c.notas ? <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}>📝 {c.notas}</div> : null}
+                                {c.lugar ? <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:2 }}><Icon name="MapPin" size={11} color="currentColor" style={{flexShrink:0}}/> {c.lugar}</div> : null}
+                                {c.notas ? <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}><Icon name="FileText" size={11} color="currentColor" style={{flexShrink:0}}/> {c.notas}</div> : null}
                               </div>
                             );
                           })}
@@ -9323,7 +9323,7 @@ function CitacionesGlobalesView({ project, onBack }) {
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color:'#555', fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>🕐</span>
+            <Icon name="Clock" size={20} color="var(--text-primary)"/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em' }}>CITACIONES</span>
           </div>
         </div>
@@ -9345,13 +9345,13 @@ function MessagesView({ project, onBack }) {
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid #ede9e3', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:24 }}>✉️</span>
+          <Icon name="Mail" size={24} color="var(--text-primary)"/>
           <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>Mensajes</div>
         </div>
         <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>{archive.length} mensaje{archive.length!==1?'s':''} archivado{archive.length!==1?'s':''}</div>
       </div>
       <div className="has-bottom-bar" style={{ flex:1, padding:'20px 16px 32px' }}>
-        {archive.length===0 && <div style={{ textAlign:'center', padding:'60px 20px', color:'#ccc', fontFamily:'inherit' }}><div style={{ fontSize:40, marginBottom:12 }}>✉️</div><div style={{ fontSize:14 }}>No hay mensajes archivados todavía.</div></div>}
+        {archive.length===0 && <div style={{ textAlign:'center', padding:'60px 20px', color:'#ccc', fontFamily:'inherit' }}><div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Icon name="MailOpen" size={40} color="#ccc"/></div><div style={{ fontSize:14 }}>No hay mensajes archivados todavía.</div></div>}
         {[...archive].reverse().map((m,i)=>(
           <div key={m.id||i} style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'16px', marginBottom:12, border:'1px solid var(--border-light)', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
             <div style={{ fontSize:10, color:'#d48c0e', letterSpacing:'0.08em', fontFamily:'inherit', marginBottom:6 }}>MENSAJE GENERAL</div>
@@ -9376,7 +9376,7 @@ function MessagesView({ project, onBack }) {
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color:'#555', fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>✉️</span>
+            <Icon name="Mail" size={20} color="var(--text-primary)"/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em' }}>MENSAJES</span>
           </div>
         </div>
@@ -9548,7 +9548,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
 
             {/* Ciudades para el clima (múltiples) */}
             <div style={{ marginTop:4, marginBottom:14 }}>
-              <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:6, fontFamily:'inherit' }}>🌤️ CIUDADES PARA CLIMA (opcional)</div>
+              <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:6, fontFamily:'inherit' }}><Icon name="CloudSun" size={11} color="#aaa"/> CIUDADES PARA CLIMA (opcional)</div>
               <div style={{ display:'flex', gap:6, marginBottom:8 }}>
                 <input value={form.weatherCity} onChange={e=>{ set('weatherCity', e.target.value); if(showGeoResultados){ setShowGeoResultados(false); setGeoResultados([]); } }}
                   onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); buscarCiudad(); } }}
@@ -9556,7 +9556,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
                   style={{ flex:1, fontFamily:'inherit', fontSize:14, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:12, padding:'12px 14px', color:'var(--text-primary)', outline:'none' }}/>
                 <button onClick={buscarCiudad} disabled={geoLoading || !form.weatherCity.trim()} type="button"
                   style={{ fontFamily:'inherit', fontSize:13, fontWeight:700, background: geoLoading||!form.weatherCity.trim() ? '#e5e2dd' : '#2f7ed8', color: geoLoading||!form.weatherCity.trim() ? '#bbb' : '#fff', border:'none', borderRadius:12, padding:'0 16px', cursor:'pointer' }}>
-                  {geoLoading ? '⏳' : '+'}
+                  {geoLoading ? <Icon name="Loader" size={14} color="currentColor"/> : <Icon name="Plus" size={14} color="currentColor"/>}
                 </button>
               </div>
               {showGeoResultados && geoResultados.length > 0 && (
@@ -9565,7 +9565,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
                   {geoResultados.map(g => (
                     <button key={g.id} onClick={()=>agregarGeoResultado(g)} type="button"
                       style={{ display:'block', width:'100%', textAlign:'left', fontFamily:'inherit', fontSize:13, background:'none', border:'none', borderTop:'1px solid var(--border-light)', padding:'10px 14px', cursor:'pointer', color:'var(--text-primary)' }}>
-                      📍 {g.name}
+                      <Icon name="MapPin" size={12} color="currentColor" style={{marginRight:4}}/> {g.name}
                     </button>
                   ))}
                   <button onClick={()=>{ setShowGeoResultados(false); setGeoResultados([]); }} type="button"
@@ -9578,7 +9578,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
                 <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
                   {weatherLocs.map(l => (
                     <div key={l.id} style={{ display:'flex', alignItems:'center', gap:8, background:'#f0f7ff', borderRadius:8, padding:'7px 10px', border:'1px solid #d0e4f7' }}>
-                      <span style={{ fontSize:12, color:'#2f7ed8', fontFamily:'inherit', flex:1 }}>📍 {l.name}</span>
+                      <span style={{ fontSize:12, color:'#2f7ed8', fontFamily:'inherit', flex:1 }}><Icon name="MapPin" size={11} color="#2f7ed8" style={{marginRight:3}}/> {l.name}</span>
                       <button onClick={()=>eliminarCiudad(l.id)} type="button" style={{ background:'none', border:'none', color:'var(--color-primary)', fontSize:13, cursor:'pointer', padding:'0 4px' }}>✕</button>
                     </div>
                   ))}
@@ -9600,7 +9600,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
                 />
               </div>
               {slugError
-                ? <div style={{ fontSize:11, color:'var(--color-primary)', fontFamily:'inherit', marginBottom:8 }}>⚠️ {slugError}</div>
+                ? <div style={{ fontSize:11, color:'var(--color-primary)', fontFamily:'inherit', marginBottom:8 }}><Icon name="AlertTriangle" size={11} color="var(--color-primary)"/> {slugError}</div>
                 : form.slug && <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', marginBottom:8 }}>✓ Podés editarlo — solo letras, números y guiones</div>
               }
               {/* Preview de la URL */}
@@ -9608,7 +9608,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
                 <div style={{ background:'#f0f7ff', borderRadius:10, padding:'10px 12px', border:'1px solid #d0e4f7' }}>
                   <div style={{ fontSize:10, color:'#2f7ed8', letterSpacing:'0.06em', fontFamily:'inherit', marginBottom:4 }}>PREVIEW DEL LINK</div>
                   <div style={{ fontSize:11, color:'#2f7ed8', fontFamily:'monospace', wordBreak:'break-all', lineHeight:1.5 }}>
-                    🔗 {previewUrl}
+                    <Icon name="Link" size={12} color="#2f7ed8" style={{marginRight:4}}/> {previewUrl}
                   </div>
                 </div>
               )}
@@ -9637,7 +9637,7 @@ function NewProjectView({ onCreated, onCancel, existingIds = [], productoraId = 
             {/* Resumen del link que se va a crear */}
             <div style={{ background:'#f0f7ff', borderRadius:12, padding:'14px 16px', marginBottom:16, border:'1px solid #d0e4f7' }}>
               <div style={{ fontSize:10, color:'#2f7ed8', letterSpacing:'0.06em', fontFamily:'inherit', marginBottom:6 }}>LINK DEL PROYECTO</div>
-              <div style={{ fontSize:12, color:'#2f7ed8', fontFamily:'monospace', wordBreak:'break-all', lineHeight:1.6 }}>🔗 {previewUrl}</div>
+              <div style={{ fontSize:12, color:'#2f7ed8', fontFamily:'monospace', wordBreak:'break-all', lineHeight:1.6 }}><Icon name="Link" size={12} color="#2f7ed8" style={{marginRight:4}}/> {previewUrl}</div>
               <div style={{ fontSize:11, color:'#aaa', fontFamily:'inherit', marginTop:6 }}>Este es el link que compartís con tu equipo.</div>
             </div>
             <div style={{ background:'#fff8f0', borderRadius:12, padding:'14px 16px', marginBottom:20, border:'1px solid #f5e8c0' }}>
@@ -9755,9 +9755,9 @@ function ExportView({ project, onBack, onDelete }) {
       <div className="no-print" style={{ display:'flex', gap:12, alignItems:'center', marginBottom:24 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', padding:0 }}>‹ Volver</button>
         <div style={{ flex:1 }}/>
-        {loaded && <button onClick={()=>window.print()} style={{ fontFamily:'inherit', fontSize:13, fontWeight:700, background:'#1a1714', color:'#fff', border:'none', borderRadius:12, padding:'10px 20px', cursor:'pointer' }}>🖨 Imprimir / Guardar PDF</button>}
+        {loaded && <button onClick={()=>window.print()} style={{ fontFamily:'inherit', fontSize:13, fontWeight:700, background:'#1a1714', color:'#fff', border:'none', borderRadius:12, padding:'10px 20px', cursor:'pointer' }}><Icon name="Printer" size={14} color="#fff" style={{marginRight:6}}/> Imprimir / Guardar PDF</button>}
       </div>
-      {!loaded && <div className="no-print" style={{ textAlign:'center', padding:'40px', color:'#aaa', fontFamily:'inherit', fontSize:13 }}>⏳ Cargando datos... un momento.</div>}
+      {!loaded && <div className="no-print" style={{ textAlign:'center', padding:'40px', color:'#aaa', fontFamily:'inherit', fontSize:13 }}><Icon name="Loader" size={11} color="#aaa"/> Cargando datos... un momento.</div>}
 
       {/* ── PORTADA ── */}
       <div className="print-page">
@@ -9814,10 +9814,10 @@ function ExportView({ project, onBack, onDelete }) {
                 <span style={{ fontSize:11, fontWeight:700, color:'#aaa', letterSpacing:'0.1em', minWidth:52 }}>{scene.num}</span>
                 <span style={{ fontSize:14, fontWeight:700, color:scene.done?'#aaa':'#1a1714', flex:1, textDecoration:scene.done?'line-through':'none' }}>{scene.title}</span>
                 {scene.momento && <span style={{ fontSize:10, color:'var(--text-tertiary)', background:'var(--bg-card-dark-secondary)', borderRadius:10, padding:'2px 8px' }}>{scene.momento.toUpperCase()}</span>}
-                <span style={{ fontSize:11, fontWeight:700, color:scene.done?'#0fa87e':'#d48c0e', border:`1px solid ${scene.done?'#0fa87e44':'#d48c0e44'}`, borderRadius:20, padding:'2px 10px' }}>{scene.done?'✓ COMPLETADA':'PENDIENTE'}</span>
+                <span style={{ fontSize:11, fontWeight:700, color:scene.done?'#0fa87e':'#d48c0e', border:`1px solid ${scene.done?'#0fa87e44':'#d48c0e44'}`, borderRadius:20, padding:'2px 10px' }}>{scene.done ? <><Icon name="Check" size={10} color="#0fa87e"/> COMPLETADA</> : 'PENDIENTE'}</span>
               </div>
               {scene.descripcion && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:6, lineHeight:1.5 }}>{scene.descripcion}</div>}
-              {scene.notes && <div style={{ fontSize:11, color:'var(--text-tertiary)', marginBottom:6, fontStyle:'italic' }}>📝 {scene.notes}</div>}
+              {scene.notes && <div style={{ fontSize:11, color:'var(--text-tertiary)', marginBottom:6, fontStyle:'italic' }}><Icon name="FileText" size={11} color="#aaa" style={{flexShrink:0}}/> {scene.notes}</div>}
               {(scene.depts||[]).length > 0 && (
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
                   {scene.depts.filter(k=>project.depts[k]).map(dk=>{
@@ -9830,7 +9830,7 @@ function ExportView({ project, onBack, onDelete }) {
               {/* PLANOS */}
               {planos.length > 0 && (
                 <div style={{ marginTop:10, paddingTop:10, borderTop:'1px dashed #e5e2dd' }}>
-                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.1em', marginBottom:8 }}>🎥 PLANOS ({planos.length})</div>
+                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.1em', marginBottom:8 }}><Icon name="Video" size={10} color="#aaa"/> PLANOS ({planos.length})</div>
                   {planos.map((p, pi) => (
                     <div key={pi} style={{ display:'flex', gap:10, marginBottom:10, pageBreakInside:'avoid', background:'var(--bg-card-dark)', borderRadius:6, padding:'8px 10px' }}>
                       {p.foto && <img src={p.foto} alt={'Plano '+p.numero} style={{ width:100, height:70, objectFit:'cover', borderRadius:4, flexShrink:0, border:'1px solid #e5e2dd' }}/>}
@@ -9839,24 +9839,24 @@ function ExportView({ project, onBack, onDelete }) {
                           <span style={{ fontSize:11, fontWeight:700, color:'var(--color-primary)' }}>#{p.numero}</span>
                           {p.tipo && <span style={{ fontSize:10, color:'var(--text-tertiary)' }}>{p.tipo}</span>}
                           {p.movimiento && p.movimiento!=='Estático' && <span style={{ fontSize:10, color:'var(--text-tertiary)' }}>· {p.movimiento}</span>}
-                          {p.duracion && <span style={{ fontSize:10, color:'var(--text-tertiary)' }}>· ⏱ {p.duracion}</span>}
+                          {p.duracion && <span style={{ fontSize:10, color:'var(--text-tertiary)' }}>· <Icon name="Timer" size={10} color="currentColor"/> {p.duracion}</span>}
                           {p.done && <span style={{ fontSize:10, color:'var(--color-success)' }}>✓</span>}
                         </div>
                         {p.descripcion && <div style={{ fontSize:11, color:'var(--text-primary)', marginBottom:3, lineHeight:1.4 }}>{p.descripcion}</div>}
-                        {p.comentario && <div style={{ fontSize:10, color:'var(--text-tertiary)', fontStyle:'italic', lineHeight:1.4 }}>💬 {p.comentario}</div>}
+                        {p.comentario && <div style={{ fontSize:10, color:'var(--text-tertiary)', fontStyle:'italic', lineHeight:1.4 }}><Icon name="MessageSquare" size={10} color="currentColor"/> {p.comentario}</div>}
                         {/* Flags */}
                         {(p.noche||p.lluvia||p.vfx||p.drone||p.animales||p.vehiculos||p.pirotecnia||p.cierreCalle||p.actores||p.sonido) && (
                           <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginTop:4 }}>
-                            {p.noche       && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e8e4ef', color:'#4a3fbf' }}>🌙 Noche</span>}
-                            {p.lluvia      && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e4f0f7', color:'#2f7ed8' }}>🌧 Lluvia</span>}
-                            {p.vfx         && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#f5f0ff', color:'#7c3fbf' }}>✨ VFX</span>}
-                            {p.drone       && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e8f8f0', color:'var(--color-success)' }}>🚁 Drone</span>}
-                            {p.animales    && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#fff8ec', color:'#d48c0e' }}>🐾 Animales</span>}
-                            {p.vehiculos   && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'var(--bg-card-dark-secondary)', color:'var(--text-secondary)' }}>🚗 Vehículos</span>}
-                            {p.pirotecnia  && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'var(--bg-error)', color:'var(--color-primary)' }}>🎆 Pirotecnia</span>}
-                            {p.cierreCalle && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'var(--bg-error)', color:'var(--color-primary)' }}>🚧 Cierre calle</span>}
-                            {p.actores     && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#f5f0ff', color:'#7c3fbf' }}>🎭 Actores</span>}
-                            {p.sonido      && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e8f8f0', color:'var(--color-success)' }}>🎙 Sonido</span>}
+                            {p.noche       && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e8e4ef', color:'#4a3fbf' }}><Icon name="Moon" size={9} color="#4a3fbf"/> Noche</span>}
+                            {p.lluvia      && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e4f0f7', color:'#2f7ed8' }}><Icon name="CloudRain" size={9} color="#2f7ed8"/> Lluvia</span>}
+                            {p.vfx         && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#f5f0ff', color:'#7c3fbf' }}><Icon name="Sparkles" size={9} color="#7c3fbf"/> VFX</span>}
+                            {p.drone       && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e8f8f0', color:'var(--color-success)' }}><Icon name="Navigation" size={9} color="var(--color-success)"/> Drone</span>}
+                            {p.animales    && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#fff8ec', color:'#d48c0e' }}><Icon name="PawPrint" size={9} color="#d48c0e"/> Animales</span>}
+                            {p.vehiculos   && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'var(--bg-card-dark-secondary)', color:'var(--text-secondary)' }}><Icon name="Car" size={9} color="currentColor"/> Vehículos</span>}
+                            {p.pirotecnia  && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'var(--bg-error)', color:'var(--color-primary)' }}><Icon name="Flame" size={9} color="var(--color-primary)"/> Pirotecnia</span>}
+                            {p.cierreCalle && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'var(--bg-error)', color:'var(--color-primary)' }}><Icon name="TriangleAlert" size={9} color="var(--color-primary)"/> Cierre calle</span>}
+                            {p.actores     && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#f5f0ff', color:'#7c3fbf' }}><Icon name="Theater" size={9} color="#7c3fbf"/> Actores</span>}
+                            {p.sonido      && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#e8f8f0', color:'var(--color-success)' }}><Icon name="Mic" size={9} color="var(--color-success)"/> Sonido</span>}
                           </div>
                         )}
                       </div>
@@ -9868,7 +9868,7 @@ function ExportView({ project, onBack, onDelete }) {
               {/* COMENTARIOS POR DEPTO */}
               {hayComentarios && (
                 <div style={{ marginTop:10, paddingTop:10, borderTop:'1px dashed #e5e2dd' }}>
-                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.1em', marginBottom:8 }}>💬 COMENTARIOS</div>
+                  <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.1em', marginBottom:8 }}><Icon name="MessageSquare" size={10} color="#aaa"/> COMENTARIOS</div>
                   {Object.entries(comDep).map(([dk, coms]) => {
                     if (!coms || !coms.length) return null;
                     const m = project.depts[dk];
@@ -9907,9 +9907,9 @@ function ExportView({ project, onBack, onDelete }) {
         return (
           <div key={dk} className="print-page" style={{ marginTop:24, pageBreakBefore:'always' }}>
             <h2 style={{ fontSize:16, fontWeight:700, color:dm.color, marginBottom:16, borderBottom:`2px solid ${dm.color}33`, paddingBottom:8, display:'flex', alignItems:'center', gap:8 }}><Icon name={dm.icon||'Clapperboard'} size={16} color={dm.color}/> {dm.label}</h2>
-            {info.responsable && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:4 }}>👤 Responsable: <strong>{info.responsable}</strong></div>}
-            {info.contacto    && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:4 }}>📱 Contacto: {info.contacto}</div>}
-            {info.notas       && <div style={{ fontSize:12, color:'var(--text-tertiary)', marginBottom:12, fontStyle:'italic' }}>📝 {info.notas}</div>}
+            {info.responsable && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:4 }}><Icon name="User" size={12} color="currentColor" style={{marginRight:4}}/> Responsable: <strong>{info.responsable}</strong></div>}
+            {info.contacto    && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:4 }}><Icon name="Smartphone" size={12} color="currentColor" style={{marginRight:4}}/> Contacto: {info.contacto}</div>}
+            {info.notas       && <div style={{ fontSize:12, color:'var(--text-tertiary)', marginBottom:12, fontStyle:'italic' }}><Icon name="FileText" size={12} color="currentColor" style={{marginRight:4}}/> {info.notas}</div>}
 
             {checklist.length > 0 && (
               <>
@@ -10056,7 +10056,7 @@ function ExportView({ project, onBack, onDelete }) {
               <>
                 <S>CITACIONES</S>
                 {citas.map((c,i) => (
-                  <div key={i} style={{ fontSize:12, color:'var(--text-primary)', marginBottom:4 }}>🕐 {c.hora} — {c.tipo||c.lugar} {c.lugar&&c.tipo?`· 📍 ${c.lugar}`:''}</div>
+                  <div key={i} style={{ fontSize:12, color:'var(--text-primary)', marginBottom:4 }}><Icon name="Clock" size={10} color="currentColor"/> {c.hora} — {c.tipo||c.lugar} {c.lugar&&c.tipo?`· ${c.lugar}`:''}</div>
                 ))}
               </>
             )}
@@ -10083,8 +10083,8 @@ function ExportView({ project, onBack, onDelete }) {
                       <div style={{ padding:'6px 8px' }}>
                         <div style={{ fontSize:11, fontWeight:700, color:'var(--text-primary)' }}>{a.nombre}</div>
                         {a.personaje && <div style={{ fontSize:10, color:'var(--text-tertiary)', fontStyle:'italic' }}>{a.personaje}</div>}
-                        {a.altura    && <div style={{ fontSize:10, color:'#aaa' }}>📏 {a.altura}</div>}
-                        {a.telefono  && <div style={{ fontSize:10, color:'#aaa' }}>📱 {a.telefono}</div>}
+                        {a.altura    && <div style={{ fontSize:10, color:'#aaa' }}><Icon name="Ruler" size={11} color="currentColor" style={{flexShrink:0}}/> {a.altura}</div>}
+                        {a.telefono  && <div style={{ fontSize:10, color:'#aaa' }}><Icon name="Smartphone" size={11} color="currentColor" style={{flexShrink:0}}/> {a.telefono}</div>}
                       </div>
                     </div>
                   ))}
@@ -10135,7 +10135,7 @@ function ExportView({ project, onBack, onDelete }) {
 
         return (
           <div className="print-page" style={{ marginTop:24, pageBreakBefore:'always' }}>
-            <h2 style={{ fontSize:16, fontWeight:700, color:'#d48c0e', marginBottom:16, borderBottom:'2px solid #d48c0e33', paddingBottom:8 }}>🍴 Catering — Condiciones alimentarias</h2>
+            <h2 style={{ fontSize:16, fontWeight:700, color:'#d48c0e', marginBottom:16, borderBottom:'2px solid #d48c0e33', paddingBottom:8 }}><Icon name="Utensils" size={16} color="#d48c0e"/> Catering — Condiciones alimentarias</h2>
             <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap' }}>
               {Object.entries(resumen).map(([c,n])=>(
                 <div key={c} style={{ border:'1px solid #e5e2dd', borderRadius:8, padding:'8px 12px' }}>
@@ -10177,7 +10177,7 @@ function ExportView({ project, onBack, onDelete }) {
       {/* ── MENSAJES ARCHIVADOS ── */}
       {msgArchive.length > 0 && (
         <div className="print-page" style={{ marginTop:24, pageBreakBefore:'always' }}>
-          <h2 style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', marginBottom:16, borderBottom:'2px solid #f0ede8', paddingBottom:8 }}>✉️ Mensajes del proyecto</h2>
+          <h2 style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', marginBottom:16, borderBottom:'2px solid #f0ede8', paddingBottom:8 }}><Icon name="Mail" size={16} color="var(--text-primary)"/> Mensajes del proyecto</h2>
           {msgArchive.map((m,i)=>(
             <div key={i} style={{ border:'1px solid #e5e2dd', borderRadius:8, padding:'12px 14px', marginBottom:10 }}>
               <div style={{ fontSize:11, color:'var(--text-muted)', marginBottom:6 }}>{new Date(m.ts).toLocaleString('es-AR',{dateStyle:'medium',timeStyle:'short'})}</div>
@@ -10260,7 +10260,7 @@ function productoraSlug(text) {
 function LoadingScreen({ text = 'Conectando...' }) {
   return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'var(--bg-primary)', gap:16 }}>
-      <div style={{ fontSize:40 }}>🎬</div>
+      <div style={{ display:'flex', justifyContent:'center' }}><Icon name="Clapperboard" size={40} color="var(--text-primary)"/></div>
       <div style={{ fontSize:18, fontWeight:700, color:'var(--text-primary)', fontFamily:'Inter, sans-serif' }}>planderodajes.com</div>
       <div style={{ fontSize:12, color:'var(--text-muted)', fontFamily:'Inter, sans-serif' }}>{text}</div>
       <div style={{ width:40, height:4, background:'#e5e2dd', borderRadius:2, overflow:'hidden', marginTop:8 }}>
@@ -10277,7 +10277,7 @@ function LoadingScreen({ text = 'Conectando...' }) {
 function NotFoundScreen() {
   return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'var(--bg-primary)', gap:12, padding:32 }}>
-      <div style={{ fontSize:48 }}>🎬</div>
+      <div style={{ display:'flex', justifyContent:'center' }}><Icon name="Clapperboard" size={48} color="var(--text-primary)"/></div>
       <div style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)', fontFamily:'Inter, sans-serif', textAlign:'center' }}>Proyecto no encontrado</div>
       <div style={{ fontSize:13, color:'#aaa', fontFamily:'Inter, sans-serif', textAlign:'center', lineHeight:1.6 }}>
         El link que usaste no corresponde a ningún proyecto activo.<br/>Pedile al productor el link correcto.
@@ -10290,11 +10290,11 @@ function NotFoundScreen() {
 //  RODAJE SENCILLO — NUEVO RODAJE
 // ═══════════════════════════════════════════════════════════
 const DEPTOS_SENCILLO = {
-  camara01: { label:'Cámara 01', icon:'🎥', color:'#d94f2b' },
-  camara02: { label:'Cámara 02', icon:'🎬', color:'#c0392b' },
-  drone:    { label:'Drone',    icon:'🚁', color:'#0fa87e' },
-  locacion: { label:'Locación', icon:'📍', color:'#8e44ad' },
-  produccion:{ label:'Producción',icon:'📋', color:'#d48c0e' },
+  camara01: { label:'Cámara 01', icon:'Video', color:'#d94f2b' },
+  camara02: { label:'Cámara 02', icon:'Clapperboard', color:'#c0392b' },
+  drone:    { label:'Drone',    icon:'Navigation', color:'#0fa87e' },
+  locacion: { label:'Locación', icon:'MapPin', color:'#8e44ad' },
+  produccion:{ label:'Producción',icon:'ClipboardList', color:'#d48c0e' },
 };
 
 function NewRodajeSencilloView({ onCreated, onCancel }) {
@@ -10403,7 +10403,7 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
     const deptKey = newDeptName.toLowerCase().replace(/\s+/g,'_').slice(0,20);
     const COLORS = ['#d94f2b','#d48c0e','#0fa87e','#2f7ed8','#8e44ad','#e67e22','#1abc9c','#c0392b','#f39c12'];
     const colorIndex = Object.keys(project.depts||{}).length % COLORS.length;
-    const newDept = { label: newDeptName.trim(), icon: '📁', color: COLORS[colorIndex] };
+    const newDept = { label: newDeptName.trim(), icon: 'FolderOpen', color: COLORS[colorIndex] };
     onUpdateProject({
       ...project,
       depts: { ...(project.depts||{}), [deptKey]: newDept }
@@ -10421,7 +10421,7 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
         {coverImg
           ? <img src={coverImg} alt="portada" style={{ width:'100%', height:220, objectFit:'cover', display:'block' }}/>
           : <div style={{ height:180, background:'linear-gradient(135deg, #1a1714 0%, #2a2420 100%)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <span style={{ fontSize:48 }}>📱</span>
+              <Icon name="Smartphone" size={48} color="var(--text-tertiary)"/>
             </div>
         }
         <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(transparent, rgba(0,0,0,0.65))', padding:'20px 20px 14px' }}>
@@ -10430,7 +10430,7 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
         </div>
         {isAdmin && (
           <label style={{ position:'absolute', top:12, right:12, background:'rgba(0,0,0,0.5)', border:'none', borderRadius:20, padding:'6px 12px', cursor:'pointer', fontFamily:'inherit', fontSize:11, color:'#fff', display:'flex', alignItems:'center', gap:6 }}>
-            📷 Portada
+            <><Icon name="Camera" size={13} color="currentColor" style={{marginRight:4}}/> Portada</>
             <input type="file" accept="image/*" onChange={handleCover} style={{ display:'none' }}/>
           </label>
         )}
@@ -10445,7 +10445,7 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
               {msg && msg.text ? (
                 <div>
                   <div style={{ fontSize:13, color:'#fff', lineHeight:1.5, marginBottom:8 }}>{msg.text}</div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>📢 {msg.author||'Admin'} · {new Date(msg.ts||0).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}><Icon name="Megaphone" size={10} color="rgba(255,255,255,0.6)"/> {msg.author||'Admin'} · {new Date(msg.ts||0).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}</div>
                 </div>
               ) : isAdmin ? (
                 <button onClick={() => {
@@ -10457,7 +10457,7 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
                     });
                   }
                 }} style={{ background:'rgba(255,255,255,0.15)', border:'1px dashed rgba(255,255,255,0.3)', borderRadius:10, padding:'12px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'rgba(255,255,255,0.7)', width:'100%' }}>
-                  📢 Escribir mensaje para el equipo
+                  <><Icon name="Megaphone" size={13} color="rgba(255,255,255,0.5)" style={{marginRight:5}}/> Escribir mensaje para el equipo</>
                 </button>
               ) : null}
             </div>
@@ -10516,7 +10516,7 @@ function RodajeSencilloHome({ project, isAdmin, onSelectDay, onSelectDept, onUpd
         <div style={{ marginBottom:24 }}>
           <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.12em', marginBottom:12 }}>ARCHIVOS IMPORTANTES</div>
           <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card-dark)', border:'1px dashed #d48c0e', borderRadius:12, padding:'14px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'var(--text-tertiary)' }}>
-            📎 Agregar archivos
+            <><Icon name="Paperclip" size={13} color="currentColor" style={{marginRight:4}}/> Agregar archivos</>
             <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={async (e)=>{
               const file = e.target.files[0]; if(!file) return;
               try {
@@ -10694,7 +10694,7 @@ function AdminAllProjectsPanel({ onClose }) {
             {/* ESPACIOS DE TRABAJO */}
             <div style={{ marginBottom:24 }}>
               <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', marginBottom:12 }}>
-                📁 ESPACIOS DE TRABAJO ({allWorkspaces.length})
+                <Icon name="FolderOpen" size={13} color="currentColor" style={{marginRight:6}}/> ESPACIOS DE TRABAJO ({allWorkspaces.length})
               </div>
               
               {allWorkspaces.length === 0 ? (
@@ -10736,7 +10736,7 @@ function AdminAllProjectsPanel({ onClose }) {
             {/* PROYECTOS */}
             <div>
               <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', marginBottom:12 }}>
-                🎬 PROYECTOS ({allProjects.length})
+                <Icon name="Clapperboard" size={13} color="currentColor" style={{marginRight:6}}/> PROYECTOS ({allProjects.length})
               </div>
               
               {allProjects.length === 0 ? (
@@ -10934,7 +10934,7 @@ function MarketplaceView({ onBack }) {
             ))}
             {(form.fotos||[]).length < 5 && (
               <label style={{ width:72, height:72, borderRadius:10, border:'1.5px dashed #ccc', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:22, color:'#bbb' }}>
-                {uploading ? '⏳' : '📷'}
+                {uploading ? <Icon name='Loader' size={14} color='currentColor'/> : <Icon name='Camera' size={14} color='currentColor'/>}
                 <input type="file" accept="image/*" multiple onChange={handleFotos} style={{ display:'none' }}/>
               </label>
             )}
@@ -10964,7 +10964,7 @@ function MarketplaceView({ onBack }) {
         {/* PIN — solo al crear */}
         {!isEdit && (
           <div style={{ marginBottom:16 }}>
-            <input value={form.pin} onChange={e=>sf('pin',e.target.value)} placeholder="🔒 PIN para editar/eliminar *" type="password" maxLength={20}
+            <input value={form.pin} onChange={e=>sf('pin',e.target.value)} placeholder="PIN para editar/eliminar *" type="password" maxLength={20}
               style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'#fff8e1', border:'1.5px solid #f0b429', borderRadius:10, padding:'11px 12px', color:'#1a1714', outline:'none', boxSizing:'border-box' }}/>
             <div style={{ fontSize:11, color:'#aaa', marginTop:4 }}>Guardá este PIN — lo necesitarás para editar o eliminar tu publicación</div>
           </div>
@@ -10985,7 +10985,7 @@ function MarketplaceView({ onBack }) {
   const renderPinModal = (action) => (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={closeModal}>
       <div style={{ background:'#fff', borderRadius:20, width:'100%', maxWidth:340, padding:24 }} onClick={e=>e.stopPropagation()}>
-        <div style={{ fontSize:32, textAlign:'center', marginBottom:8 }}>{action==='edit' ? '✏️' : '🗑️'}</div>
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:8 }}>{action==='edit' ? <Icon name='PencilLine' size={32} color='var(--text-primary)'/> : <Icon name='Trash2' size={32} color='var(--color-primary)'/>}</div>
         <div style={{ fontSize:16, fontWeight:700, color:'#1a1714', textAlign:'center', marginBottom:4 }}>
           {action==='edit' ? 'Editar publicación' : 'Eliminar publicación'}
         </div>
@@ -11008,15 +11008,15 @@ function MarketplaceView({ onBack }) {
     <div style={{ minHeight:'100vh', background:'#f7f5f2', fontFamily:'Inter, sans-serif', display:'flex', flexDirection:'column' }}>
       {/* Header */}
       <div style={{ background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding:'calc(env(safe-area-inset-top,0px) + 16px) 20px 20px', position:'sticky', top:0, zIndex:10 }}>
-        <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.7)', fontSize:14, cursor:'pointer', padding:'0 0 12px', fontFamily:'Inter, sans-serif' }}>‹ Volver</button>
+        <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.7)', cursor:'pointer', padding:'0 0 12px', fontFamily:'Inter, sans-serif' }}>‹ Volver</button>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <div>
-            <div style={{ fontSize:24, fontWeight:800, color:'#fff' }}>🛒 Marketplace</div>
+            <div style={{ fontSize:24, fontWeight:800, color:'#fff', display:'flex', alignItems:'center', gap:10 }}><Icon name="ShoppingCart" size={22} color="#fff"/> Marketplace</div>
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginTop:2 }}>Equipos, props y servicios para producción</div>
           </div>
           <button onClick={()=>{ setForm(EMPTY_FORM); setMode('new'); }} style={{ background:'rgba(255,255,255,0.95)', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, color:'#0B7285', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>+ Publicar</button>
         </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍  Buscar equipos, props, servicios..."
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar equipos, props, servicios..."
           style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:14, background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.25)', borderRadius:12, padding:'11px 14px', color:'#fff', outline:'none', boxSizing:'border-box' }}/>
       </div>
 
@@ -11035,7 +11035,7 @@ function MarketplaceView({ onBack }) {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'60px 20px', color:'#bbb' }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🛒</div>
+            <div style={{ }}><Icon name="ShoppingCart" size={40} color="var(--text-primary)"/></div>
             <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>{search ? 'Sin resultados' : 'El marketplace está vacío'}</div>
             <div style={{ fontSize:13 }}>{search ? 'Probá con otra búsqueda' : 'Sé el primero en publicar'}</div>
           </div>
@@ -11046,21 +11046,21 @@ function MarketplaceView({ onBack }) {
                 {(item.fotos||[]).length > 0 ? (
                   <img src={item.fotos[0]} alt={item.titulo} style={{ width:'100%', aspectRatio:'4/3', objectFit:'cover' }}/>
                 ) : (
-                  <div style={{ width:'100%', aspectRatio:'4/3', background:'#f0ede8', display:'flex', alignItems:'center', justifyContent:'center', fontSize:36 }}>📦</div>
+                  <div style={{ width:'100%', aspectRatio:'4/3', background:'#f0ede8', display:'flex', alignItems:'center', justifyContent:'center', }}><Icon name="Package" size={36} color="var(--text-secondary)"/></div>
                 )}
                 <div style={{ padding:'10px 10px 12px' }}>
                   <div style={{ fontSize:10, background:'#0B728515', color:'#0B7285', borderRadius:6, padding:'2px 7px', display:'inline-block', marginBottom:6 }}>{item.categoria}</div>
                   <div style={{ fontSize:13, fontWeight:700, color:'#1a1714', marginBottom:3, lineHeight:1.3 }}>{item.titulo}</div>
                   {item.descripcion && <div style={{ fontSize:11, color:'#888', marginBottom:6, lineHeight:1.4 }}>{item.descripcion.slice(0,60)}{item.descripcion.length>60?'…':''}</div>}
                   {item.precio && <div style={{ fontSize:14, fontWeight:700, color:'#0B7285', marginBottom:4 }}>{item.precio}</div>}
-                  <div style={{ fontSize:11, color:'#aaa', marginBottom:8 }}>📞 {item.contacto}{item.nombre?' · '+item.nombre:''}</div>
+                  <div style={{ fontSize:11, color:'#aaa', marginBottom:8 }}><Icon name="Phone" size={11} color="#aaa"/> {item.contacto}{item.nombre?' · '+item.nombre:''}</div>
                   <a href={`https://wa.me/${item.contacto.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
                     style={{ display:'block', textAlign:'center', background:'#25D366', color:'#fff', borderRadius:8, padding:'7px', fontSize:12, fontWeight:700, textDecoration:'none', fontFamily:'Inter, sans-serif', marginBottom:6 }}>
-                    💬 WhatsApp
+                    <Icon name="MessageCircle" size={13} color="#fff" style={{marginRight:5}}/> WhatsApp
                   </a>
                   <div style={{ display:'flex', gap:4 }}>
                     <button onClick={()=>startEdit(item)} style={{ flex:1, background:'#f0f7ff', border:'1px solid #cce4f7', borderRadius:8, fontSize:11, color:'#0B7285', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>✏️ Editar</button>
-                    <button onClick={()=>startDel(item)} style={{ flex:1, background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8, fontSize:11, color:'#e53e3e', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>🗑️ Eliminar</button>
+                    <button onClick={()=>startDel(item)} style={{ flex:1, background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8, fontSize:11, color:'#e53e3e', fontWeight:600, padding:'6px', cursor:'pointer', fontFamily:'Inter, sans-serif' }}><Icon name="Trash2" size={13} color="#e53e3e" style={{marginRight:4}}/> Eliminar</button>
                   </div>
                 </div>
               </div>
@@ -11140,9 +11140,9 @@ function DropboxView({ project, onBack }) {
       <div style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', position:'sticky', top:0, zIndex:10, background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <button onClick={onBack} className="tap" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.8)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>‹ Volver</button>
-          <span style={{ color:'#fff', fontSize:14, fontWeight:700, fontFamily:'inherit' }}>📁 Dropbox</span>
+          <span style={{ color:'#fff', fontSize:14, fontWeight:700, fontFamily:'inherit' }}><Icon name="FolderOpen" size={14} color="#fff"/> Dropbox</span>
           <label className="tap" style={{ background:'rgba(255,255,255,0.2)', borderRadius:8, padding:'6px 12px', fontSize:12, color:'#fff', fontWeight:700, cursor: uploading?'wait':'pointer', fontFamily:'inherit', opacity: uploading?0.6:1 }}>
-            {uploading ? '⏳ Subiendo…' : '+ Subir'}
+            {uploading ? <><Icon name='Loader' size={12} color='currentColor'/> Subiendo…</> : <><Icon name='Upload' size={12} color='currentColor'/> Subir</>}
             <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp4,.mov" style={{ display:'none' }} onChange={handleUpload} disabled={uploading}/>
           </label>
         </div>
@@ -11152,7 +11152,7 @@ function DropboxView({ project, onBack }) {
           <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.6)' }}>Cargando…</div>
         ) : files.length === 0 ? (
           <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.5)' }}>
-            <div style={{ fontSize:48, marginBottom:12, opacity:0.5 }}>📁</div>
+            <div style={{ }}><Icon name="FolderOpen" size={48} color="var(--text-tertiary)" style={{opacity:0.5}}/></div>
             <div style={{ fontSize:14, fontWeight:600, marginBottom:4, color:'#fff' }}>No hay archivos todavía</div>
             <div style={{ fontSize:12 }}>Subí fotos, PDFs o documentos del proyecto</div>
           </div>
@@ -11164,14 +11164,14 @@ function DropboxView({ project, onBack }) {
                   {f.type && f.type.startsWith('image/') ? (
                     <img src={f.url} alt={f.name} style={{ width:'100%', height:110, objectFit:'cover', display:'block' }}/>
                   ) : (
-                    <div style={{ height:110, display:'flex', alignItems:'center', justifyContent:'center', fontSize:36, background:'rgba(0,0,0,0.1)' }}>📄</div>
+                    <div style={{ height:110, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.1)' }}><Icon name="FileText" size={36} color="var(--text-primary)"/></div>
                   )}
                 </a>
                 <div style={{ padding:'8px 10px' }}>
                   <div style={{ fontSize:11, fontWeight:600, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:4 }}>
                     <span style={{ fontSize:9, color:'rgba(255,255,255,0.5)' }}>{f.size ? fmtSize(f.size) : ''} · {new Date(f.ts).toLocaleDateString()}</span>
-                    <button onClick={()=>deleteFile(f.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', fontSize:14, cursor:'pointer', padding:2 }} title="Eliminar">✕</button>
+                    <button onClick={()=>deleteFile(f.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', padding:2 }} title="Eliminar">✕</button>
                   </div>
                 </div>
               </div>
@@ -11429,11 +11429,11 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
 
         {pinnedList.length > 0 && (
           <div style={{ padding:'0 20px 8px' }}>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:10, paddingLeft:4, textTransform:'uppercase' }}>📌 Acceso directo</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:10, paddingLeft:4, textTransform:'uppercase' }}><Icon name="Pin" size={11} color="rgba(255,255,255,0.5)"/> Acceso directo</div>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
               {pinnedList.map(proj => (
                 <button key={proj.id} onClick={()=>handleOpenPinned(proj)} className="tap" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', border:'none', borderRadius:14, background:'rgba(255,255,255,0.12)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-                  <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0B7285', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
+                  <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0B7285', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Clapperboard" size={18} color="rgba(255,255,255,0.9)"/></div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
                     <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)' }}>Abrir proyecto</div>
@@ -11447,36 +11447,36 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
 
         <div style={{ display:'flex', flexDirection:'column', padding:'0 20px', gap:0 }}>
           <button onClick={()=>setModo('complejo')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔑</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="LogIn" size={18} color="rgba(255,255,255,0.9)"/></div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Ingresar</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Accedé a tu espacio existente</div>
             </div>
-            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <Icon name="ChevronRight" size={18} color="rgba(255,255,255,0.3)"/>
           </button>
           <button onClick={onCreateProductora} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>✦</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Plus" size={18} color="rgba(255,255,255,0.9)"/></div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Crear espacio de trabajo</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Freelance o productora</div>
             </div>
-            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <Icon name="ChevronRight" size={18} color="rgba(255,255,255,0.3)"/>
           </button>
           <button onClick={()=>setModo('marketplace')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🛒</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="ShoppingCart" size={18} color="rgba(255,255,255,0.9)"/></div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Marketplace</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Equipos, props y servicios</div>
             </div>
-            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <Icon name="ChevronRight" size={18} color="rgba(255,255,255,0.3)"/>
           </button>
           <button onClick={onOpenDemo} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'none', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>▶</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Play" size={18} color="rgba(255,255,255,0.9)"/></div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Ver demo</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Explorar el Proyecto Cero</div>
             </div>
-            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+            <Icon name="ChevronRight" size={18} color="rgba(255,255,255,0.3)"/>
           </button>
         </div>
       </div>
@@ -11514,7 +11514,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
         <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.6)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
           <div style={{ background:'#2a1200', borderRadius:20, padding:28, maxWidth:300, width:'100%', border:'1px solid rgba(255,255,255,0.12)' }}>
             <div style={{ textAlign:'center', marginBottom:20 }}>
-              <div style={{ fontSize:28, marginBottom:10 }}>🔐</div>
+              <div style={{ }}><Icon name="Lock" size={28} color="var(--text-primary)"/></div>
               <div style={{ fontSize:16, fontWeight:700, color:'#fff', marginBottom:4 }}>Panel de Admin</div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>Ingresá la contraseña</div>
             </div>
@@ -11550,7 +11550,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily:'Inter, sans-serif' }}>
       <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', padding:'48px 20px 32px', display:'flex', flexDirection:'column' }}>
         <button onClick={()=>setModo(null)}
-          style={{ alignSelf:'flex-start', background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:14, cursor:'pointer', padding:'0 0 28px', fontFamily:'Inter, sans-serif' }}>
+          style={{ alignSelf:'flex-start', background:'none', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', padding:'0 0 28px', fontFamily:'Inter, sans-serif' }}>
           ‹ Volver
         </button>
         <div style={{ marginBottom:32 }}>
@@ -11627,7 +11627,7 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
   if (notFound) {
     return (
       <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', gap:14, padding:32, fontFamily:'Inter, sans-serif' }}>
-        <div style={{ fontSize:48 }}>🔍</div>
+        <div style={{ }}><Icon name="Search" size={48} color="var(--text-tertiary)"/></div>
         <div style={{ fontSize:20, fontWeight:800, color:'#fff', textAlign:'center' }}>Productora no encontrada</div>
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', textAlign:'center', lineHeight:1.6, maxWidth:300 }}>
           No existe ninguna productora con el nombre <strong style={{ color:'rgba(255,200,160,0.9)' }}>"{productoraId}"</strong>.<br/>
@@ -11657,7 +11657,7 @@ function ProductoraGateView({ productoraId, onUnlocked, onBack }) {
       <button onClick={onBack} style={{ position:'absolute', top:20, left:20, background:'none', border:'none', fontSize:13, color:'rgba(255,255,255,0.55)', cursor:'pointer', fontFamily:'Inter, sans-serif' }}>‹ Inicio</button>
       <div style={{ width:'100%', maxWidth:340 }}>
         <div style={{ textAlign:'center', marginBottom:32 }}>
-          <div style={{ fontSize:42, marginBottom:10 }}>🔒</div>
+          <div style={{ }}><Icon name="Lock" size={42} color="var(--text-primary)"/></div>
           <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', marginBottom:8, fontWeight:600 }}>PRODUCTORA</div>
           <div style={{ fontSize:24, fontWeight:900, color:'#fff', marginBottom:6, letterSpacing:'-0.02em' }}>{productora.name}</div>
           <div style={{ fontSize:13, color:'#888' }}>Ingresá la contraseña para continuar</div>
@@ -11880,7 +11880,7 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
           <div style={{ fontSize:10, color:tc('rgba(255,255,255,0.4)','rgba(0,0,0,0.35)'), letterSpacing:'0.12em', fontWeight:600 }}>PRODUCTORA</div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <button onClick={()=>{ setShowColorPicker(true); setColorPin(''); setColorPinError(''); setColorPinOk(false); }} style={{ background:tc('rgba(255,255,255,0.12)','rgba(0,0,0,0.08)'), border:'none', fontSize:12, color:tc('rgba(255,255,255,0.7)','rgba(0,0,0,0.55)'), cursor:'pointer', fontFamily:'Inter, sans-serif', padding:'5px 12px', borderRadius:20 }}>🎨 Color</button>
+            <button onClick={()=>{ setShowColorPicker(true); setColorPin(''); setColorPinError(''); setColorPinOk(false); }} style={{ background:tc('rgba(255,255,255,0.12)','rgba(0,0,0,0.08)'), border:'none', fontSize:12, color:tc('rgba(255,255,255,0.7)','rgba(0,0,0,0.55)'), cursor:'pointer', fontFamily:'Inter, sans-serif', padding:'5px 12px', borderRadius:20 }}><Icon name="Palette" size={13} color="currentColor" style={{marginRight:4}}/> Color</button>
             <button onClick={handleLogout} style={{ background:tc('rgba(255,255,255,0.08)','rgba(0,0,0,0.06)'), border:'none', fontSize:12, color:tc('rgba(255,255,255,0.5)','rgba(0,0,0,0.4)'), cursor:'pointer', fontFamily:'Inter, sans-serif', padding:'5px 12px', borderRadius:20 }}>Cerrar sesión</button>
           </div>
         </div>
@@ -11890,7 +11890,7 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
         {/* Color Picker Modal */}
         {showColorPicker && (
           <div style={{ background:'rgba(0,0,0,0.3)', borderRadius:16, padding:20, marginBottom:20, border:'1px solid rgba(255,255,255,0.15)' }}>
-            <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:12 }}>🎨 Cambiar color de productora</div>
+            <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:12 }}><Icon name="Palette" size={14} color="#fff" style={{marginRight:6}}/> Cambiar color de productora</div>
             {!colorPinOk ? (
               <div>
                 <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', marginBottom:8 }}>Ingresá el código de la productora ({productora.id}) para confirmar</div>
@@ -11976,7 +11976,7 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
                       <div style={{ fontSize:10, color:tc('rgba(255,255,255,0.3)','rgba(0,0,0,0.3)'), marginTop:2 }}>{(p.days||[]).length} día{(p.days||[]).length!==1?'s':''} · {(p.days||[]).reduce((sum,d)=>sum+(d.scenes||[]).length,0)} escenas</div>
                     </div>
                     <button onClick={()=>copyLink(p.id)} style={{ background: copied===p.id?tc('rgba(255,255,255,0.9)','rgba(0,0,0,0.12)'):tc('rgba(255,255,255,0.08)','rgba(0,0,0,0.06)'), border:'none', borderRadius:8, color: copied===p.id?tc('#0f3460','#1a1714'):tc('rgba(255,255,255,0.5)','rgba(0,0,0,0.4)'), fontSize:13, cursor:'pointer', padding:'8px 12px', fontFamily:'Inter, sans-serif' }}>
-                      {copied===p.id ? '✓' : '🔗'}
+                      {copied===p.id ? <Icon name='Check' size={14} color='currentColor'/> : <Icon name='Link' size={14} color='currentColor'/>}
                     </button>
                     <button onClick={()=>setConfirmDelete(p.id)} style={{ background:'rgba(255,80,60,0.15)', border:'none', borderRadius:8, color:tc('rgba(255,160,140,0.9)','#c00'), fontSize:13, cursor:'pointer', padding:'8px 10px' }}>✕</button>
                   </div>
@@ -12031,7 +12031,7 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
       <div style={{ flex:1, padding:'24px 16px 40px', display:'flex', flexDirection:'column', gap:12 }}>
         <div style={{ background:'var(--bg-card-dark)', borderRadius:14, padding:'14px 16px', border:'1px solid #f5e8c0' }}>
           <div style={{ fontSize:12, color:'#d48c0e', fontFamily:'Inter, sans-serif', lineHeight:1.6 }}>
-            💡 Cada proyecto tiene su propio link. Compartilo con el equipo — acceden en tiempo real sin cuenta.
+            <Icon name="Lightbulb" size={13} color="#d48c0e" style={{marginRight:5}}/> Cada proyecto tiene su propio link. Compartilo con el equipo — acceden en tiempo real sin cuenta.
           </div>
         </div>
 
@@ -12041,7 +12041,7 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
             {projects.map(p => (
               <div key={p.id} style={{ background:'var(--bg-secondary)', borderRadius:16, padding:'16px', marginBottom:10, border:'1px solid var(--border-light)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
                 <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:12 }}>
-                  <div style={{ width:44, height:44, borderRadius:12, background:'#d94f2b18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>🎬</div>
+                  <div style={{ width:44, height:44, borderRadius:12, background:'#d94f2b18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icon name="Clapperboard" size={22} color="rgba(255,255,255,0.9)"/></div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'Inter, sans-serif', marginBottom:2 }}>{p.title}</div>
                     <div style={{ fontSize:12, color:'#aaa', fontFamily:'Inter, sans-serif' }}>{p.client}</div>
@@ -12050,7 +12050,7 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
                 </div>
 
                 <div style={{ background:'var(--bg-primary)', borderRadius:10, padding:'10px 12px', marginBottom:10, fontFamily:'monospace', fontSize:11, color:'var(--text-tertiary)', wordBreak:'break-all', lineHeight:1.5 }}>
-                  🔗 {buildProjectUrl(p.id)}
+                  <Icon name="Link" size={12} color="#2f7ed8" style={{marginRight:4}}/> {buildProjectUrl(p.id)}
                 </div>
 
                 {/* Botones principales */}
@@ -12058,7 +12058,7 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
                   <button onClick={() => copyLink(p.id)} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700,
                     background: copied===p.id ? '#0fa87e' : '#1a1714',
                     color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer', transition:'background 0.2s' }}>
-                    {copied===p.id ? '✓ Copiado!' : '📋 Copiar link'}
+                    {copied===p.id ? <><Icon name='Check' size={12} color='currentColor'/> Copiado!</> : <><Icon name='ClipboardCopy' size={12} color='currentColor'/> Copiar link</>}
                   </button>
                   <button onClick={() => onOpenProject(p.id)} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background:'var(--color-primary)', color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>
                     Abrir →
@@ -12068,7 +12068,7 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
                 {/* Borrar proyecto */}
                 {confirmDelete !== p.id
                   ? <button onClick={()=>setConfirmDelete(p.id)} style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:11, color:'#ccc', background:'none', border:'1px dashed #e5e2dd', borderRadius:10, padding:'8px', cursor:'pointer' }}>
-                      🗑 Borrar proyecto
+                      <Icon name="Trash2" size={13} color="currentColor" style={{marginRight:4}}/> Borrar proyecto
                     </button>
                   : <div style={{ background:'var(--bg-error)', borderRadius:10, padding:'12px 14px', border:'1px solid #d94f2b33' }}>
                       <div style={{ fontSize:12, color:'var(--color-primary)', fontFamily:'inherit', fontWeight:700, marginBottom:4 }}>⚠️ ¿Borrar "{p.title}"?</div>
@@ -12088,7 +12088,7 @@ function AdminHub({ projects, onCreateProject, onOpenProject, onDeleteProject })
 
         {projects.length === 0 && (
           <div style={{ textAlign:'center', padding:'40px 20px', color:'#ccc', fontFamily:'Inter, sans-serif' }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🎬</div>
+            <div style={{ }}><Icon name="Clapperboard" size={40} color="var(--text-primary)"/></div>
             <div style={{ fontSize:14 }}>Sin proyectos todavía.</div>
           </div>
         )}
@@ -12657,3 +12657,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                       
