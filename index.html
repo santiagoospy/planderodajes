@@ -11460,7 +11460,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
                   <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0B7285', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
-                    <div style={{ fontSize:12, color:lt2 }}>Abrir proyecto</div>
+                    <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)' }}>Abrir proyecto</div>
                   </div>
                   <span onClick={(e)=>removePinned(proj.id, e)} style={{ fontSize:16, color:'rgba(255,255,255,0.3)', padding:'4px 8px', cursor:'pointer', borderRadius:8 }} title="Quitar">✕</span>
                 </button>
@@ -11473,7 +11473,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
           <button onClick={()=>setModo('complejo')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔑</div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:16, fontWeight:700, color:lt }}>Ingresar</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Ingresar</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Accedé a tu espacio existente</div>
             </div>
             <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
@@ -11481,7 +11481,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
           <button onClick={onCreateProductora} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>✦</div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:16, fontWeight:700, color:lt }}>Crear espacio de trabajo</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Crear espacio de trabajo</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Freelance o productora</div>
             </div>
             <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
@@ -11489,7 +11489,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
           <button onClick={()=>setModo('marketplace')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🛒</div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:16, fontWeight:700, color:lt }}>Marketplace</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Marketplace</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Equipos, props y servicios</div>
             </div>
             <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
@@ -11497,7 +11497,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
           <button onClick={onOpenDemo} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'none', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>▶</div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:16, fontWeight:700, color:lt }}>Ver demo</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff' }}>Ver demo</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Explorar el Proyecto Cero</div>
             </div>
             <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
