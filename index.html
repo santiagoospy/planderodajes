@@ -8585,19 +8585,17 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
   // Detectar gradient de la productora
   const PRODUCTORA_THEMES_MAP = {
     celeste:   'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
-    turquesa:  '#2EC4B6',
-    arena:     '#F4A261',
-    coral:     '#E76F51',
+    coral:     '#C45A3C',
     oscuro:    'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
     claro:     '#F1FAEE',
     // Backward compat: viejos keys → paleta nueva
-    naranja:   '#F4A261',
-    amarillo:  '#F4A261',
+    naranja:   '#C45A3C',
+    amarillo:  '#C45A3C',
     gris:      'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
     verde:     '#0B7285',
-    violeta:   '#E76F51',
-    rojo:      '#E76F51',
-    rosado:    '#E76F51',
+    violeta:   '#C45A3C',
+    rojo:      '#C45A3C',
+    rosado:    '#C45A3C',
   };
   const [productoraGrad, setProductoraGrad] = useState('linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)');
   const [isLightTheme, setIsLightTheme] = useState(false);
@@ -8606,7 +8604,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
       fb().getProductora(project.productoraId).then(prod => {
         if (prod && prod.colorTheme && PRODUCTORA_THEMES_MAP[prod.colorTheme]) {
           setProductoraGrad(PRODUCTORA_THEMES_MAP[prod.colorTheme]);
-          setIsLightTheme(['claro','arena','coral','naranja','amarillo'].includes(prod.colorTheme));
+          setIsLightTheme(prod.colorTheme === 'claro');
         }
       }).catch(()=>{});
     }
@@ -8761,13 +8759,6 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
     );
   }
 
-  // ── Colores adaptativos: tema claro = texto oscuro, tema oscuro = texto blanco ──
-  const tw  = isLightTheme ? '#2a2a2a' : '#fff';
-  const tw2 = isLightTheme ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.6)';
-  const tw3 = isLightTheme ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)';
-  const tw4 = isLightTheme ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.3)';
-  const twBg = isLightTheme ? 'rgba(0,0,0,0.07)' : 'rgba(0,0,0,0.15)';
-  const twBd = isLightTheme ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.08)';
 
   return (
     <div style={{ minHeight:'100vh', background:productoraGrad, display:'flex', flexDirection:'column' }} className="slide-r">
@@ -8810,22 +8801,37 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               <img src={project.logo} alt="Portada" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
               {isAdmin && (
                 <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
-                  <label className="tap" style={{ background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:11, color:tw, fontWeight:600, fontFamily:'inherit' }}>
+                  <label className="tap" style={{ background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:11, color:'#fff', fontWeight:600, fontFamily:'inherit' }}>
                     📸 Cambiar
                     <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
                       onChange={async (e) => {
-                        const f = e.target.files[0]; if (!f) return;
+                        const file = e.target.files[0]; if (!file) return;
                         try {
-                          const data = await window.compressImage(f, 800, 0.60);
-                          console.log('[Foto] Comprimida:', Math.round(data.length/1024)+'KB');
-                          onUpdateProject({ ...project, logo: data });
+                          // Comprimir → Blob → File → subir a R2 → guardar solo la URL
+                          const blob = await new Promise((res, rej) => {
+                            const img = new Image();
+                            img.onload = () => {
+                              const canvas = document.createElement('canvas');
+                              let w = img.width, h = img.height, max = 1200;
+                              if (w > max || h > max) { if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
+                              canvas.width = w; canvas.height = h;
+                              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                              canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/jpeg', 0.75);
+                            };
+                            img.onerror = () => rej(new Error('No se pudo leer la imagen'));
+                            img.src = URL.createObjectURL(file);
+                          });
+                          const f2 = new File([blob], 'cover-'+Date.now()+'.jpg', { type:'image/jpeg' });
+                          const { url } = await window.uploadFileToR2(f2);
+                          console.log('[Foto] Subida a R2:', url);
+                          onUpdateProject({ ...project, logo: url });
                         } catch(err) {
-                          console.error('[Foto] Error:', err);
-                          alert('Error al subir foto: ' + (err.message || err));
+                          console.error('[Foto]', err);
+                          alert('Error al subir foto: ' + (err.message||err));
                         }
                       }}/>
                   </label>
-                  <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ background:'rgba(0,0,0,0.6)', border:'none', color:tw, fontSize:14, cursor:'pointer', fontWeight:700, borderRadius:8, padding:'5px 8px' }}>✕</button>
+                  <button onClick={() => onUpdateProject({ ...project, logo: '' })} style={{ background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:14, cursor:'pointer', fontWeight:700, borderRadius:8, padding:'5px 8px' }}>✕</button>
                 </div>
               )}
             </div>
@@ -8834,14 +8840,28 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
               📸 SUBIR FOTO DE PORTADA
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style={{ display:'none' }}
                 onChange={async (e) => {
-                  const f = e.target.files[0]; if (!f) return;
+                  const file = e.target.files[0]; if (!file) return;
                   try {
-                    const data = await window.compressImage(f, 800, 0.60);
-                    console.log('[Foto] Comprimida:', Math.round(data.length/1024)+'KB');
-                    onUpdateProject({ ...project, logo: data });
+                    const blob = await new Promise((res, rej) => {
+                      const img = new Image();
+                      img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height, max = 1200;
+                        if (w > max || h > max) { if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/jpeg', 0.75);
+                      };
+                      img.onerror = () => rej(new Error('No se pudo leer la imagen'));
+                      img.src = URL.createObjectURL(file);
+                    });
+                    const f2 = new File([blob], 'cover-'+Date.now()+'.jpg', { type:'image/jpeg' });
+                    const { url } = await window.uploadFileToR2(f2);
+                    console.log('[Foto] Subida a R2:', url);
+                    onUpdateProject({ ...project, logo: url });
                   } catch(err) {
-                    console.error('[Foto] Error:', err);
-                    alert('Error al subir foto: ' + (err.message || err));
+                    console.error('[Foto]', err);
+                    alert('Error al subir foto: ' + (err.message||err));
                   }
                 }}/>
             </label>
@@ -8867,19 +8887,19 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
 
           {/* MENSAJE GENERAL - Clear style */}
           {msg ? (
-            <div style={{ background:twBg, borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
+            <div style={{ background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
               <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:10 }}>
                 <span style={{ fontSize:18 }}>📢</span>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:10, color:tw3, letterSpacing:'0.08em', fontFamily:'Inter, sans-serif', marginBottom:3, fontWeight:600 }}>MENSAJE GENERAL</div>
-                  <div style={{ fontSize:13, color:tw, fontFamily:'Inter, sans-serif', lineHeight:1.5 }}>{msg.text}</div>
-                  <div style={{ fontSize:10, color:tw3, fontFamily:'Inter, sans-serif', marginTop:4 }}>{new Date(msg.ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', fontFamily:'Inter, sans-serif', marginBottom:3, fontWeight:600 }}>MENSAJE GENERAL</div>
+                  <div style={{ fontSize:13, color:'#fff', fontFamily:'Inter, sans-serif', lineHeight:1.5 }}>{msg.text}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', fontFamily:'Inter, sans-serif', marginTop:4 }}>{new Date(msg.ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}</div>
                 </div>
-                {isAdmin && <button onClick={archiveMsg} style={{ background:'none', border:'none', color:tw3, fontSize:16, cursor:'pointer', padding:0 }} title="Archivar">✕</button>}
+                {isAdmin && <button onClick={archiveMsg} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:16, cursor:'pointer', padding:0 }} title="Archivar">✕</button>}
               </div>
               {Object.keys(project.depts).length > 0 && (
                 <div style={{ borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:10 }}>
-                  <div style={{ fontSize:9, color:tw3, letterSpacing:'0.08em', marginBottom:7, fontWeight:600 }}>ACUSE DE LECTURA</div>
+                  <div style={{ fontSize:9, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:7, fontWeight:600 }}>ACUSE DE LECTURA</div>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
                     {Object.entries(project.depts).map(([k,m]) => {
                       const acked = msg.acks.includes(k);
@@ -8894,7 +8914,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                       );
                     })}
                   </div>
-                  <div style={{ fontSize:10, color:tw3, marginTop:7 }}>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:7 }}>
                     {msg.acks.length}/{Object.keys(project.depts).length} departamentos confirmaron
                   </div>
                 </div>
@@ -8902,7 +8922,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </div>
           ) : (isAdmin && !showMsgForm && (
             <button onClick={() => setShowMsgForm(true)}
-              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:600, color:tw2,
+              style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.6)',
                 background:'rgba(0,0,0,0.12)', border:'1px dashed rgba(255,255,255,0.2)', borderRadius:14,
                 padding:'13px 16px', cursor:'pointer', marginBottom:16, textAlign:'left' }}>
               📢 Escribir mensaje general
@@ -8911,9 +8931,9 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
           {isAdmin && showMsgForm && (
             <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:14, padding:16, marginBottom:16 }}>
               <textarea value={msgDraft} onChange={e => setMsgDraft(e.target.value)} placeholder="Mensaje para el equipo..." rows={3} autoFocus
-                style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'10px 12px', color:tw, outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
+                style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:13, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'10px 12px', color:'#fff', outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={() => { setShowMsgForm(false); setMsgDraft(''); }} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:600, background:'rgba(255,255,255,0.12)', color:tw2, border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
+                <button onClick={() => { setShowMsgForm(false); setMsgDraft(''); }} style={{ flex:1, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:600, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.6)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
                 <button onClick={postMsg} style={{ flex:2, fontFamily:'Inter, sans-serif', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#0B7285', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Publicar</button>
               </div>
             </div>
@@ -8928,8 +8948,8 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
           {Object.keys(project.depts).length > 0 && (
             <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontSize:10, color:tw3, letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:600 }}>DEPARTAMENTOS</div>
-                {isAdmin && <button onClick={() => setShowAddDept(true)} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:tw2, background:twBg, border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>+ Agregar</button>}
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:600 }}>DEPARTAMENTOS</div>
+                {isAdmin && <button onClick={() => setShowAddDept(true)} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:'rgba(255,255,255,0.6)', background:'rgba(0,0,0,0.15)', border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>+ Agregar</button>}
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(72px, 1fr))', gap:'16px' }}>
                 {Object.entries(project.depts).map(([k,m]) => {
@@ -8947,8 +8967,8 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                         <path d="M 10 30 L 110 30 L 110 38 Q 60 44 10 38 Z" fill="rgba(255,255,255,0.15)" stroke="none"/>
                         <text x="60" y="68" textAnchor="middle" fontSize="26" fill="rgba(255,255,255,0.9)">{m.icon}</text>
                       </svg>
-                      <div style={{ fontSize:'9px', fontWeight:700, color:tw, textAlign:'center', letterSpacing:'0.01em', lineHeight:1.2 }}>{m.label}</div>
-                      {isAdmin && <button onClick={() => removeDept(k)} style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'1.5px solid rgba(255,255,255,0.4)', color:tw, fontSize:10, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>✕</button>}
+                      <div style={{ fontSize:'9px', fontWeight:700, color:'#fff', textAlign:'center', letterSpacing:'0.01em', lineHeight:1.2 }}>{m.label}</div>
+                      {isAdmin && <button onClick={() => removeDept(k)} style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>✕</button>}
                     </div>
                   );
                 })}
@@ -8960,8 +8980,8 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
           {project.days.length > 0 && (
             <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                <div style={{ fontSize:10, color:tw3, letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:600 }}>DÍAS DE RODAJE</div>
-                {isAdmin && <button onClick={addDay} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:tw2, background:twBg, border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>+ Agregar día</button>}
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.12em', fontFamily:'Inter, sans-serif', fontWeight:600 }}>DÍAS DE RODAJE</div>
+                {isAdmin && <button onClick={addDay} className="tap" style={{ fontFamily:'Inter, sans-serif', fontSize:11, color:'rgba(255,255,255,0.6)', background:'rgba(0,0,0,0.15)', border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>+ Agregar día</button>}
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {project.days.map((day, i) => {
@@ -9008,10 +9028,10 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                           display:'flex', 
                           alignItems:'center', 
                           gap:12,
-                          background:twBg,
+                          background:'rgba(0,0,0,0.15)',
                           padding:'13px 14px', 
                           border:'none',
-                          borderBottom:twBd,
+                          borderBottom:'1px solid rgba(255,255,255,0.08)',
                           cursor:'pointer', 
                           fontFamily:'Inter, sans-serif', 
                           textAlign:'left', 
@@ -9019,29 +9039,29 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                           borderRadius: i===0 ? '12px 12px 0 0' : (i===project.days.length-1 ? '0 0 12px 12px' : '0'),
                         }}>
                         <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(0,0,0,0.25)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                          <span style={{ fontSize:15, fontWeight:700, color:tw, fontFamily:'Inter, sans-serif' }}>{i+1}</span>
+                          <span style={{ fontSize:15, fontWeight:700, color:'#fff', fontFamily:'Inter, sans-serif' }}>{i+1}</span>
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:14, fontWeight:700, color:tw, fontFamily:'Inter, sans-serif' }}>{day.label}</div>
-                          <div style={{ fontSize:11, color:tw2, fontFamily:'Inter, sans-serif', marginBottom:5 }}>{day.date} · {day.scenes.length} escenas</div>
+                          <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:'Inter, sans-serif' }}>{day.label}</div>
+                          <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', fontFamily:'Inter, sans-serif', marginBottom:5 }}>{day.date} · {day.scenes.length} escenas</div>
                           <div style={{ background:'rgba(255,255,255,0.15)', height:3, borderRadius:3, overflow:'hidden' }}>
                             <div style={{ background:'rgba(255,255,255,0.85)', height:'100%', width:`${p*100}%`, borderRadius:3 }}/>
                           </div>
                         </div>
-                        <span style={{ fontSize:18, color:tw4, fontWeight:300 }}>›</span>
+                        <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
                       </button>
                       {isAdmin && (
                         <div style={{ position:'absolute', top:-6, right:-6, display:'flex', gap:4, zIndex:5 }}>
                           <button 
                             onClick={() => startEditDay(day)}
                             title="Editar día"
-                            style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:tw, fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                             ✎
                           </button>
                           <button 
                             onClick={() => deleteDay(day.id)}
                             title="Borrar día"
-                            style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:tw, fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                             ✕
                           </button>
                         </div>
@@ -9055,27 +9075,27 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
 
           {/* ACCIONES - Grid 2 columnas */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
-            <button onClick={onOpenDropbox} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+            <button onClick={onOpenDropbox} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>📁</div>
               <div style={{ fontSize:12, fontWeight:600, color:tw }}>Dropbox</div>
               <div style={{ fontSize:10, color:tw3 }}>Archivos del proyecto</div>
             </button>
-            <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+            <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>🕐</div>
               <div style={{ fontSize:12, fontWeight:600, color:tw }}>Citaciones</div>
               <div style={{ fontSize:10, color:tw3 }}>Horarios de los deptos</div>
             </button>
-            <button onClick={onOpenMessages} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+            <button onClick={onOpenMessages} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>✉️</div>
               <div style={{ fontSize:12, fontWeight:600, color:tw }}>Mensajes</div>
               <div style={{ fontSize:10, color:tw3 }}>Comunicaciones</div>
             </button>
-            <button onClick={onOpenScouting} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+            <button onClick={onOpenScouting} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>🗺️</div>
               <div style={{ fontSize:12, fontWeight:600, color:tw }}>Scouting</div>
               <div style={{ fontSize:10, color:tw3 }}>Locaciones y fotos</div>
             </button>
-            <button onClick={onOpenTools} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+            <button onClick={onOpenTools} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>🧰</div>
               <div style={{ fontSize:12, fontWeight:600, color:tw }}>Herramientas</div>
               <div style={{ fontSize:10, color:tw3 }}>Sun AR, Color Temp</div>
@@ -9087,12 +9107,12 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             </button>
             {isAdmin && (
               <>
-                <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+                <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
                   <div style={{ fontSize:22 }}>📄</div>
                   <div style={{ fontSize:12, fontWeight:600, color:tw }}>Exportar PDF</div>
                   <div style={{ fontSize:10, color:tw3 }}>Resumen completo</div>
                 </button>
-                <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:twBg, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
+                <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
                   <div style={{ fontSize:22 }}>🎬</div>
                   <div style={{ fontSize:12, fontWeight:600, color:tw }}>Nuevo proyecto</div>
                   <div style={{ fontSize:10, color:tw3 }}>Crear rodaje</div>
@@ -11084,6 +11104,7 @@ function DropboxView({ project, onBack }) {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
   const BLOB_KEY = 'dropbox';
 
   useEffect(() => {
@@ -11094,73 +11115,87 @@ function DropboxView({ project, onBack }) {
     }).catch(() => setLoading(false));
   }, [project.id]);
 
-  const saveFiles = async (nf) => {
+  const saveMeta = async (nf) => {
     setFiles(nf);
     if (window._fb) await fb().saveDeptData(project.id, '_shared', BLOB_KEY, nf);
   };
 
   const handleUpload = async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    setUploading(true);
+    const file = e.target.files[0]; if (!file) return;
+    setUploading(true); setUploadPct(0);
     try {
-      let data;
-      if (f.type.startsWith('image/') && window.compressImage) {
-        data = await window.compressImage(f, 1200, 0.80);
-      } else {
-        data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.onerror = rej; r.readAsDataURL(f); });
+      let uploadFile = file;
+      // Si es imagen, comprimir antes de subir a R2
+      if (file.type.startsWith('image/')) {
+        const blob = await new Promise((res, rej) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height, max = 1600;
+            if (w > max || h > max) { if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(b => b ? res(b) : rej(new Error('Compress fail')), 'image/jpeg', 0.80);
+          };
+          img.onerror = () => rej(new Error('Image load fail'));
+          img.src = URL.createObjectURL(file);
+        });
+        uploadFile = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
       }
-      await saveFiles([...files, { id: Date.now(), name: f.name, type: f.type, data, ts: Date.now() }]);
-    } catch(err) { console.warn('Upload:', err); }
+      // Subir a R2
+      const { url } = await window.uploadFileToR2(uploadFile);
+      // Guardar solo metadata (URL) en blob — NO el archivo
+      const entry = { id: Date.now(), name: file.name, type: file.type, url, size: uploadFile.size, ts: Date.now() };
+      await saveMeta([...files, entry]);
+      console.log('[Dropbox] Subido a R2:', url);
+    } catch(err) {
+      console.error('[Dropbox]', err);
+      alert('Error al subir: ' + (err.message || err));
+    }
     setUploading(false);
   };
 
-  const deleteFile = async (id) => { await saveFiles(files.filter(f => f.id !== id)); };
+  const deleteFile = async (id) => { await saveMeta(files.filter(f => f.id !== id)); };
 
-  const downloadFile = (f) => {
-    const a = document.createElement('a'); a.href = f.data; a.download = f.name;
-    document.body.appendChild(a); a.click(); a.remove();
-  };
+  const fmtSize = (b) => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.round(b/1024)+' KB';
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', fontFamily:'Inter, sans-serif' }} className="slide-l">
-      <div style={{ background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', position:'sticky', top:0, zIndex:10 }}>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily:'Inter, sans-serif' }} className="slide-l">
+      <div style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', position:'sticky', top:0, zIndex:10, background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <button onClick={onBack} className="tap" style={{ background:'none', border:'none', color:'rgba(255,255,255,0.8)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>‹ Volver</button>
           <span style={{ color:'#fff', fontSize:14, fontWeight:700, fontFamily:'inherit' }}>📁 Dropbox</span>
-          <label className="tap" style={{ background:'rgba(255,255,255,0.2)', borderRadius:8, padding:'6px 12px', fontSize:12, color:'#fff', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            {uploading ? '⏳…' : '+ Subir'}
-            <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style={{ display:'none' }} onChange={handleUpload} disabled={uploading}/>
+          <label className="tap" style={{ background:'rgba(255,255,255,0.2)', borderRadius:8, padding:'6px 12px', fontSize:12, color:'#fff', fontWeight:700, cursor: uploading?'wait':'pointer', fontFamily:'inherit', opacity: uploading?0.6:1 }}>
+            {uploading ? '⏳ Subiendo…' : '+ Subir'}
+            <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp4,.mov" style={{ display:'none' }} onChange={handleUpload} disabled={uploading}/>
           </label>
         </div>
       </div>
       <div style={{ padding:16 }}>
         {loading ? (
-          <div style={{ textAlign:'center', padding:48, color:'var(--text-tertiary)' }}>
-            <div style={{ width:24, height:24, border:'3px solid var(--border-light)', borderTop:'3px solid #0B7285', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }}/>
-            Cargando…
-          </div>
+          <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.6)' }}>Cargando…</div>
         ) : files.length === 0 ? (
-          <div style={{ textAlign:'center', padding:48, color:'var(--text-tertiary)' }}>
+          <div style={{ textAlign:'center', padding:48, color:'rgba(255,255,255,0.5)' }}>
             <div style={{ fontSize:48, marginBottom:12, opacity:0.5 }}>📁</div>
-            <div style={{ fontSize:14, fontWeight:600, marginBottom:4 }}>No hay archivos todavía</div>
+            <div style={{ fontSize:14, fontWeight:600, marginBottom:4, color:'#fff' }}>No hay archivos todavía</div>
             <div style={{ fontSize:12 }}>Subí fotos, PDFs o documentos del proyecto</div>
           </div>
         ) : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))', gap:10 }}>
             {files.map(f => (
-              <div key={f.id} style={{ background:'var(--bg-secondary)', borderRadius:12, overflow:'hidden', border:'1px solid var(--border-light)' }}>
-                <div onClick={()=>downloadFile(f)} style={{ cursor:'pointer' }}>
+              <div key={f.id} style={{ background:'rgba(0,0,0,0.15)', borderRadius:12, overflow:'hidden' }}>
+                <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ display:'block', textDecoration:'none' }}>
                   {f.type && f.type.startsWith('image/') ? (
-                    <img src={f.data} alt={f.name} style={{ width:'100%', height:110, objectFit:'cover', display:'block' }}/>
+                    <img src={f.url} alt={f.name} style={{ width:'100%', height:110, objectFit:'cover', display:'block' }}/>
                   ) : (
-                    <div style={{ height:110, display:'flex', alignItems:'center', justifyContent:'center', fontSize:36, background:'var(--bg-tertiary)' }}>📄</div>
+                    <div style={{ height:110, display:'flex', alignItems:'center', justifyContent:'center', fontSize:36, background:'rgba(0,0,0,0.1)' }}>📄</div>
                   )}
-                </div>
+                </a>
                 <div style={{ padding:'8px 10px' }}>
-                  <div style={{ fontSize:11, fontWeight:600, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</div>
+                  <div style={{ fontSize:11, fontWeight:600, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:4 }}>
-                    <span style={{ fontSize:9, color:'var(--text-tertiary)' }}>{new Date(f.ts).toLocaleDateString()}</span>
-                    <button onClick={()=>deleteFile(f.id)} style={{ background:'none', border:'none', color:'var(--text-tertiary)', fontSize:14, cursor:'pointer', padding:2 }} title="Eliminar">✕</button>
+                    <span style={{ fontSize:9, color:'rgba(255,255,255,0.5)' }}>{f.size ? fmtSize(f.size) : ''} · {new Date(f.ts).toLocaleDateString()}</span>
+                    <button onClick={()=>deleteFile(f.id)} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', fontSize:14, cursor:'pointer', padding:2 }} title="Eliminar">✕</button>
                   </div>
                 </div>
               </div>
@@ -11254,7 +11289,7 @@ function SecretGameView({ onBack }) {
     return '—';
   };
 
-  const ADJ_COLORS = ['','#0B7285','#2EC4B6','#E76F51','#c0392b','#8e44ad','#d35400','#2c3e50','#7f8c8d'];
+  const ADJ_COLORS = ['','#0B7285','#2EC4B6','#C45A3C','#c0392b','#8e44ad','#d35400','#2c3e50','#7f8c8d'];
 
   return (
     <div style={{ minHeight:'100vh', background:'#f0f2f0', fontFamily:'Inter, Consolas, monospace', display:'flex', flexDirection:'column' }}>
@@ -11396,19 +11431,14 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
 
   const LANDING_THEMES = {
     celeste:   'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
-    turquesa:  '#2EC4B6',
-    arena:     '#F4A261',
-    coral:     '#E76F51',
+    coral:     '#C45A3C',
     oscuro:    'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
     // Compat viejos keys
-    naranja:   '#F4A261', gris:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', amarillo:'#F4A261',
+    naranja:   '#C45A3C', gris:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', amarillo:'#F4A261',
   };
   const [landingTheme, setLandingTheme] = React.useState(() => localStorage.getItem('landing-theme') || 'celeste');
   const landingGrad = LANDING_THEMES[landingTheme];
-  const isLandingLight = ['arena','coral','turquesa','naranja','amarillo'].includes(landingTheme);
-  const lt = isLandingLight ? '#2a2a2a' : '#fff';
-  const lt2 = isLandingLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.5)';
-  const lt3 = isLandingLight ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.3)';
+
 
   // ── JUEGO DE SNAKE (NOKIA) ──
   if (showSecret) return <SecretGameView onBack={() => setShowSecret(false)} />;
@@ -11417,22 +11447,22 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:landingGrad, fontFamily:'Inter, sans-serif', transition:'background 0.4s ease' }}>
       <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', display:'flex', flexDirection:'column' }}>
         <div style={{ padding:'64px 24px 32px' }}>
-          <div style={{ fontSize:32, fontWeight:800, color:lt, letterSpacing:'-0.5px', lineHeight:1.1 }}>Plan de Rodaje</div>
-          <div style={{ fontSize:15, color:lt2, marginTop:8 }}>Organizá tus producciones</div>
+          <div style={{ fontSize:32, fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>Plan de Rodaje</div>
+          <div style={{ fontSize:15, color:'rgba(255,255,255,0.5)', marginTop:8 }}>Organizá tus producciones</div>
         </div>
 
         {pinnedList.length > 0 && (
           <div style={{ padding:'0 20px 8px' }}>
-            <div style={{ fontSize:11, color:lt2, letterSpacing:'0.08em', marginBottom:10, paddingLeft:4, textTransform:'uppercase' }}>📌 Acceso directo</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:10, paddingLeft:4, textTransform:'uppercase' }}>📌 Acceso directo</div>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
               {pinnedList.map(proj => (
-                <button key={proj.id} onClick={()=>handleOpenPinned(proj)} className="tap" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', border:'none', borderRadius:14, background:isLandingLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.12)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
+                <button key={proj.id} onClick={()=>handleOpenPinned(proj)} className="tap" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', border:'none', borderRadius:14, background:'rgba(255,255,255,0.12)', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
                   <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0B7285', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:15, fontWeight:700, color:lt, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
+                    <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
                     <div style={{ fontSize:12, color:lt2 }}>Abrir proyecto</div>
                   </div>
-                  <span onClick={(e)=>removePinned(proj.id, e)} style={{ fontSize:16, color:lt3, padding:'4px 8px', cursor:'pointer', borderRadius:8 }} title="Quitar">✕</span>
+                  <span onClick={(e)=>removePinned(proj.id, e)} style={{ fontSize:16, color:'rgba(255,255,255,0.3)', padding:'4px 8px', cursor:'pointer', borderRadius:8 }} title="Quitar">✕</span>
                 </button>
               ))}
             </div>
@@ -11441,43 +11471,43 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
 
         <div style={{ display:'flex', flexDirection:'column', padding:'0 20px', gap:0 }}>
           <button onClick={()=>setModo('complejo')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:isLandingLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔑</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔑</div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:lt }}>Ingresar</div>
-              <div style={{ fontSize:13, color:lt2, marginTop:1 }}>Accedé a tu espacio existente</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Accedé a tu espacio existente</div>
             </div>
-            <span style={{ fontSize:20, color:lt3, fontWeight:300 }}>›</span>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
           </button>
           <button onClick={onCreateProductora} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:isLandingLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>✦</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>✦</div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:lt }}>Crear espacio de trabajo</div>
-              <div style={{ fontSize:13, color:lt2, marginTop:1 }}>Freelance o productora</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Freelance o productora</div>
             </div>
-            <span style={{ fontSize:20, color:lt3, fontWeight:300 }}>›</span>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
           </button>
           <button onClick={()=>setModo('marketplace')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.12)', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:isLandingLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🛒</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🛒</div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:lt }}>Marketplace</div>
-              <div style={{ fontSize:13, color:lt2, marginTop:1 }}>Equipos, props y servicios</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Equipos, props y servicios</div>
             </div>
-            <span style={{ fontSize:20, color:lt3, fontWeight:300 }}>›</span>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
           </button>
           <button onClick={onOpenDemo} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 4px', border:'none', borderBottom:'none', background:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'left', width:'100%' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:isLandingLight?'rgba(0,0,0,0.08)':'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>▶</div>
+            <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>▶</div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:lt }}>Ver demo</div>
-              <div style={{ fontSize:13, color:lt2, marginTop:1 }}>Explorar el Proyecto Cero</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginTop:1 }}>Explorar el Proyecto Cero</div>
             </div>
-            <span style={{ fontSize:20, color:lt3, fontWeight:300 }}>›</span>
+            <span style={{ fontSize:20, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
           </button>
         </div>
       </div>
       <div style={{ padding:'20px 24px 28px', maxWidth:'480px', margin:'0 auto', width:'100%' }}>
         {/* Color picker */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:20 }}>
-          {Object.entries(LANDING_THEMES).filter(([key]) => ['celeste','turquesa','arena','coral','oscuro'].includes(key)).map(([key, grad]) => (
+          {Object.entries(LANDING_THEMES).filter(([key]) => ['celeste','coral','oscuro'].includes(key)).map(([key, grad]) => (
             <button key={key} onClick={() => { setLandingTheme(key); localStorage.setItem('landing-theme', key); }}
               style={{ width: landingTheme===key ? 32 : 22, height: landingTheme===key ? 32 : 22,
                 borderRadius:'50%', background: grad, border: landingTheme===key ? '3px solid #fff' : '2px solid rgba(255,255,255,0.3)',
@@ -11496,10 +11526,10 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
             title=""
           ></button>
         </div>
-        <p style={{ margin:0, fontSize:11, color:lt3, textAlign:'center' }}>Hecho en Asunción, Paraguay 🇵🇾</p>
+        <p style={{ margin:0, fontSize:11, color:'rgba(255,255,255,0.3)', textAlign:'center' }}>Hecho en Asunción, Paraguay 🇵🇾</p>
         <div style={{ textAlign:'center' }}>
           <button onClick={() => setShowAdminPassword(!showAdminPassword)} title="Panel de admin"
-            style={{ background:'none', border:'none', color:lt3, cursor:'pointer', fontSize:10, marginTop:8, textDecoration:'underline', fontFamily:'Inter, sans-serif' }}>
+            style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:10, marginTop:8, textDecoration:'underline', fontFamily:'Inter, sans-serif' }}>
             ⚙️ Panel de admin
           </button>
         </div>
@@ -11509,7 +11539,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
           <div style={{ background:'#2a1200', borderRadius:20, padding:28, maxWidth:300, width:'100%', border:'1px solid rgba(255,255,255,0.12)' }}>
             <div style={{ textAlign:'center', marginBottom:20 }}>
               <div style={{ fontSize:28, marginBottom:10 }}>🔐</div>
-              <div style={{ fontSize:16, fontWeight:700, color:lt, marginBottom:4 }}>Panel de Admin</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#fff', marginBottom:4 }}>Panel de Admin</div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>Ingresá la contraseña</div>
             </div>
             <div style={{ marginBottom:16 }}>
@@ -11517,12 +11547,12 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
                 onChange={(e) => { setAdminPassword(e.target.value); setAdminError(''); }}
                 onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
                 placeholder="Contraseña" autoFocus
-                style={{ width:'100%', fontFamily:'inherit', fontSize:15, background:'rgba(255,255,255,0.08)', border:`1.5px solid ${adminError?'rgba(255,200,160,0.8)':'rgba(255,255,255,0.15)'}`, borderRadius:12, padding:'12px 14px', color:lt, outline:'none', textAlign:'center', letterSpacing:'0.2em', marginBottom:8, boxSizing:'border-box' }}/>
+                style={{ width:'100%', fontFamily:'inherit', fontSize:15, background:'rgba(255,255,255,0.08)', border:`1.5px solid ${adminError?'rgba(255,200,160,0.8)':'rgba(255,255,255,0.15)'}`, borderRadius:12, padding:'12px 14px', color:'#fff', outline:'none', textAlign:'center', letterSpacing:'0.2em', marginBottom:8, boxSizing:'border-box' }}/>
               {adminError && <div style={{ fontSize:11, color:'rgba(255,200,160,0.9)', textAlign:'center' }}>{adminError}</div>}
             </div>
             <div style={{ display:'flex', gap:8 }}>
               <button onClick={() => { setShowAdminPassword(false); setAdminPassword(''); setAdminError(''); }}
-                style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'rgba(255,255,255,0.08)', color:lt2, border:'none', borderRadius:12, padding:'10px', cursor:'pointer' }}>
+                style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', border:'none', borderRadius:12, padding:'10px', cursor:'pointer' }}>
                 Cancelar
               </button>
               <button onClick={handleAdminLogin} disabled={!adminPassword}
@@ -11544,18 +11574,18 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily:'Inter, sans-serif' }}>
       <div style={{ flex:1, maxWidth:'480px', margin:'0 auto', width:'100%', padding:'48px 20px 32px', display:'flex', flexDirection:'column' }}>
         <button onClick={()=>setModo(null)}
-          style={{ alignSelf:'flex-start', background:'none', border:'none', color:lt2, fontSize:14, cursor:'pointer', padding:'0 0 28px', fontFamily:'Inter, sans-serif' }}>
+          style={{ alignSelf:'flex-start', background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:14, cursor:'pointer', padding:'0 0 28px', fontFamily:'Inter, sans-serif' }}>
           ‹ Volver
         </button>
         <div style={{ marginBottom:32 }}>
-          <div style={{ fontSize:28, fontWeight:800, color:lt, letterSpacing:'-0.5px' }}>Ingresar</div>
-          <div style={{ fontSize:14, color:lt2, marginTop:6 }}>Nombre de tu espacio o productora</div>
+          <div style={{ fontSize:28, fontWeight:800, color:'#fff', letterSpacing:'-0.5px' }}>Ingresar</div>
+          <div style={{ fontSize:14, color:'rgba(255,255,255,0.5)', marginTop:6 }}>Nombre de tu espacio o productora</div>
         </div>
         <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:16, padding:'20px', marginBottom:16 }}>
-          <div style={{ fontSize:10, color:lt3, letterSpacing:'0.1em', fontWeight:700, marginBottom:10 }}>ESPACIO O PRODUCTORA</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', letterSpacing:'0.1em', fontWeight:700, marginBottom:10 }}>ESPACIO O PRODUCTORA</div>
           <input value={codigo} onChange={e=>setCodigo(e.target.value)} autoFocus
             placeholder="ej: mi-productora"
-            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:16, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'13px 14px', color:lt, outline:'none', boxSizing:'border-box' }}/>
+            style={{ width:'100%', fontFamily:'Inter, sans-serif', fontSize:16, background:'rgba(255,255,255,0.1)', border:'1.5px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'13px 14px', color:'#fff', outline:'none', boxSizing:'border-box' }}/>
           <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginTop:8 }}>Pedile el nombre al responsable</div>
         </div>
         <button onClick={handleEnter} disabled={!codigo.trim()}
@@ -11819,25 +11849,23 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
 
   const PRODUCTORA_THEMES = {
     celeste:   { grad:'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', label:'Teal' },
-    turquesa:  { grad:'#2EC4B6', label:'Turquesa' },
-    arena:     { grad:'#F4A261', label:'Arena' },
-    coral:     { grad:'#E76F51', label:'Coral' },
+    coral:     { grad:'#C45A3C', label:'Coral' },
     oscuro:    { grad:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label:'Oscuro' },
     claro:     { grad:'#F1FAEE', label:'Claro' },
     // backward compat: viejos keys
-    naranja:   { grad:'#F4A261', label:'Arena' },
-    amarillo:  { grad:'#F4A261', label:'Arena' },
+    naranja:   { grad:'#C45A3C', label:'Coral' },
+    amarillo:  { grad:'#C45A3C', label:'Coral' },
     gris:      { grad:'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label:'Oscuro' },
     verde:     { grad:'#0B7285', label:'Teal' },
-    violeta:   { grad:'#E76F51', label:'Coral' },
-    rojo:      { grad:'#E76F51', label:'Coral' },
-    rosado:    { grad:'#E76F51', label:'Coral' },
+    violeta:   { grad:'#C45A3C', label:'Coral' },
+    rojo:      { grad:'#C45A3C', label:'Coral' },
+    rosado:    { grad:'#C45A3C', label:'Coral' },
   };
   
   const currentThemeKey = productora.colorTheme || 'celeste';
   const currentTheme = PRODUCTORA_THEMES[currentThemeKey] || PRODUCTORA_THEMES.celeste;
   const productoraGrad = currentTheme.grad;
-  const isLight = ['claro','arena','coral','naranja','amarillo'].includes(currentThemeKey);
+  const isLight = currentThemeKey === 'claro';
   const tc = (light, dark) => isLight ? dark : light; // text color helper
 
   const productoraUrl = buildProductoraUrl(productora.id);
@@ -11910,7 +11938,7 @@ function ProductoraHubView({ productora, projects, onCreateProject, onOpenProjec
               <div>
                 <div style={{ fontSize:12, color:'rgba(255,255,255,0.7)', marginBottom:12 }}>Elegí el color para esta productora:</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:14 }}>
-                  {Object.entries(PRODUCTORA_THEMES).filter(([key]) => ['celeste','turquesa','arena','coral','oscuro','claro'].includes(key)).map(([key, th]) => (
+                  {Object.entries(PRODUCTORA_THEMES).filter(([key]) => ['celeste','coral','oscuro','claro'].includes(key)).map(([key, th]) => (
                     <button key={key} onClick={()=>{
                       if (onUpdateProductora) onUpdateProductora({ ...productora, colorTheme: key });
                       setShowColorPicker(false);
