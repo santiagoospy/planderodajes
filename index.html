@@ -9077,45 +9077,45 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
             <button onClick={onOpenDropbox} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>📁</div>
-              <div style={{ fontSize:12, fontWeight:600, color:tw }}>Dropbox</div>
-              <div style={{ fontSize:10, color:tw3 }}>Archivos del proyecto</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Dropbox</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Archivos del proyecto</div>
             </button>
             <button onClick={onOpenCitaciones} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>🕐</div>
-              <div style={{ fontSize:12, fontWeight:600, color:tw }}>Citaciones</div>
-              <div style={{ fontSize:10, color:tw3 }}>Horarios de los deptos</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Citaciones</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Horarios de los deptos</div>
             </button>
             <button onClick={onOpenMessages} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>✉️</div>
-              <div style={{ fontSize:12, fontWeight:600, color:tw }}>Mensajes</div>
-              <div style={{ fontSize:10, color:tw3 }}>Comunicaciones</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Mensajes</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Comunicaciones</div>
             </button>
             <button onClick={onOpenScouting} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>🗺️</div>
-              <div style={{ fontSize:12, fontWeight:600, color:tw }}>Scouting</div>
-              <div style={{ fontSize:10, color:tw3 }}>Locaciones y fotos</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Scouting</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Locaciones y fotos</div>
             </button>
             <button onClick={onOpenTools} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>🧰</div>
-              <div style={{ fontSize:12, fontWeight:600, color:tw }}>Herramientas</div>
-              <div style={{ fontSize:10, color:tw3 }}>Sun AR, Color Temp</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Herramientas</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Sun AR, Color Temp</div>
             </button>
             <button onClick={togglePin} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: pinned ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
               <div style={{ fontSize:22 }}>{pinned ? '📌' : '📍'}</div>
-              <div style={{ fontSize:12, fontWeight:600, color:tw }}>{pinned ? 'Pineado' : 'Pinear'}</div>
-              <div style={{ fontSize:10, color:tw3 }}>{pinned ? 'Quitar del inicio' : 'Acceso directo'}</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>{pinned ? 'Pineado' : 'Pinear'}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{pinned ? 'Quitar del inicio' : 'Acceso directo'}</div>
             </button>
             {isAdmin && (
               <>
                 <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
                   <div style={{ fontSize:22 }}>📄</div>
-                  <div style={{ fontSize:12, fontWeight:600, color:tw }}>Exportar PDF</div>
-                  <div style={{ fontSize:10, color:tw3 }}>Resumen completo</div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Exportar PDF</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Resumen completo</div>
                 </button>
                 <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:'rgba(0,0,0,0.15)', borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'Inter, sans-serif', textAlign:'center' }}>
                   <div style={{ fontSize:22 }}>🎬</div>
-                  <div style={{ fontSize:12, fontWeight:600, color:tw }}>Nuevo proyecto</div>
-                  <div style={{ fontSize:10, color:tw3 }}>Crear rodaje</div>
+                  <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Nuevo proyecto</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Crear rodaje</div>
                 </button>
               </>
             )}
