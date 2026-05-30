@@ -11460,7 +11460,7 @@ function LandingView({ onEnterProductora, onCreateProductora, onOpenDemo }) {
                   <div style={{ width:40, height:40, borderRadius:11, background: proj.color || '#0B7285', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🎬</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:15, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{proj.nombre}</div>
-                    <div style={{ fontSize:12, color:lt2 }}>Abrir proyecto</div>
+                    <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)' }}>Abrir proyecto</div>
                   </div>
                   <span onClick={(e)=>removePinned(proj.id, e)} style={{ fontSize:16, color:'rgba(255,255,255,0.3)', padding:'4px 8px', cursor:'pointer', borderRadius:8 }} title="Quitar">✕</span>
                 </button>
