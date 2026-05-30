@@ -336,6 +336,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"
         onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js';document.head.appendChild(s);"></script>
 
@@ -617,10 +618,13 @@
       toast.id = '_syncToast';
       document.body.appendChild(toast);
     }
-    const icon = notification.type === 'sync-ok' ? '✓' : notification.type === 'sync-error' ? '✗' : '…';
+    const svgCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const svgX     = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    const svgDot   = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+    const iconSvg = notification.type === 'sync-ok' ? svgCheck : notification.type === 'sync-error' ? svgX : svgDot;
     const color = notification.type === 'sync-ok' ? '#22c55e' : notification.type === 'sync-error' ? '#ef4444' : '#f59e0b';
-    toast.style.cssText = `position:fixed;bottom:20px;right:20px;background:${color};color:white;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-family:Inter,sans-serif;${notification.type === 'sync-error'?'':'animation: fadeOut 3s ease forwards;'}`;
-    toast.textContent = icon + ' ' + notification.message;
+    toast.style.cssText = `position:fixed;bottom:20px;right:20px;background:${color};color:white;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;${notification.type === 'sync-error'?'':'animation: fadeOut 3s ease forwards;'}`;
+    toast.innerHTML = iconSvg + '<span>' + notification.message + '</span>';
     if (notification.type !== 'sync-error') {
       toastTimeout = setTimeout(() => { if (toast) toast.remove(); }, 3000);
     }
@@ -1016,24 +1020,47 @@ body { background:#f2f0ed; font-family:'Inter', -apple-system, BlinkMacSystemFon
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
+// ── Lucide Icon wrapper ───────────────────────────────────────
+// Uso: <Icon name="Camera" size={20} color="currentColor" strokeWidth={2} />
+// Los íconos están disponibles en window.lucide (UMD). Cada icono es un array
+// de [tagName, attrs] que representa los paths internos del SVG.
+function Icon({ name, size = 18, color = 'currentColor', strokeWidth = 1.8, style }) {
+  const iconData = window.lucide && window.lucide[name];
+  if (!iconData) return null;
+  const children = iconData.map(([tag, attrs], i) =>
+    React.createElement(tag, { key: i, ...attrs })
+  );
+  return React.createElement('svg', {
+    xmlns: 'http://www.w3.org/2000/svg',
+    width: size, height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: color,
+    strokeWidth: strokeWidth,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    style: { flexShrink: 0, display: 'block', ...style }
+  }, ...children);
+}
+
 // ── Constantes ───────────────────────────────────────────────
 const DAY_COLORS = ['#2f7ed8','#d48c0e','#0fa87e','#d94f2b','#7c3fbf'];
 
 const DEPT_DEFAULTS = {
-  produccion:  { label:'Producción',      icon:'📋', color:'#F97316' },
-  direccion:   { label:'Dirección',       icon:'🎬', color:'var(--color-primary)' },
-  locaciones:  { label:'Locaciones',      icon:'📍', color:'#2f7ed8' },
-  arte:        { label:'Arte',            icon:'🎨', color:'#7c3fbf' },
-  fotografia:  { label:'DF',              icon:'📷', color:'#d48c0e' },
-  camara:      { label:'Cámara',          icon:'🎥', color:'#2f7ed8' },
-  drone:       { label:'Drone',           icon:'🚁', color:'var(--color-success)' },
-  sonido:      { label:'Sonido',          icon:'🎙️', color:'var(--color-success)' },
-  fotofija:    { label:'Foto fija',       icon:'📸', color:'#d48c0e' },
-  tecnica:     { label:'Técnica',         icon:'🔧', color:'#2f7ed8' },
-  casting:     { label:'Casting',         icon:'👥', color:'#7c3fbf' },
-  catering:    { label:'Catering',        icon:'🍴', color:'#d48c0e' },
-  continuidad: { label:'Continuidad',     icon:'🎞️', color:'#e91e63' },
-  cliente:     { label:'Cliente',         icon:'💼', color:'#555555' },
+  produccion:  { label:'Producción',      icon:'ClipboardList', color:'#F97316' },
+  direccion:   { label:'Dirección',       icon:'Clapperboard',  color:'var(--color-primary)' },
+  locaciones:  { label:'Locaciones',      icon:'MapPin',        color:'#2f7ed8' },
+  arte:        { label:'Arte',            icon:'Palette',       color:'#7c3fbf' },
+  fotografia:  { label:'DF',              icon:'Aperture',      color:'#d48c0e' },
+  camara:      { label:'Cámara',          icon:'Video',         color:'#2f7ed8' },
+  drone:       { label:'Drone',           icon:'Navigation',    color:'var(--color-success)' },
+  sonido:      { label:'Sonido',          icon:'Mic',           color:'var(--color-success)' },
+  fotofija:    { label:'Foto fija',       icon:'Camera',        color:'#d48c0e' },
+  tecnica:     { label:'Técnica',         icon:'Wrench',        color:'#2f7ed8' },
+  casting:     { label:'Casting',         icon:'Users',         color:'#7c3fbf' },
+  catering:    { label:'Catering',        icon:'Utensils',      color:'#d48c0e' },
+  continuidad: { label:'Continuidad',     icon:'Film',          color:'#e91e63' },
+  cliente:     { label:'Cliente',         icon:'Briefcase',     color:'#555555' },
 };
 
 const SEED_PROJECT = {
@@ -1176,7 +1203,7 @@ function PinModal({ title, subtitle, onSuccess, onCancel, correctPin }) {
       <div style={{ background:'var(--bg-secondary)',borderRadius:20,padding:'28px 24px',width:'100%',maxWidth:320,boxShadow:'0 16px 60px rgba(0,0,0,0.18)' }}
         onClick={e=>e.stopPropagation()}>
         <div style={{ textAlign:'center', marginBottom:24 }}>
-          <div style={{ fontSize:30, marginBottom:8 }}>🔒</div>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:8 }}><Icon name="Lock" size={30} color="var(--text-primary)"/></div>
           <div style={{ fontSize:18, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{title}</div>
           {subtitle && <div style={{ fontSize:12, color:'#aaa', marginTop:4, fontFamily:'inherit' }}>{subtitle}</div>}
         </div>
@@ -1323,7 +1350,7 @@ function DeptMuralTab({ color, deptKey, projectId }) {
             {adjunto.tipo==='video'  && <video src={adjunto.data || adjunto.url} controls style={{ width:'100%', borderRadius:8, maxHeight:220 }}/>}
             {(adjunto.tipo==='archivo' || adjunto.tipo==='pdf') && (
               <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 4px' }}>
-                <span style={{ fontSize:22 }}>{adjunto.tipo==='pdf' ? '📄' : '📎'}</span>
+                <Icon name={adjunto.tipo==='pdf' ? 'FileText' : 'Paperclip'} size={22} color="var(--text-secondary)"/>
                 <span style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit' }}>{adjunto.nombre}</span>
               </div>
             )}
@@ -1357,11 +1384,11 @@ function DeptMuralTab({ color, deptKey, projectId }) {
 
         <div style={{ display:'flex', gap:8 }}>
           <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, flex:1, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'12px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'var(--text-tertiary)' }}>
-            {uploading ? '⏳ Subiendo...' : '📎 Archivo'}
+            {uploading ? <><Icon name="Loader" size={13} color="var(--text-tertiary)"/> Subiendo...</> : <><Icon name="Paperclip" size={13} color="var(--text-tertiary)"/> Archivo</>}
             <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={handleFile} style={{ display:'none' }}/>
           </label>
           <button onClick={()=>setShowLinkForm(!showLinkForm)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card-dark)', border:`1px dashed ${color}66`, borderRadius:10, padding:'12px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color, fontWeight:600 }}>
-            🔗 Link
+            <Icon name="Link" size={13} color={color}/> Link
           </button>
           {adjunto && (
             <button onClick={publish} style={{ fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px 18px', cursor:'pointer' }}>
@@ -1398,14 +1425,14 @@ function DeptMuralTab({ color, deptKey, projectId }) {
           )}
           {m.adjunto && (m.adjunto.tipo==='archivo' || m.adjunto.tipo==='pdf') && (
             <a href={m.adjunto.data || m.adjunto.url} download={m.adjunto.nombre} style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
-              <span style={{ fontSize:20 }}>{m.adjunto.tipo==='pdf' ? '📄' : '📎'}</span>
+              <Icon name={m.adjunto.tipo==='pdf' ? 'FileText' : 'Paperclip'} size={20} color="var(--text-secondary)"/>
               <span style={{ flex:1 }}>{m.adjunto.nombre}</span>
               <span style={{ color, fontWeight:700 }}>↓ Descargar</span>
             </a>
           )}
           {m.adjunto && m.adjunto.tipo==='link' && (
             <a href={m.adjunto.url} target="_blank" rel="noopener noreferrer" style={{ display:'flex', alignItems:'center', gap:10, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', border:`1px solid ${color}22` }}>
-              <span style={{ fontSize:22, flexShrink:0 }}>{m.adjunto.linkIcon||'🔗'}</span>
+              <Icon name="Link" size={22} color={color} style={{ flexShrink:0 }}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:12, fontWeight:700, color, fontFamily:'inherit', marginBottom:2 }}>{m.adjunto.nombre}</div>
                 <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.adjunto.url}</div>
@@ -1774,7 +1801,7 @@ function GastosTab({ color, isAdmin, deptKey, projectId, project, requirePin }) 
       {/* Exportar a Excel */}
       {expenses.length > 0 && (
         <button onClick={exportarExcel} style={{ width:'100%', fontFamily:'inherit', fontSize:12, fontWeight:700, color:'#217346', background:'#e8f5ee', border:'1px solid #21734633', borderRadius:14, padding:'13px', cursor:'pointer', marginTop:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-          <span style={{ fontSize:16 }}>📊</span> Exportar a Excel (.xlsx)
+          <Icon name="FileSpreadsheet" size={16} color="#217346"/> Exportar a Excel (.xlsx)
         </button>
       )}
     </div>
@@ -1912,7 +1939,7 @@ function GastosTabSimple({ color, deptKey, projectId, project }) {
 
       {expenses.length > 0 && (
         <button onClick={exportarExcel} style={{ width:'100%', fontFamily:'inherit', fontSize:12, fontWeight:700, color:'#217346', background:'#e8f5ee', border:'1px solid #21734633', borderRadius:14, padding:'13px', cursor:'pointer', marginTop:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-          <span style={{ fontSize:16 }}>📊</span> Exportar a Excel (.xlsx)
+          <Icon name="FileSpreadsheet" size={16} color="#217346"/> Exportar a Excel (.xlsx)
         </button>
       )}
 
@@ -3017,7 +3044,7 @@ function CateringTab({ color, projectId, project }) {
             deptKey: dk,
             deptLabel: project.depts[dk]?.label || dk,
             deptColor: project.depts[dk]?.color || '#888',
-            deptIcon:  project.depts[dk]?.icon  || '🎬',
+            deptIcon:  project.depts[dk]?.icon  || 'Clapperboard',
           }))
         ).catch(()=>[])
       )
@@ -3066,7 +3093,7 @@ function CateringTab({ color, projectId, project }) {
     deptKey: '_extra',
     deptLabel: 'Invitados / Extras',
     deptColor: '#888',
-    deptIcon: '➕',
+    deptIcon: 'Plus',
   }));
   const todos = [...allCrew, ...extrasItems];
 
@@ -3091,14 +3118,14 @@ function CateringTab({ color, projectId, project }) {
   const [openId, setOpenId] = useState(null);
 
   const iconoCondicion = (c) => {
-    if (c === 'Vegano')         return '🌱';
-    if (c === 'Vegetariano')    return '🥗';
-    if (c === 'Celíaco' || c === 'Sin gluten') return '🌾';
-    if (c === 'Sin lactosa')    return '🥛';
-    if (c === 'Kosher')         return '✡️';
-    if (c === 'Halal')          return '☪️';
-    if (c === 'Diabético')      return '💉';
-    return '🍽️';
+    if (c === 'Vegano')         return 'Leaf';
+    if (c === 'Vegetariano')    return 'Salad';
+    if (c === 'Celíaco' || c === 'Sin gluten') return 'WheatOff';
+    if (c === 'Sin lactosa')    return 'MilkOff';
+    if (c === 'Kosher')         return 'Star';
+    if (c === 'Halal')          return 'Moon';
+    if (c === 'Diabético')      return 'Syringe';
+    return 'UtensilsCrossed';
   };
 
   return (
@@ -3123,7 +3150,7 @@ function CateringTab({ color, projectId, project }) {
           </div>
           {Object.entries(resumen).map(([cond, cant]) => (
             <div key={cond} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', borderBottom:'1px solid #f5f3f0' }}>
-              <span style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit' }}>{iconoCondicion(cond)} {cond}</span>
+              <span style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:5 }}><Icon name={iconoCondicion(cond)} size={13} color="var(--text-secondary)"/> {cond}</span>
               <span style={{ fontSize:13, fontWeight:700, color: cond==='Sin restricciones'?'#0fa87e':'#d48c0e', fontFamily:'inherit', background: cond==='Sin restricciones'?'#e8f8f0':'#fff8ec', borderRadius:20, padding:'2px 10px', border:`1px solid ${cond==='Sin restricciones'?'#0fa87e33':'#d48c0e33'}` }}>{cant} {cant===1?'persona':'personas'}</span>
             </div>
           ))}
@@ -3139,7 +3166,7 @@ function CateringTab({ color, projectId, project }) {
 
       {loaded && todos.length === 0 && (
         <div style={{ textAlign:'center', padding:'40px 20px', color:'#ccc', fontFamily:'inherit' }}>
-          <div style={{ fontSize:36, marginBottom:12 }}>🍴</div>
+          <div style={{ marginBottom:12, display:'flex', justifyContent:'center' }}><Icon name="Utensils" size={36} color="#ccc"/></div>
           <div>Ningún departamento cargó integrantes todavía.</div>
           <div style={{ fontSize:12, marginTop:6 }}>Cada depto puede cargar crew (con condición alimentaria) desde su tab CREW.</div>
         </div>
@@ -3149,12 +3176,12 @@ function CateringTab({ color, projectId, project }) {
       {loaded && Object.entries(byDept).map(([dk, personas]) => {
         const isExtra = dk === '_extra';
         const dmColor = isExtra ? '#888' : (project?.depts?.[dk]?.color || '#888');
-        const dmIcon  = isExtra ? '➕' : (project?.depts?.[dk]?.icon || '🎬');
+        const dmIcon  = isExtra ? 'Plus' : (project?.depts?.[dk]?.icon || 'Clapperboard');
         const dmLabel = isExtra ? 'INVITADOS / EXTRAS' : (project?.depts?.[dk]?.label || dk).toUpperCase();
         return (
           <div key={dk} style={{ marginBottom:20 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'6px 0' }}>
-              <span style={{ fontSize:16 }}>{dmIcon}</span>
+              <Icon name={dmIcon} size={16} color={dmColor}/>
               <span style={{ fontSize:11, fontWeight:700, color:dmColor, letterSpacing:'0.08em', fontFamily:'inherit' }}>{dmLabel}</span>
               <span style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>— {personas.length}</span>
             </div>
@@ -3166,8 +3193,8 @@ function CateringTab({ color, projectId, project }) {
               return (
                 <div key={p.id} style={{ background:'var(--bg-secondary)', borderRadius:12, marginBottom:6, border:`1px solid ${cond?color+'30':'#ede9e3'}`, overflow:'hidden' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px' }}>
-                    <div style={{ width:32, height:32, borderRadius:8, background:(cond?color:dmColor)+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
-                      {cond ? iconoCondicion(cond) : '👤'}
+                    <div style={{ width:32, height:32, borderRadius:8, background:(cond?color:dmColor)+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <Icon name={cond ? iconoCondicion(cond) : 'User'} size={15} color={cond ? color : dmColor}/>
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{nombreVisible}</div>
@@ -3775,7 +3802,7 @@ function DeptDetailView({ deptKey, deptMeta, isAdmin, onBack, projectId, project
           </button>
           <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color:color, fontFamily:'inherit', minWidth:72 }}>
-            <span style={{ fontSize:20 }}>{deptMeta.icon || '🎬'}</span>
+            <Icon name={deptMeta.icon || 'Clapperboard'} size={20} color={color}/>
             <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{deptMeta.label?.toUpperCase()?.slice(0,10)}</span>
           </div>
         </div>
@@ -3813,14 +3840,14 @@ function IntegrantesTab({ color, deptKey, projectId }) {
   const del = (id) => setPersonas(personas.filter(p=>p.id!==id));
 
   const iconoCond = (c) => {
-    if (c === 'Vegano')         return '🌱';
-    if (c === 'Vegetariano')    return '🥗';
-    if (c === 'Celíaco' || c === 'Sin gluten') return '🌾';
-    if (c === 'Sin lactosa')    return '🥛';
-    if (c === 'Kosher')         return '✡️';
-    if (c === 'Halal')          return '☪️';
-    if (c === 'Diabético')      return '💉';
-    return '🍽️';
+    if (c === 'Vegano')         return 'Leaf';
+    if (c === 'Vegetariano')    return 'Salad';
+    if (c === 'Celíaco' || c === 'Sin gluten') return 'WheatOff';
+    if (c === 'Sin lactosa')    return 'MilkOff';
+    if (c === 'Kosher')         return 'Star';
+    if (c === 'Halal')          return 'Moon';
+    if (c === 'Diabético')      return 'Syringe';
+    return 'UtensilsCrossed';
   };
 
   return (
@@ -3838,8 +3865,8 @@ function IntegrantesTab({ color, deptKey, projectId }) {
               {p.rol && <span style={{ fontSize:11, color, fontFamily:'inherit' }}>{p.rol}</span>}
               {p.cedula && <span style={{ fontSize:11, color:'#aaa', fontFamily:'inherit' }}>CI: {p.cedula}</span>}
               {p.condicionAlimentaria && (
-                <span style={{ fontSize:10, color:p.condicionAlimentaria==='Sin restricciones'?'#0fa87e':'#d48c0e', fontFamily:'inherit', background:p.condicionAlimentaria==='Sin restricciones'?'#e8f8f0':'#fff8ec', borderRadius:10, padding:'1px 8px', border:`1px solid ${p.condicionAlimentaria==='Sin restricciones'?'#0fa87e33':'#d48c0e33'}` }}>
-                  {iconoCond(p.condicionAlimentaria)} {p.condicionAlimentaria}
+                <span style={{ fontSize:10, color:p.condicionAlimentaria==='Sin restricciones'?'#0fa87e':'#d48c0e', fontFamily:'inherit', background:p.condicionAlimentaria==='Sin restricciones'?'#e8f8f0':'#fff8ec', borderRadius:10, padding:'1px 8px', border:`1px solid ${p.condicionAlimentaria==='Sin restricciones'?'#0fa87e33':'#d48c0e33'}`, display:'inline-flex', alignItems:'center', gap:4 }}>
+                  <Icon name={iconoCond(p.condicionAlimentaria)} size={10} color={p.condicionAlimentaria==='Sin restricciones'?'#0fa87e':'#d48c0e'}/> {p.condicionAlimentaria}
                 </span>
               )}
             </div>
@@ -4103,7 +4130,7 @@ function CrewTotalTab({ color, projectId, project }) {
     Promise.all(
       deptKeys.map(dk =>
         fb().getDeptData(projectId, dk, 'integrantes').then(d =>
-          (d||[]).map(p => ({ ...p, deptKey:dk, deptLabel:project.depts[dk]?.label||dk, deptColor:project.depts[dk]?.color||'#888', deptIcon:project.depts[dk]?.icon||'🎬' }))
+          (d||[]).map(p => ({ ...p, deptKey:dk, deptLabel:project.depts[dk]?.label||dk, deptColor:project.depts[dk]?.color||'#888', deptIcon:project.depts[dk]?.icon||'Clapperboard' }))
         ).catch(()=>[])
       )
     ).then(results => { setAllCrew(results.flat()); setLoaded(true); });
@@ -4171,7 +4198,7 @@ function CrewTotalTab({ color, projectId, project }) {
         return (
           <div key={dk} style={{ marginBottom:20 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, padding:'6px 0' }}>
-              <span style={{ fontSize:16 }}>{dm.icon}</span>
+              <Icon name={dm.icon||'Clapperboard'} size={16} color={dm.color}/>
               <span style={{ fontSize:11, fontWeight:700, color:dm.color, letterSpacing:'0.08em', fontFamily:'inherit' }}>{dm.label.toUpperCase()}</span>
               <span style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>— {personas.length}</span>
             </div>
@@ -4653,8 +4680,8 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
           {(plano.deptos||[]).filter(dk=>depts[dk]).map(dk=>{
             const m = depts[dk];
             return (
-              <button key={dk} onClick={()=>onOpenDept && onOpenDept(dk)} style={{ fontSize:10, padding:'4px 10px', borderRadius:10, border:`1px solid ${m.color}44`, color:m.color, background:m.color+'0d', fontFamily:'inherit', cursor:'pointer' }}>
-                {m.icon} {m.label}
+              <button key={dk} onClick={()=>onOpenDept && onOpenDept(dk)} style={{ fontSize:10, padding:'4px 10px', borderRadius:10, border:`1px solid ${m.color}44`, color:m.color, background:m.color+'0d', fontFamily:'inherit', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4 }}>
+                <Icon name={m.icon||'Clapperboard'} size={11} color={m.color}/> {m.label}
               </button>
             );
           })}
@@ -4779,8 +4806,8 @@ function PlanoForm({ plano, depts, allDepts, onSave, onCancel, color }) {
           <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginBottom:6 }}>DEPARTAMENTOS INVOLUCRADOS</div>
           <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
             {Object.entries(allDepts).map(([dk,m])=>(
-              <button key={dk} onClick={()=>toggleDk(dk)} style={{ fontSize:11, padding:'4px 10px', borderRadius:20, border:'none', cursor:'pointer', background:(form.deptos||[]).includes(dk)?m.color:'#f0ede8', color:(form.deptos||[]).includes(dk)?'#fff':'#888', fontFamily:'inherit' }}>
-                {m.icon} {m.label}
+              <button key={dk} onClick={()=>toggleDk(dk)} style={{ fontSize:11, padding:'4px 10px', borderRadius:20, border:'none', cursor:'pointer', background:(form.deptos||[]).includes(dk)?m.color:'#f0ede8', color:(form.deptos||[]).includes(dk)?'#fff':'#888', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:4 }}>
+                <Icon name={m.icon||'Clapperboard'} size={12} color={(form.deptos||[]).includes(dk)?'#fff':'#888'}/> {m.label}
               </button>
             ))}
           </div>
@@ -5221,7 +5248,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
 
   // Agrupar escenas por momento del día
   const momentos = ['mañana','tarde','noche','sin definir'];
-  const iconMomento = { mañana:'🌅', tarde:'🌤️', noche:'🌙', 'sin definir':'🎬' };
+  const iconMomento = { mañana:'Sunrise', tarde:'Cloud', noche:'Moon', 'sin definir':'Clapperboard' };
   const colorMomento = { mañana:'#f5a623', tarde:'#2f7ed8', noche:'#4a3fbf', 'sin definir':'#888' };
   const byMomento = {};
   momentos.forEach(m => { byMomento[m] = []; });
@@ -5347,8 +5374,8 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
               {(scene.depts||[]).filter(k=>depts[k]).map(dk=>{
                 const m = depts[dk];
                 return (
-                  <span key={dk} style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:scene.done?'var(--bg-card-dark-secondary)':m.color+'14', color:scene.done?'var(--text-muted)':m.color, border:`1px solid ${scene.done?'var(--border-light)':m.color+'33'}`, fontFamily:'inherit', display:'flex', alignItems:'center', gap:3 }}>
-                    {m.icon} {m.label}
+                  <span key={dk} style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:scene.done?'var(--bg-card-dark-secondary)':m.color+'14', color:scene.done?'var(--text-muted)':m.color, border:`1px solid ${scene.done?'var(--border-light)':m.color+'33'}`, fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:3 }}>
+                    <Icon name={m.icon||'Clapperboard'} size={10} color={scene.done?'var(--text-muted)':m.color}/> {m.label}
                   </span>
                 );
               })}
@@ -5395,7 +5422,7 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
           return (
             <div key={momento} style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-                <span style={{ fontSize:18 }}>{iconMomento[momento]}</span>
+                <Icon name={iconMomento[momento]||'Clapperboard'} size={18} color={colorMomento[momento]}/>
                 <span style={{ fontSize:11, fontWeight:700, color:colorMomento[momento], letterSpacing:'0.1em', fontFamily:'inherit' }}>{momento.toUpperCase()}</span>
                 <span style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>— {sc.length} escena{sc.length!==1?'s':''}</span>
               </div>
@@ -5420,8 +5447,10 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
             </div>
             <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>MOMENTO DEL DÍA</div>
             <div style={{ display:'flex', gap:6, marginBottom:12 }}>
-              {[['mañana','🌅'],['tarde','🌤️'],['noche','🌙']].map(([m,ic])=>(
-                <button key={m} onClick={()=>setAddMomento(m)} style={{ flex:1, fontFamily:'inherit', fontSize:12, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:addMomento===m?color:'#f0ede8', color:addMomento===m?'#fff':'#888' }}>{ic} {m}</button>
+              {[['mañana','Sunrise'],['tarde','Cloud'],['noche','Moon']].map(([m,ic])=>(
+                <button key={m} onClick={()=>setAddMomento(m)} style={{ flex:1, fontFamily:'inherit', fontSize:12, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:addMomento===m?color:'#f0ede8', color:addMomento===m?'#fff':'#888', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                  <Icon name={ic} size={12} color={addMomento===m?'#fff':'#888'}/> {m}
+                </button>
               ))}
             </div>
             <div style={{ display:'flex', gap:8 }}>
@@ -5453,11 +5482,11 @@ function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelectScene, onToggl
 //  DEPT ICONS PARA NUEVO DEPT
 // ═══════════════════════════════════════════════════════════
 const DEPT_ICONS  = [
-  '🎬','📷','🎙️','🎨','📍','👥','🍴','📋','🔧',
-  '🚁','🎞️','✂️','🖥️','💡','🎭','📝','🧑‍🎨','👔',
-  '🎵','🎤','🚗','🏎️','🎥','📡','🔌','💻','📱',
-  '🎆','🌟','👁️','🕶️','🎯','📐','🖨️','🎮','🛸',
-  '🧪','⚡','🔬','🛠️','📦','🗂️','💼','🤝','🏆',
+  'Clapperboard','Camera','Mic','Palette','MapPin','Users','Utensils','ClipboardList','Wrench',
+  'Navigation','Film','Scissors','Monitor','Lightbulb','Drama','FileText','Brush','Shirt',
+  'Music','Mic2','Car','Gauge','Video','Radio','Plug','Laptop','Smartphone',
+  'Sparkles','Star','Eye','Glasses','Target','Ruler','Printer','Gamepad2','Rocket',
+  'TestTube','Zap','Microscope','Settings2','Package','FolderOpen','Briefcase','Handshake','Trophy',
 ];
 const DEPT_COLORS = ['#d94f2b','#2f7ed8','#0fa87e','#7c3fbf','#d48c0e','#e91e8c','#00bcd4'];
 
@@ -5472,7 +5501,7 @@ const DEPT_SECTION_OPTIONS = [
 
 function AddDeptModal({ onAdd, onClose }) {
   const [label, setLabel] = useState('');
-  const [icon, setIcon]   = useState('🎞️');
+  const [icon, setIcon]   = useState('Film');
   const [color, setColor] = useState('#d94f2b');
   const [sections, setSections] = useState(['checklist','gastos','citaciones','mural','integrantes','info']);
   const toggleSection = (key) => setSections(prev => prev.includes(key) ? prev.filter(k=>k!==key) : [...prev, key]);
@@ -5491,7 +5520,9 @@ function AddDeptModal({ onAdd, onClose }) {
         <div style={{ fontSize:11,color:'#aaa',letterSpacing:'0.08em',marginBottom:8,fontFamily:'inherit' }}>ÍCONO</div>
         <div style={{ display:'flex',gap:8,flexWrap:'wrap',marginBottom:16 }}>
           {DEPT_ICONS.map(ic=>(
-            <button key={ic} onClick={()=>setIcon(ic)} style={{ width:40,height:40,borderRadius:10,border:icon===ic?'2px solid #d94f2b':'1px solid #e5e2dd',background:icon===ic?'#fff3f0':'#faf8f5',fontSize:20,cursor:'pointer' }}>{ic}</button>
+            <button key={ic} onClick={()=>setIcon(ic)} style={{ width:40,height:40,borderRadius:10,border:icon===ic?'2px solid #d94f2b':'1px solid #e5e2dd',background:icon===ic?'#fff3f0':'#faf8f5',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>
+              <Icon name={ic} size={18} color={icon===ic?'#d94f2b':'var(--text-secondary)'}/>
+            </button>
           ))}
         </div>
         <div style={{ fontSize:11,color:'#aaa',letterSpacing:'0.08em',marginBottom:8,fontFamily:'inherit' }}>COLOR</div>
@@ -6016,7 +6047,7 @@ function ScoutDeptCard({ dept, onUpdate, onDelete }) {
   return (
     <div style={{ background:'var(--bg-secondary)', borderRadius:12, border:`1px solid ${dept.color}33`, marginBottom:8, overflow:'hidden' }}>
       <div onClick={()=>setOpen(!open)} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', cursor:'pointer', background:dept.color+'08' }}>
-        <span style={{ fontSize:18 }}>{dept.icon||'📋'}</span>
+        <Icon name={dept.icon||'ClipboardList'} size={18} color={dept.color||'var(--text-secondary)'}/>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:13, fontWeight:700, color:dept.color, fontFamily:'inherit' }}>{dept.label}</div>
           <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit' }}>
@@ -6043,9 +6074,9 @@ function ScoutDeptCard({ dept, onUpdate, onDelete }) {
 function AddScoutDeptModal({ onAdd, onClose }) {
   const [label, setLabel] = useState('');
   const [color, setColor] = useState('#0fa87e');
-  const [icon, setIcon] = useState('📋');
+  const [icon, setIcon] = useState('ClipboardList');
   const colores = ['#d94f2b','#2f7ed8','#0fa87e','#7c3fbf','#d48c0e','#e91e8c','#00bcd4','#555555'];
-  const iconos = ['📋','🎬','📷','🎙️','💡','🚗','🍴','💻','🔌','🚁','✂️','🎵'];
+  const iconos = ['ClipboardList','Clapperboard','Camera','Mic','Lightbulb','Car','Utensils','Laptop','Plug','Navigation','Scissors','Music'];
   const submit = () => {
     if (!label.trim()) return;
     onAdd({ key:'custom_'+Date.now(), label:label.trim(), color, icon, checklist:[], files:[] });
@@ -6060,7 +6091,9 @@ function AddScoutDeptModal({ onAdd, onClose }) {
         <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>ÍCONO</div>
         <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:12 }}>
           {iconos.map(i => (
-            <button key={i} onClick={()=>setIcon(i)} style={{ width:36, height:36, borderRadius:8, border:'none', cursor:'pointer', fontSize:18, background: icon===i ? color+'22' : '#f0ede8' }}>{i}</button>
+            <button key={i} onClick={()=>setIcon(i)} style={{ width:36, height:36, borderRadius:8, border:'none', cursor:'pointer', background: icon===i ? color+'22' : '#f0ede8', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Icon name={i} size={16} color={icon===i ? color : 'var(--text-secondary)'}/>
+            </button>
           ))}
         </div>
         <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>COLOR</div>
@@ -6823,7 +6856,7 @@ function IMessageChat({ project, isAdmin }) {
     { key: 'produccion', label: 'Producción', icon: '🎬' },
     ...Object.entries(project.depts || {})
       .filter(([k]) => k !== 'produccion')
-      .map(([k, m]) => ({ key: k, label: m.label, icon: m.icon || '👤' }))
+      .map(([k, m]) => ({ key: k, label: m.label, icon: m.icon || 'User' }))
   ];
 
   // Color por participante (asignar colores distintos)
@@ -6837,7 +6870,7 @@ function IMessageChat({ project, isAdmin }) {
       id: 'cm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
       authorKey: author,
       authorLabel: participants.find(p => p.key === author)?.label || author,
-      authorIcon: participants.find(p => p.key === author)?.icon || '👤',
+      authorIcon: participants.find(p => p.key === author)?.icon || 'User',
       text: draft.trim(),
       ts: Date.now(),
     };
@@ -6965,8 +6998,8 @@ function IMessageChat({ project, isAdmin }) {
               {participants.map(p => (
                 <button key={p.key} onClick={() => setAuthor(p.key)}
                   style={{ fontFamily:'inherit', fontSize:11, fontWeight:600, padding:'5px 12px', borderRadius:20, cursor:'pointer',
-                    background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.8)', border:'1px solid rgba(255,255,255,0.2)' }}>
-                  {p.icon} {p.label}
+                    background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.8)', border:'1px solid rgba(255,255,255,0.2)', display:'inline-flex', alignItems:'center', gap:5 }}>
+                  <Icon name={p.icon||'User'} size={12} color="rgba(255,255,255,0.8)"/> {p.label}
                 </button>
               ))}
             </div>
@@ -6976,7 +7009,7 @@ function IMessageChat({ project, isAdmin }) {
             {/* Cambiar autor */}
             <button onClick={() => setAuthor('')} title="Cambiar"
               style={{ width:30, height:30, borderRadius:'50%', background: colorMap[author] + '33', border:`1.5px solid ${colorMap[author]}`, color:'#fff', fontSize:14, cursor:'pointer', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              {selectedAuthorObj?.icon || '👤'}
+              <Icon name={selectedAuthorObj?.icon || 'User'} size={14} color={colorMap[author]||'#fff'}/>
             </button>
             {/* Campo de texto */}
             <div style={{ flex:1, display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', borderRadius:22, border:'1px solid rgba(255,255,255,0.18)', padding:'0 4px 0 12px', gap:4 }}>
@@ -7135,70 +7168,23 @@ function ToolsMenuView({ onBack, onSelectTool }) {
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-        <button onClick={() => onSelectTool('sun-ar')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="4"/>
-              <line x1="12" y1="2" x2="12" y2="4"/>
-              <line x1="12" y1="20" x2="12" y2="22"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="2" y1="12" x2="4" y2="12"/>
-              <line x1="20" y1="12" x2="22" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Sun AR</div>
-            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Trayectoria del sol en tiempo real</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-
-        <button onClick={() => onSelectTool('color-temp')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
-            </svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Color Temperature</div>
-            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Temperatura de color en Kelvin</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-
-        <button onClick={() => onSelectTool('viewfinder')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="6" width="14" height="12" rx="2"/>
-              <path d="M17 10l4-2v8l-4-2z"/>
-              <circle cx="10" cy="12" r="2.2"/>
-            </svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Director's Viewfinder</div>
-            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Previsualización por sensor + lente</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-
-        <button onClick={() => onSelectTool('claqueta')} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="9" width="18" height="11" rx="1.5"/>
-              <path d="M3 9l2.2-4 3.2 2.4L5.4 5 3 9z" fill="var(--text-primary)" stroke="none"/>
-              <path d="M9.4 7.4L12.6 5l3.2 2.4L12.6 5 9.4 7.4z" fill="var(--text-primary)" stroke="none"/>
-              <path d="M3 9l2.6-4.3 3.4 2.5 3.2-2.4 3.4 2.5 3.2-2.4L21 7.6V9H3z" fill="var(--text-primary)" stroke="none"/>
-            </svg>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>Claqueta</div>
-            <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>Sincronización con sonido</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
+        {[
+          { key:'sun-ar',     icon:'Sun',         title:'Sun AR',               desc:'Trayectoria del sol en tiempo real' },
+          { key:'color-temp', icon:'Thermometer',  title:'Color Temperature',     desc:'Temperatura de color en Kelvin' },
+          { key:'viewfinder', icon:'Video',        title:"Director's Viewfinder", desc:'Previsualización por sensor + lente' },
+          { key:'claqueta',   icon:'Clapperboard', title:'Claqueta',              desc:'Sincronización con sonido' },
+        ].map(tool => (
+          <button key={tool.key} onClick={() => onSelectTool(tool.key)} className="tap" style={{ display:'flex', alignItems:'center', gap:16, padding:'18px', background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:14, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
+            <div style={{ width:44, height:44, borderRadius:12, background:'var(--bg-card-dark)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <Icon name={tool.icon} size={22} color="var(--text-primary)" strokeWidth={1.8}/>
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:3 }}>{tool.title}</div>
+              <div style={{ fontSize:12, color:'var(--text-tertiary)' }}>{tool.desc}</div>
+            </div>
+            <Icon name="ChevronRight" size={16} color="var(--text-light)"/>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -7615,7 +7601,7 @@ function SunARView({ project, onBack }) {
             {!window.SunCalc && <span style={{ opacity:0.7, color:'#ff9a6a', marginLeft:6 }}>· cargando librería…</span>}
           </div>
           <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <Icon name="ChevronLeft" size={16} color="white"/>
           </button>
         </div>
       </div>
@@ -7913,7 +7899,7 @@ function ColorTempView({ project, onBack }) {
             {wbLocked === false && <span style={{ marginLeft:8, color:'#ff9a6a', fontSize:10, letterSpacing:'0.04em', textTransform:'none' }}>· auto-WB (aprox.)</span>}
           </div>
           <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <Icon name="ChevronLeft" size={16} color="white"/>
           </button>
         </div>
       </div>
@@ -7973,11 +7959,7 @@ function ColorTempView({ project, onBack }) {
           <div style={{ display:'flex', justifyContent:'center' }}>
             <button onClick={measureTemp} disabled={isMeasuring} className="tap"
               style={{ width:64, height:64, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.1)', cursor:isMeasuring?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', opacity:isMeasuring?0.4:1, backdropFilter:'blur(12px)' }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M20.94 11A8.994 8.994 0 0 0 12 3a8.994 8.994 0 0 0-8.94 8"/>
-                <path d="M3.06 13A8.994 8.994 0 0 0 12 21a8.994 8.994 0 0 0 8.94-8"/>
-              </svg>
+              <Icon name="ScanEye" size={26} color="white" strokeWidth={1.5}/>
             </button>
           </div>
 
@@ -8382,7 +8364,7 @@ function DirectorViewfinderView({ project, onBack }) {
             Director's Viewfinder
           </div>
           <button onClick={onBack} className="tap" style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', color:'white', width:36, height:36, borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <Icon name="ChevronLeft" size={16} color="white"/>
           </button>
         </div>
 
@@ -8503,12 +8485,7 @@ function DirectorViewfinderView({ project, onBack }) {
             color: note.trim() ? '#FFD050' : 'white',
             cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="9" y1="13" x2="15" y2="13"/>
-              <line x1="9" y1="17" x2="15" y2="17"/>
-            </svg>
+            <Icon name="FileText" size={20} color="currentColor"/>
           </button>
 
           <div style={{ flex:1, color:'white', fontFamily:'inherit', minWidth:0 }}>
@@ -8534,15 +8511,9 @@ function DirectorViewfinderView({ project, onBack }) {
             {savingToDirector ? (
               <div style={{ width:18, height:18, border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
             ) : savedToDirector ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
+              <Icon name="Check" size={22} color="currentColor" strokeWidth={2.5}/>
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
+              <Icon name="Save" size={22} color="currentColor"/>
             )}
           </button>
 
@@ -8575,7 +8546,7 @@ function DirectorViewfinderView({ project, onBack }) {
 function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, onLock, onExport, onNewProject, onUpdateProject, onSelectDept, onOpenMessages, onOpenCitaciones, onOpenScouting, onOpenTools, onOpenDropbox }) {
   const [showAddDept, setShowAddDept] = useState(false);
   const [newDeptLabel, setNewDeptLabel] = useState('');
-  const [newDeptIcon, setNewDeptIcon] = useState('👤');
+  const [newDeptIcon, setNewDeptIcon] = useState('User');
   const [pinned, setPinned] = useState(() => isPinnedProject(project.id));
   const togglePin = () => {
     if (pinned) { unpinProject(project.id); setPinned(false); }
@@ -8721,7 +8692,7 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
       }
     });
     setNewDeptLabel('');
-    setNewDeptIcon('👤');
+    setNewDeptIcon('User');
     setNewDeptColor('#FF5722');
     setShowAddDept(false);
   };
@@ -8739,8 +8710,8 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
             <input value={newDeptLabel} onChange={e => setNewDeptLabel(e.target.value)} placeholder="Ej: Cámaras" style={{ width:'100%', fontFamily:'inherit', fontSize:14, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
           </div>
           <div style={{ marginBottom:16 }}>
-            <label style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit', display:'block', marginBottom:6 }}>Emoji</label>
-            <input value={newDeptIcon} onChange={e => setNewDeptIcon(e.target.value)} placeholder="👤" style={{ width:'100%', fontFamily:'inherit', fontSize:14, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
+            <label style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit', display:'block', marginBottom:6 }}>Ícono Lucide (ej: Camera, Users, Mic)</label>
+            <input value={newDeptIcon} onChange={e => setNewDeptIcon(e.target.value)} placeholder="User" style={{ width:'100%', fontFamily:'inherit', fontSize:14, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
           </div>
           <div style={{ marginBottom:16 }}>
             <label style={{ fontSize:12, color:'var(--text-secondary)', fontFamily:'inherit', display:'block', marginBottom:6 }}>Color</label>
@@ -8965,7 +8936,11 @@ function HomeView({ project, isAdmin, theme, setTheme, onSelectDay, onUnlock, on
                         <path d="M 10 30 L 35 30 L 40 18 L 10 18 Z" fill={folderColor} stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
                         <path d="M 10 28 L 10 85 Q 10 90 15 90 L 105 90 Q 110 90 110 85 L 110 35 Q 110 30 105 30 L 40 30 L 35 18 Q 35 15 30 15 L 15 15 Q 10 15 10 18 Z" fill={folderColor} stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
                         <path d="M 10 30 L 110 30 L 110 38 Q 60 44 10 38 Z" fill="rgba(255,255,255,0.15)" stroke="none"/>
-                        <text x="60" y="68" textAnchor="middle" fontSize="26" fill="rgba(255,255,255,0.9)">{m.icon}</text>
+                        <foreignObject x="35" y="42" width="50" height="50">
+                          <div xmlns="http://www.w3.org/1999/xhtml" style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:'100%' }}>
+                            <Icon name={m.icon||'Clapperboard'} size={26} color="rgba(255,255,255,0.9)"/>
+                          </div>
+                        </foreignObject>
                       </svg>
                       <div style={{ fontSize:'9px', fontWeight:700, color:'#fff', textAlign:'center', letterSpacing:'0.01em', lineHeight:1.2 }}>{m.label}</div>
                       {isAdmin && <button onClick={() => removeDept(k)} style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>✕</button>}
@@ -9318,8 +9293,8 @@ function CitacionesGlobalesView({ project, onBack }) {
                               <div key={c.id||i} style={{ background:'var(--bg-secondary)', borderRadius:'0 10px 10px 0', borderLeft:`3px solid ${deptColor}`, border:`1px solid ${deptColor}20`, borderLeft:`3px solid ${deptColor}`, padding:'8px 10px', marginBottom:4 }}>
                                 <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginBottom:1 }}>{c.hora}</div>
                                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-                                  <span style={{ fontSize:10, fontWeight:700, color:deptColor, fontFamily:'inherit', background:deptColor+'15', padding:'1px 7px', borderRadius:20 }}>
-                                    {c.deptMeta?.icon} {c.deptMeta?.label}
+                                  <span style={{ fontSize:10, fontWeight:700, color:deptColor, fontFamily:'inherit', background:deptColor+'15', padding:'1px 7px', borderRadius:20, display:'inline-flex', alignItems:'center', gap:4 }}>
+                                    <Icon name={c.deptMeta?.icon||'Clapperboard'} size={10} color={deptColor}/> {c.deptMeta?.label}
                                   </span>
                                 </div>
                                 <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{c.tipo}</div>
@@ -9385,7 +9360,7 @@ function MessagesView({ project, onBack }) {
             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
               {m.acks?.map(k => {
                 const d = project.depts[k];
-                return d ? <span key={k} style={{ fontSize:10, padding:'3px 10px', borderRadius:20, background:'#e8f8f0', color:'var(--color-success)', fontFamily:'inherit', border:'1px solid #0fa87e33' }}>{d.icon} {d.label} 👍</span> : null;
+                return d ? <span key={k} style={{ fontSize:10, padding:'3px 10px', borderRadius:20, background:'#e8f8f0', color:'var(--color-success)', fontFamily:'inherit', border:'1px solid #0fa87e33', display:'inline-flex', alignItems:'center', gap:4 }}><Icon name={d.icon||'Clapperboard'} size={10} color="var(--color-success)"/> {d.label} <Icon name="ThumbsUp" size={10} color="var(--color-success)"/></span> : null;
               })}
             </div>
           </div>
@@ -9815,8 +9790,8 @@ function ExportView({ project, onBack, onDelete }) {
             const resp = Array.isArray(info) ? info[0]?.responsable : info?.responsable;
             return (
               <div key={k} style={{ border:`1px solid ${m.color}33`, borderRadius:8, padding:'8px 12px', background:m.color+'08' }}>
-                <div style={{ fontSize:13, fontWeight:700, color:m.color }}>{m.icon} {m.label}</div>
-                {resp && <div style={{ fontSize:11, color:'var(--text-tertiary)', marginTop:2 }}>👤 {resp}</div>}
+                <div style={{ fontSize:13, fontWeight:700, color:m.color, display:'flex', alignItems:'center', gap:5 }}><Icon name={m.icon||'Clapperboard'} size={13} color={m.color}/> {m.label}</div>
+                {resp && <div style={{ fontSize:11, color:'var(--text-tertiary)', marginTop:2, display:'flex', alignItems:'center', gap:4 }}><Icon name="User" size={11} color="var(--text-tertiary)"/> {resp}</div>}
               </div>
             );
           })}
@@ -9847,7 +9822,7 @@ function ExportView({ project, onBack, onDelete }) {
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
                   {scene.depts.filter(k=>project.depts[k]).map(dk=>{
                     const m = project.depts[dk];
-                    return <span key={dk} style={{ fontSize:10, padding:'2px 8px', borderRadius:10, border:`1px solid ${m.color}44`, color:m.color }}>{m.icon} {m.label}</span>;
+                    return <span key={dk} style={{ fontSize:10, padding:'2px 8px', borderRadius:10, border:`1px solid ${m.color}44`, color:m.color, display:'inline-flex', alignItems:'center', gap:4 }}><Icon name={m.icon||'Clapperboard'} size={10} color={m.color}/> {m.label}</span>;
                   })}
                 </div>
               )}
@@ -9900,7 +9875,7 @@ function ExportView({ project, onBack, onDelete }) {
                     if (!m) return null;
                     return (
                       <div key={dk} style={{ marginBottom:8 }}>
-                        <div style={{ fontSize:10, fontWeight:700, color:m.color, marginBottom:4 }}>{m.icon} {m.label}</div>
+                        <div style={{ fontSize:10, fontWeight:700, color:m.color, marginBottom:4, display:'flex', alignItems:'center', gap:4 }}><Icon name={m.icon||'Clapperboard'} size={10} color={m.color}/> {m.label}</div>
                         {coms.map((c,ci) => (
                           <div key={ci} style={{ fontSize:11, color:'var(--text-secondary)', paddingLeft:10, borderLeft:`2px solid ${m.color}44`, marginBottom:3, lineHeight:1.4 }}>
                             {c.texto}
@@ -9931,7 +9906,7 @@ function ExportView({ project, onBack, onDelete }) {
         if (!hasContent) return null;
         return (
           <div key={dk} className="print-page" style={{ marginTop:24, pageBreakBefore:'always' }}>
-            <h2 style={{ fontSize:16, fontWeight:700, color:dm.color, marginBottom:16, borderBottom:`2px solid ${dm.color}33`, paddingBottom:8 }}>{dm.icon} {dm.label}</h2>
+            <h2 style={{ fontSize:16, fontWeight:700, color:dm.color, marginBottom:16, borderBottom:`2px solid ${dm.color}33`, paddingBottom:8, display:'flex', alignItems:'center', gap:8 }}><Icon name={dm.icon||'Clapperboard'} size={16} color={dm.color}/> {dm.label}</h2>
             {info.responsable && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:4 }}>👤 Responsable: <strong>{info.responsable}</strong></div>}
             {info.contacto    && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:4 }}>📱 Contacto: {info.contacto}</div>}
             {info.notas       && <div style={{ fontSize:12, color:'var(--text-tertiary)', marginBottom:12, fontStyle:'italic' }}>📝 {info.notas}</div>}
@@ -10579,18 +10554,19 @@ function RodajeSencilloShell({ project, save, view, setView, activeDayId, setAct
   const selectSceneFromDept = (scene) => { const day = project.days.find(d=>d.scenes.some(s=>s.id===scene.id)); if(!day) return; setActiveDayId(day.id); setActiveSceneId(scene.id); setView('scene'); };
 
   // Header común para rodaje sencillo
-  const SencilloHeader = ({ title, onBack }) => (
+  const SencilloHeader = ({ title, icon, iconColor, onBack }) => (
     <div style={{ background:'var(--bg-header)', borderBottom:'1px solid var(--border-light)', padding:'14px 20px', display:'flex', alignItems:'center', gap:12, position:'sticky', top:0, zIndex:100 }}>
       {onBack && <button onClick={onBack} style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', color:'var(--text-tertiary)', padding:0 }}>‹</button>}
+      {icon && <Icon name={icon} size={18} color={iconColor||'var(--text-primary)'}/>}
       <div style={{ flex:1, fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{title}</div>
     </div>
   );
 
   if (view==='dept') {
-    const deptMeta = (project.depts||{})[activeDeptKey] || { label:activeDeptKey, icon:'📁', color:'#888' };
+    const deptMeta = (project.depts||{})[activeDeptKey] || { label:activeDeptKey, icon:'FolderOpen', color:'#888' };
     return (
       <div style={{ maxWidth:'var(--app-max-width)', margin:'0 auto', minHeight:'100vh', background:'var(--bg-primary)' }}>
-        <SencilloHeader title={`${deptMeta.icon} ${deptMeta.label}`} onBack={()=>setView('home')}/>
+        <SencilloHeader title={deptMeta.label} icon={deptMeta.icon} iconColor={deptMeta.color} onBack={()=>setView('home')}/>
         <div style={{ padding:'20px' }}>
           <DeptDetailView
             deptKey={activeDeptKey} deptMeta={deptMeta} isAdmin={isAdmin}
@@ -12189,11 +12165,15 @@ function DeptAvatar({ photo, icon, color, size=48, borderRadius=14, fontSize=26,
     <div style={{ position:'relative', width:size, height:size, flexShrink:0 }}>
       {photo
         ? <img src={photo} alt="avatar" style={{ width:size, height:size, borderRadius:'50%', objectFit:'cover', border:`2px solid ${color}44`, display:'block' }}/>
-        : <div style={{ width:size, height:size, borderRadius:borderRadius, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:fontSize }}>{icon}</div>
+        : <div style={{ width:size, height:size, borderRadius:borderRadius, background:color+'18', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name={icon||'User'} size={Math.round(fontSize*0.9)} color={color}/>
+          </div>
       }
       {editable && (
         <>
-          <div onClick={()=>inputRef.current?.click()} style={{ position:'absolute', bottom:-4, right:-4, width:22, height:22, borderRadius:'50%', background:color, border:'2px solid var(--bg-primary)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:11 }}>📷</div>
+          <div onClick={()=>inputRef.current?.click()} style={{ position:'absolute', bottom:-4, right:-4, width:22, height:22, borderRadius:'50%', background:color, border:'2px solid var(--bg-primary)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <Icon name="Camera" size={11} color="#fff"/>
+          </div>
           <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }}/>
         </>
       )}
