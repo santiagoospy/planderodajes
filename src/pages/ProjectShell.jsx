@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useProject } from '../hooks/useProject'
 import { LoadingScreen, NotFoundScreen } from '../components/ui/LoadingScreen'
 import { SEED_PROJECT } from '../constants/seed'
@@ -15,15 +15,17 @@ const CitacionesView = lazy(() => import('../features/citaciones/CitacionesGloba
 const MessagesView   = lazy(() => import('../features/messaging/MessagesView'))
 const DropboxView    = lazy(() => import('../features/dropbox/DropboxView'))
 
+// DemoShell keeps its own project state so admin changes survive lock/unlock
 function DemoShell() {
-  return <ProjectViews project={SEED_PROJECT} projectId="proj_demo" isAdmin={false} save={() => {}} />
+  const [project, setProject] = useState(SEED_PROJECT)
+  return <ProjectViews project={project} projectId="proj_demo" save={setProject} />
 }
 
 function LiveShell({ projectId }) {
   const { project, loading, error, save } = useProject(projectId)
   if (loading) return <LoadingScreen text="Cargando proyecto..." />
   if (error || !project) return <NotFoundScreen />
-  return <ProjectViews project={project} projectId={projectId} isAdmin={false} save={save} />
+  return <ProjectViews project={project} projectId={projectId} save={save} />
 }
 
 export default function ProjectShell({ projectId }) {
@@ -40,10 +42,21 @@ function ProjectViews({ project, projectId, save }) {
   const [theme, setTheme]           = useState(() => localStorage.getItem('pdr:theme') || 'light')
   const [localProject, setLocalProject] = useState(project)
 
-  // Sync when project prop changes (e.g. after API load)
-  if (project !== localProject && !isAdmin) setLocalProject(project)
+  // Track whether admin has made changes this session.
+  // Once true, we stop auto-syncing from the server prop so stale API
+  // responses don't revert the user's edits on lock.
+  const adminChangedRef = useRef(false)
+
+  // Sync localProject when the server/parent project prop changes,
+  // but only if the admin hasn't made local edits yet.
+  useEffect(() => {
+    if (!adminChangedRef.current) {
+      setLocalProject(project)
+    }
+  }, [project])
 
   const updateProject = (updated) => {
+    adminChangedRef.current = true
     setLocalProject(updated)
     save(updated)
   }

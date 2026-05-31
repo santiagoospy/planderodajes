@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useDeptData } from '../../hooks/useDeptData'
+import { api } from '../../services/api'
 import { Icon } from '../../components/ui/Icon'
 
 export default function CitacionesGlobalesView({ onBack, project, projectId, color = '#0052CC' }) {
   const { items: citas, save: setCitas } = useDeptData(projectId, '_global', 'citas', [])
-  const [locsDepto, setLocsDepto] = useState([])
+  const [deptCitas, setDeptCitas] = useState([])
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState(null)
   const [form, setForm] = useState({ tipo: '', hora: '', lugar: '', dia: '', notas: '' })
@@ -12,16 +13,29 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  // Load citaciones from all departments
   useEffect(() => {
-    // Placeholder: in a real app, load locations from locaciones dept
-    setLocsDepto([])
-  }, [projectId])
+    if (!project || !projectId) return
+    const deptKeys = Object.keys(project.depts || {})
+    Promise.all(
+      deptKeys.map(dk =>
+        api.getDeptData(projectId, dk, 'citas')
+          .then(d => Array.isArray(d)
+            ? d.map(c => ({ ...c, _deptKey: dk, _deptLabel: project.depts[dk]?.label || dk, _deptColor: project.depts[dk]?.color || '#888' }))
+            : []
+          )
+          .catch(() => [])
+      )
+    ).then(results => setDeptCitas(results.flat()))
+  }, [projectId, project])
+
+  // Merge global citas + dept citas for display
+  const todasCitas = [...citas, ...deptCitas]
 
   const diasExistentes = project?.days?.map(d => d.label) || []
-  const lugaresDeLocaciones = locsDepto.map(l => l.nombre).filter(Boolean)
-  const lugaresDeHistorial = [...new Set(citas.map(c => c.lugar).filter(Boolean))]
-  const todosLugares = [...new Set([...lugaresDeLocaciones, ...lugaresDeHistorial])]
-  const diasUnicos = [...new Set(citas.map(c => c.dia).filter(Boolean))]
+  const lugaresDeHistorial = [...new Set(todasCitas.map(c => c.lugar).filter(Boolean))]
+  const todosLugares = lugaresDeHistorial
+  const diasUnicos = [...new Set(todasCitas.map(c => c.dia).filter(Boolean))]
   const todosDias = [...diasUnicos, ...diasExistentes].filter((v, i, a) => a.indexOf(v) === i)
 
   const openAdd = () => {
@@ -56,7 +70,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
   const del = (id) => setCitas(citas.filter(c => c.id !== id))
 
   const byDay = {}
-  citas.forEach(c => {
+  todasCitas.forEach(c => {
     const d = c.dia || 'Sin día'
     if (!byDay[d]) byDay[d] = []
     byDay[d].push(c)
@@ -147,10 +161,17 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
                       </div>
                       <div style={{ flex: 1, padding: hasEvents ? '2px 0 10px 12px' : '0 0 0 12px' }}>
                         {events.map(c => (
-                          <div key={c.id} style={{ background: 'var(--bg-secondary)', borderRadius: '0 10px 10px 0', border: `1px solid ${color}20`, borderLeft: `3px solid ${color}`, padding: '8px 10px', marginBottom: 4 }}>
+                          <div key={c.id} style={{ background: 'var(--bg-secondary)', borderRadius: '0 10px 10px 0', border: `1px solid ${c._deptColor || color}20`, borderLeft: `3px solid ${c._deptColor || color}`, padding: '8px 10px', marginBottom: 4 }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'inherit', marginBottom: 1 }}>{c.hora}</div>
+                                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'inherit', marginBottom: 1, display: 'flex', gap: 6, alignItems: 'center' }}>
+                                  {c.hora}
+                                  {c._deptLabel && (
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: c._deptColor || color, background: `${c._deptColor || color}18`, borderRadius: 4, padding: '1px 5px', letterSpacing: '0.04em' }}>
+                                      {c._deptLabel.toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'inherit' }}>{c.tipo}</div>
                                 {c.lugar && <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'inherit', marginTop: 2 }}>
                                   <Icon name="MapPin" size={11} color="currentColor" style={{ marginRight: 4 }} /> {c.lugar}
@@ -159,10 +180,12 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
                                   <Icon name="FileText" size={11} color="currentColor" style={{ marginRight: 4 }} /> {c.notas}
                                 </div>}
                               </div>
-                              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                                <button onClick={() => openEdit(c)} style={{ background: 'var(--bg-card-dark-secondary)', border: 'none', borderRadius: 7, color: 'var(--text-tertiary)', fontSize: 12, cursor: 'pointer', padding: '3px 7px' }}>✎</button>
-                                <button onClick={() => del(c.id)} style={{ background: 'var(--bg-error)', border: 'none', borderRadius: 7, color: 'var(--color-primary)', fontSize: 12, cursor: 'pointer', padding: '3px 7px' }}>✕</button>
-                              </div>
+                              {!c._deptKey && (
+                                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                                  <button onClick={() => openEdit(c)} style={{ background: 'var(--bg-card-dark-secondary)', border: 'none', borderRadius: 7, color: 'var(--text-tertiary)', fontSize: 12, cursor: 'pointer', padding: '3px 7px' }}>✎</button>
+                                  <button onClick={() => del(c.id)} style={{ background: 'var(--bg-error)', border: 'none', borderRadius: 7, color: 'var(--color-primary)', fontSize: 12, cursor: 'pointer', padding: '3px 7px' }}>✕</button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
