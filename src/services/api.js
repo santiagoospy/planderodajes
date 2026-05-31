@@ -42,6 +42,17 @@ export const api = {
     return apiFetch('/list-projects')
   },
 
+  async listProductoras() {
+    return apiFetch('/data?store=productoras&list=true')
+  },
+
+  async delete(store, key) {
+    return apiFetch('/data', {
+      method: 'POST',
+      body: JSON.stringify({ store, key, delete: true }),
+    })
+  },
+
   async getProductora(id) {
     return this.get('productoras', id)
   },

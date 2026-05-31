@@ -3,12 +3,13 @@
  * Matches the existing LandingView behavior.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Icon } from '../components/ui/Icon'
 import { NewProductoraView } from '../features/productora/NewProductoraView'
 import { MarketplaceView } from '../features/marketplace/MarketplaceView'
-import { getPinnedProjects, unpinProject, productoraSlug, buildProjectUrl } from '../utils/urls'
+import { getPinnedProjects, unpinProject, productoraSlug, buildProjectUrl, buildProductoraUrl } from '../utils/urls'
 import { SEED_PROJECT } from '../constants/seed'
+import { api } from '../services/api'
 
 const THEMES = {
   celeste: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
@@ -21,11 +22,124 @@ const LANDING_ACTIONS = [
   { key: 'create',      icon: 'Plus',         label: 'Crear espacio de trabajo', desc: 'Freelance o productora' },
   { key: 'marketplace', icon: 'ShoppingCart', label: 'Marketplace',            desc: 'Equipos, props y servicios' },
   { key: 'demo',        icon: 'Play',         label: 'Ver demo',               desc: 'Explorar el Proyecto Cero' },
+  { key: 'admin',       icon: 'Settings',     label: 'Admin',                  desc: 'Ver productoras y proyectos' },
 ]
+
+function AdminView({ onBack }) {
+  const [productoras, setProductoras] = useState([])
+  const [projects,    setProjects]    = useState([])
+  const [loading,     setLoading]     = useState(true)
+
+  useEffect(() => {
+    Promise.all([api.listProductoras(), api.listProjects()])
+      .then(([pRes, projRes]) => {
+        setProductoras(pRes?.items || [])
+        setProjects(projRes?.projects || [])
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const projectsByProductora = {}
+  projects.forEach(p => {
+    const key = p.productoraId || '__sin_productora__'
+    if (!projectsByProductora[key]) projectsByProductora[key] = []
+    projectsByProductora[key].push(p)
+  })
+
+  return (
+    <div className="px-5 slide-up">
+      <button onClick={onBack} className="tap flex items-center gap-2 text-white/60 text-sm mb-6 bg-transparent border-0 cursor-pointer">
+        <Icon name="ChevronLeft" size={16} color="rgba(255,255,255,0.6)" />
+        Volver
+      </button>
+      <div className="text-xl font-bold text-white mb-1">Admin</div>
+      <div className="text-xs text-white/40 mb-6">Vista general de productoras y proyectos</div>
+
+      {loading ? (
+        <div className="text-white/40 text-sm text-center py-8">Cargando datos…</div>
+      ) : (
+        <>
+          {/* Productoras */}
+          <div className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
+            Productoras ({productoras.length})
+          </div>
+          <div className="flex flex-col gap-2 mb-6">
+            {productoras.length === 0 && <div className="text-white/30 text-sm">Sin productoras</div>}
+            {productoras.map(p => {
+              const projs = projectsByProductora[p.id] || []
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => window.location.href = buildProductoraUrl(p.id)}
+                  className="tap flex items-center gap-3 px-4 py-3 rounded-[14px] text-left w-full border-0 cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.1)' }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{p.name || p.id}</div>
+                    <div className="text-xs text-white/40">{p.id} · {projs.length} proyecto{projs.length !== 1 ? 's' : ''}</div>
+                  </div>
+                  <Icon name="ChevronRight" size={14} color="rgba(255,255,255,0.3)" />
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Proyectos sin productora */}
+          {(projectsByProductora['__sin_productora__'] || []).length > 0 && (
+            <>
+              <div className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
+                Proyectos sin productora ({projectsByProductora['__sin_productora__'].length})
+              </div>
+              <div className="flex flex-col gap-2 mb-6">
+                {projectsByProductora['__sin_productora__'].map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => window.location.href = buildProjectUrl(p.id)}
+                    className="tap flex items-center gap-3 px-4 py-3 rounded-[14px] text-left w-full border-0 cursor-pointer"
+                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{p.title || p.id}</div>
+                      <div className="text-xs text-white/40">{p.id}</div>
+                    </div>
+                    <Icon name="ChevronRight" size={14} color="rgba(255,255,255,0.3)" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Todos los proyectos */}
+          <div className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
+            Todos los proyectos ({projects.length})
+          </div>
+          <div className="flex flex-col gap-2">
+            {projects.map(p => (
+              <button
+                key={p.id}
+                onClick={() => window.location.href = buildProjectUrl(p.id)}
+                className="tap flex items-center gap-3 px-4 py-3 rounded-[14px] text-left w-full border-0 cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.07)' }}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-white truncate">{p.title || p.id}</div>
+                  <div className="text-xs text-white/40">
+                    {p.productoraId ? `${p.productoraId} · ` : ''}{p.id}
+                  </div>
+                </div>
+                <Icon name="ChevronRight" size={14} color="rgba(255,255,255,0.3)" />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 export default function LandingPage() {
   const [theme, setTheme] = useState(() => localStorage.getItem('pdr:landing-theme') || 'celeste')
-  const [modo, setModo]   = useState(null)  // null | 'enter' | 'create' | 'marketplace'
+  const [modo, setModo]   = useState(null)  // null | 'enter' | 'create' | 'marketplace' | 'admin'
   const [codigo, setCodigo] = useState('')
   const [pinnedList, setPinnedList] = useState(() => getPinnedProjects())
 
@@ -177,6 +291,11 @@ export default function LandingPage() {
         {/* Marketplace mode */}
         {modo === 'marketplace' && (
           <MarketplaceView onBack={() => setModo(null)} />
+        )}
+
+        {/* Admin mode */}
+        {modo === 'admin' && (
+          <AdminView onBack={() => setModo(null)} />
         )}
       </div>
 
