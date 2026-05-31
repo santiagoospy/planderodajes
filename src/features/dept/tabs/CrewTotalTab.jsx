@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { db } from '../../../services/db'
+import { api } from '../../../services/api'
 import { Icon } from '../../../components/ui/Icon'
 
 export default function CrewTotalTab({ color, projectId, project }) {
@@ -11,7 +11,7 @@ export default function CrewTotalTab({ color, projectId, project }) {
     const deptKeys = Object.keys(project.depts)
     Promise.all(
       deptKeys.map(dk =>
-        db.getDeptData(projectId, dk, 'integrantes').then(d =>
+        api.getDeptData(projectId, dk, 'integrantes').then(d =>
           (d||[]).map(p => ({ ...p, deptKey:dk, deptLabel:project.depts[dk]?.label||dk, deptColor:project.depts[dk]?.color||'#888', deptIcon:project.depts[dk]?.icon||'Clapperboard' }))
         ).catch(() => [])
       )

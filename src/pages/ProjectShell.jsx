@@ -110,14 +110,13 @@ function ProjectViews({ project, projectId, save }) {
     updateProject(updated)
   }
 
-  const onUpdateScene = (dayId, sceneId, updates) => {
+  const onUpdateScene = (updatedScene) => {
     const updated = {
       ...localProject,
-      days: localProject.days.map(d =>
-        d.id === dayId
-          ? { ...d, scenes: d.scenes.map(s => s.id === sceneId ? { ...s, ...updates } : s) }
-          : d
-      )
+      days: localProject.days.map(d => ({
+        ...d,
+        scenes: d.scenes.map(s => s.id === updatedScene.id ? updatedScene : s),
+      }))
     }
     updateProject(updated)
   }
@@ -185,6 +184,10 @@ function ProjectViews({ project, projectId, save }) {
             deptKey={activeDeptKey}
             deptMeta={depts[activeDeptKey] || { label: activeDeptKey, icon: 'FolderOpen', color: '#888' }}
             onBack={nav.goHome}
+            onSelectSceneFromDept={(scene) => {
+              const day = localProject.days.find(d => d.scenes.some(s => s.id === scene.id))
+              if (day) { setDayId(day.id); setSceneId(scene.id); setView('scene') }
+            }}
           />
         )}
         {view === 'export'     && <ExportView    {...common} onBack={nav.goHome} />}
