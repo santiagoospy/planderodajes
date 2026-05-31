@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { Icon } from '../components/ui/Icon'
+import { NewProductoraView } from '../features/productora/NewProductoraView'
 import { getPinnedProjects, unpinProject, productoraSlug, buildProjectUrl } from '../utils/urls'
 import { SEED_PROJECT } from '../constants/seed'
 
@@ -159,6 +160,31 @@ export default function LandingPage() {
                 Ingresar
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Create mode — new productora */}
+        {modo === 'create' && (
+          <NewProductoraView
+            onCreated={(prod) => {
+              window.location.href = `/?org=${prod.id}`
+            }}
+            onCancel={() => setModo(null)}
+          />
+        )}
+
+        {/* Marketplace mode */}
+        {modo === 'marketplace' && (
+          <div className="px-5 slide-up">
+            <button onClick={() => setModo(null)} className="tap flex items-center gap-2 text-white/60 text-sm mb-6 bg-transparent border-0 cursor-pointer">
+              <Icon name="ChevronLeft" size={16} color="rgba(255,255,255,0.6)" />
+              Volver
+            </button>
+            <div className="text-xl font-bold text-white mb-6">Marketplace</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, textAlign: 'center', padding: '40px 20px' }}>
+              🔧 El marketplace está en construcción.<br/>
+              Pronto podrás comprar y vender equipos, props y servicios.
+            </div>
           </div>
         )}
       </div>

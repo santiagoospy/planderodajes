@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { ProgressRing } from '../../components/ui/ProgressRing'
+import { PinModal } from '../../components/ui/PinModal'
 import { uid } from '../../utils/uid'
 import { isPinnedProject, pinProject, unpinProject } from '../../utils/urls'
 import { api } from '../../services/api'
@@ -42,6 +43,7 @@ export default function HomeView({
   const [editingDayId, setEditingDayId] = useState(null)
   const [editingDayLabel, setEditingDayLabel] = useState('')
   const [editingDayDate, setEditingDayDate]   = useState('')
+  const [showPinModal, setShowPinModal] = useState(false)
 
   const allScenes = project.days.flatMap(d => d.scenes)
   const doneAll   = allScenes.filter(s => s.done).length
@@ -237,7 +239,7 @@ export default function HomeView({
               )}
             </h1>
             <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
-              <button onClick={isAdmin ? onLock : onUnlock} className="tap"
+              <button onClick={() => isAdmin ? onLock() : setShowPinModal(true)} className="tap"
                 style={{ background:'rgba(0,0,0,0.2)', border:'none', cursor:'pointer', padding:'6px 8px', borderRadius:8 }}>
                 <Icon name={isAdmin ? 'LockOpen' : 'Lock'} size={16} color={textColor}/>
               </button>
@@ -507,6 +509,19 @@ export default function HomeView({
 
         </div>
       </div>
+
+      {showPinModal && (
+        <PinModal
+          title="Desbloquear edición"
+          subtitle="Ingresá la contraseña del proyecto"
+          correctPin={project.pin || '1234'}
+          onSuccess={() => {
+            setShowPinModal(false)
+            onUnlock()
+          }}
+          onCancel={() => setShowPinModal(false)}
+        />
+      )}
     </div>
   )
 }
