@@ -29,8 +29,13 @@ export function useProject(projectId) {
     setError(null)
     try {
       const data = await api.getProject(projectId)
-      setProject(data)
-      storage.setProject(projectId, data)
+      if (data !== null) {
+        setProject(data)
+        storage.setProject(projectId, data)
+      } else {
+        const cached = storage.getProject(projectId)
+        if (!cached) setError('Proyecto no encontrado')
+      }
     } catch (e) {
       const cached = storage.getProject(projectId)
       if (cached) setProject(cached)

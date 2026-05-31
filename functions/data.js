@@ -40,7 +40,6 @@ export default async (req) => {
 
       if (!key) return error('Missing key param')
       const val = await blob.get(key, { type: 'json' })
-      if (val === null) return error('Not found', 404)
       return json(val)
     }
 

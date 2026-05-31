@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { api } from '../../services/api';
 
 const productoraSlug = (text) => {
     return (text || '').toLowerCase()
@@ -31,8 +32,8 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
 
         setCreating(true);
         try {
-            const exists = await window._fb.productoraExists(slug);
-            if (exists) {
+            const existing = await api.getProductora(slug);
+            if (existing !== null) {
                 setError(`El nombre "${slug}" ya está en uso. Probá otro.`);
                 setCreating(false);
                 return;
@@ -43,7 +44,7 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
                 password: password,
                 createdAt: Date.now(),
             };
-            await window._fb.saveProductora(prod);
+            await api.saveProductora(slug, prod);
             try { localStorage.setItem(`prod_pwd_${slug}`, password); } catch { }
             onCreated(prod);
         } catch (e) {
