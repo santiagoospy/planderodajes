@@ -85,7 +85,7 @@ export default function DropboxView({ project, onBack }) {
   const fmtSize = (b) => (b > 1048576 ? ((b / 1048576).toFixed(1) + ' MB') : Math.round(b / 1024) + ' KB')
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily: 'Inter, sans-serif' }} className="slide-l">
+    <div style={{ minHeight: '100dvh', background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily: 'Inter, sans-serif' }} className="slide-l">
       <div style={{ padding: 'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', position: 'sticky', top: 0, zIndex: 10, background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button onClick={onBack} className="tap" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>

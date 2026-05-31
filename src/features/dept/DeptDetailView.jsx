@@ -73,7 +73,7 @@ export default function DeptDetailView({
   const tabProps = { color, deptKey, projectId, project, isAdmin, onUpdateProject }
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
+    <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
 
       {/* Header */}
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 0', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>

@@ -5,18 +5,9 @@ import { PinModal } from '../../components/ui/PinModal'
 import { uid } from '../../utils/uid'
 import { isPinnedProject, pinProject, unpinProject } from '../../utils/urls'
 import { api } from '../../services/api'
+import { getTheme } from '../../constants/themes'
 import WeatherWidget from '../weather/WeatherWidget'
 import IMessageChat from '../messaging/IMessageChat'
-
-const PRODUCTORA_THEMES = {
-  celeste: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
-  coral:   '#C45A3C',
-  oscuro:  'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
-  claro:   '#F1FAEE',
-  naranja: '#C45A3C', amarillo: '#C45A3C',
-  gris:    'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
-  verde: '#0B7285', violeta: '#C45A3C', rojo: '#C45A3C', rosado: '#C45A3C',
-}
 
 export default function HomeView({
   project, isAdmin, save, depts, projectId,
@@ -33,7 +24,7 @@ export default function HomeView({
   const [newDeptIcon, setNewDeptIcon]   = useState('User')
   const [newDeptColor, setNewDeptColor] = useState('#FF5722')
   const [pinned, setPinned]             = useState(() => isPinnedProject(project.id))
-  const [productoraGrad, setProductoraGrad] = useState(PRODUCTORA_THEMES.celeste)
+  const [productoraGrad, setProductoraGrad] = useState(getTheme('celeste').grad)
   const [isLightTheme, setIsLightTheme] = useState(false)
   const [editingProjectName, setEditingProjectName] = useState(false)
   const [newProjectName, setNewProjectName] = useState(project.name || project.title || '')
@@ -53,9 +44,10 @@ export default function HomeView({
   useEffect(() => {
     if (!project.productoraId) return
     api.getProductora(project.productoraId).then(prod => {
-      if (prod?.colorTheme && PRODUCTORA_THEMES[prod.colorTheme]) {
-        setProductoraGrad(PRODUCTORA_THEMES[prod.colorTheme])
-        setIsLightTheme(prod.colorTheme === 'claro')
+      if (prod?.colorTheme) {
+        const t = getTheme(prod.colorTheme)
+        setProductoraGrad(t.grad)
+        setIsLightTheme(t.light)
       }
     }).catch(() => {})
   }, [project.productoraId])
@@ -175,7 +167,7 @@ export default function HomeView({
 
   // ── Add dept form ──────────────────────────────────────────────
   if (showAddDept) return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }}>
+    <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }}>
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={() => setShowAddDept(false)} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>
           ‹ Volver
@@ -215,7 +207,7 @@ export default function HomeView({
   const glass     = 'rgba(0,0,0,0.15)'
 
   return (
-    <div style={{ minHeight:'100vh', background:productoraGrad, display:'flex', flexDirection:'column' }}>
+    <div style={{ minHeight:'100dvh', background:productoraGrad, display:'flex', flexDirection:'column' }}>
       <div style={{ flex:1, overflowY:'auto' }}>
 
         {/* Header */}

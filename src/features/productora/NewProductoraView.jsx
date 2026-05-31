@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-
-const WORKSPACE_THEMES = {
-  celeste:  { grad: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', label: 'Celeste' },
-  coral:    { grad: '#C45A3C', label: 'Coral' },
-  oscuro:   { grad: 'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label: 'Oscuro' },
-  claro:    { grad: '#F1FAEE', label: 'Claro' },
-  amarillo: { grad: '#F5A52A', label: 'Amarillo' },
-};
+import { THEMES as WORKSPACE_THEMES } from '../../constants/themes';
 
 const productoraSlug = (text) => {
     return (text || '').toLowerCase()
@@ -66,7 +59,7 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
     const baseUrl = window.location.origin + window.location.pathname;
 
     return (
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding: '0 20px 40px', fontFamily: 'inherit' }}>
+        <div style={{ minHeight: '100dvh', background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding: '0 20px 40px', fontFamily: 'inherit' }}>
             <div style={{ maxWidth: '480px', margin: '0 auto', paddingTop: 52 }}>
                 <button onClick={onCancel} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>← Cancelar</button>
                 <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.5px' }}>Creá el nombre de la carpeta o productora</div>

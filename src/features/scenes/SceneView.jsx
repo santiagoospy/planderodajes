@@ -269,7 +269,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
   const color = '#d94f2b'
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
+    <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
       {/* Header */}
       <div style={{ background:'var(--bg-header)', padding:'14px 20px 0', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', marginBottom:8 }}>

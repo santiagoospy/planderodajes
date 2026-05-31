@@ -85,12 +85,13 @@ html, body {
   padding: 0;
   background: var(--bg-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-  min-height: 100vh;
+  min-height: 100vh;        /* fallback navegadores viejos */
+  min-height: 100dvh;       /* viewport dinámico (iOS/Android) */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
 
-#root { width: 100%; min-height: 100vh; }
+#root { width: 100%; min-height: 100vh; min-height: 100dvh; }
 
 /* ─── Layout utilities ──────────────────────────────────── */
 .app-container {

@@ -9,7 +9,7 @@ export const ToolsMenuView = ({ onBack, onSelectTool }) => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', padding: '52px 20px 20px' }} className="slide-l">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', padding: '52px 20px 20px' }} className="slide-l">
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
         <button onClick={onBack} className="tap" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 8, fontSize: 18, cursor: 'pointer', fontFamily: 'inherit' }}>
           ←

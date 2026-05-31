@@ -12,7 +12,7 @@ const MessagesView = ({ project, onBack }) => {
   const fmt = (ts) => new Date(ts).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
       <div style={{ background: 'var(--bg-secondary)', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom: '1px solid #ede9e3', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 8, padding: 0 }}>
           ‹ Volver

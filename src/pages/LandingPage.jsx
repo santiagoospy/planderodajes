@@ -10,13 +10,7 @@ import { MarketplaceView } from '../features/marketplace/MarketplaceView'
 import { getPinnedProjects, unpinProject, productoraSlug, buildProjectUrl, buildProductoraUrl } from '../utils/urls'
 import { SEED_PROJECT } from '../constants/seed'
 import { api } from '../services/api'
-
-const THEMES = {
-  celeste:  'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
-  coral:    '#C45A3C',
-  oscuro:   'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
-  amarillo: '#F5A52A',
-}
+import { THEME_KEYS, getTheme } from '../constants/themes'
 
 const LANDING_ACTIONS = [
   { key: 'enter',       icon: 'LogIn',        label: 'Ingresar',               desc: 'Accedé a tu espacio existente' },
@@ -103,11 +97,13 @@ function AdminView({ onBack }) {
     }
   }
 
-  const projectsByProductora = {}
-  projects.forEach(p => {
-    const key = p.productoraId || '__sin_productora__'
-    if (!projectsByProductora[key]) projectsByProductora[key] = []
-    projectsByProductora[key].push(p)
+  // Solo proyectos reales creados (excluye el demo / Proyecto Cero)
+  const realProjects = projects.filter(p => (p._blobKey || p.id) !== SEED_PROJECT.id && p.id !== SEED_PROJECT.id)
+
+  const countByProductora = {}
+  realProjects.forEach(p => {
+    if (!p.productoraId) return
+    countByProductora[p.productoraId] = (countByProductora[p.productoraId] || 0) + 1
   })
 
   const DelBtn = ({ type, id, blobKey, label }) => (
@@ -148,19 +144,19 @@ function AdminView({ onBack }) {
         <div className="text-white/40 text-sm text-center py-8">Cargando datos…</div>
       ) : (
         <>
-          {/* Productoras */}
+          {/* Productoras creadas */}
           <div className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
             Productoras ({productoras.length})
           </div>
           <div className="flex flex-col gap-2 mb-6">
             {productoras.length === 0 && <div className="text-white/30 text-sm">Sin productoras</div>}
             {productoras.map(p => {
-              const projs = projectsByProductora[p.id] || []
+              const n = countByProductora[p.id] || 0
               return (
                 <div key={p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.1)' }}>
                   <button onClick={() => window.location.href = buildProductoraUrl(p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
                     <div className="text-sm font-bold text-white truncate">{p.name || p.id}</div>
-                    <div className="text-xs text-white/40">{p.id} · {projs.length} proyecto{projs.length !== 1 ? 's' : ''}</div>
+                    <div className="text-xs text-white/40">{n} proyecto{n !== 1 ? 's' : ''}</div>
                   </button>
                   <DelBtn type="productora" id={p.id} blobKey={p._blobKey} label={p.name || p.id} />
                 </div>
@@ -168,36 +164,17 @@ function AdminView({ onBack }) {
             })}
           </div>
 
-          {/* Proyectos sin productora */}
-          {(projectsByProductora['__sin_productora__'] || []).length > 0 && (
-            <>
-              <div className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
-                Sin productora ({projectsByProductora['__sin_productora__'].length})
-              </div>
-              <div className="flex flex-col gap-2 mb-6">
-                {projectsByProductora['__sin_productora__'].map(p => (
-                  <div key={p._blobKey || p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                    <button onClick={() => window.location.href = buildProjectUrl(p._blobKey || p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
-                      <div className="text-sm font-bold text-white truncate">{p.title || p._blobKey || p.id}</div>
-                      <div className="text-xs text-white/40">{p._blobKey || p.id}</div>
-                    </button>
-                    <DelBtn type="project" id={p.id} blobKey={p._blobKey} label={p.title || p._blobKey || p.id} />
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Todos los proyectos */}
+          {/* Proyectos creados */}
           <div className="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-3">
-            Todos los proyectos ({projects.length})
+            Proyectos ({realProjects.length})
           </div>
           <div className="flex flex-col gap-2">
-            {projects.map(p => (
+            {realProjects.length === 0 && <div className="text-white/30 text-sm">Sin proyectos</div>}
+            {realProjects.map(p => (
               <div key={p._blobKey || p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
                 <button onClick={() => window.location.href = buildProjectUrl(p._blobKey || p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
                   <div className="text-sm font-bold text-white truncate">{p.title || p._blobKey || p.id}</div>
-                  <div className="text-xs text-white/40">{p.productoraId ? `${p.productoraId} · ` : ''}{p._blobKey || p.id}</div>
+                  {p.productoraId && <div className="text-xs text-white/40">{p.productoraId}</div>}
                 </button>
                 <DelBtn type="project" id={p.id} blobKey={p._blobKey} label={p.title || p._blobKey || p.id} />
               </div>
@@ -216,7 +193,7 @@ export default function LandingPage() {
   const [pinnedList, setPinnedList] = useState(() => getPinnedProjects())
   const [adminUnlocked, setAdminUnlocked] = useState(false)
 
-  const grad = THEMES[theme] || THEMES.celeste
+  const grad = getTheme(theme).grad
 
   const changeTheme = (key) => {
     setTheme(key)
@@ -377,7 +354,7 @@ export default function LandingPage() {
 
       {/* Theme picker */}
       <div className="flex items-center justify-center gap-3 pb-8 pt-6 max-w-[480px] mx-auto w-full">
-        {Object.entries(THEMES).filter(([k]) => ['celeste','coral','oscuro','amarillo'].includes(k)).map(([key, grad]) => (
+        {THEME_KEYS.map((key) => (
           <button
             key={key}
             onClick={() => changeTheme(key)}
@@ -385,7 +362,7 @@ export default function LandingPage() {
             style={{
               width:  theme === key ? 32 : 22,
               height: theme === key ? 32 : 22,
-              background: grad,
+              background: getTheme(key).grad,
               border: theme === key ? '3px solid #fff' : '2px solid rgba(255,255,255,0.3)',
             }}
           />

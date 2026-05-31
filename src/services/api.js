@@ -61,6 +61,9 @@ export const api = {
     return this.set('productoras', id, data)
   },
 
+  // NOTE: File uploads to R2 use uploadFileToR2() in services/s3-upload.js,
+  // which calls /r2-presign with the correct { action, fileName, fileType } payload.
+
   // Dept data uses flattened store/key: store="dept:pid:deptKey" key=section
   async getDeptData(projectId, deptKey, section) {
     return this.get(`dept:${projectId}:${deptKey}`, section)
@@ -68,12 +71,5 @@ export const api = {
 
   async saveDeptData(projectId, deptKey, section, data) {
     return this.set(`dept:${projectId}:${deptKey}`, section, data)
-  },
-
-  async getUploadUrl(filename, contentType) {
-    return apiFetch('/r2-presign', {
-      method: 'POST',
-      body: JSON.stringify({ filename, contentType }),
-    })
   },
 }

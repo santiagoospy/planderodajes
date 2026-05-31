@@ -1,7 +1,9 @@
 /**
- * Compress an image File to a base64 data URL.
- * @param {File} file
- * @param {number} size  - max dimension in px (default 120)
+ * Single source of truth for client-side image compression.
+ * Compresses a File to a base64 JPEG data URL via canvas.
+ *
+ * @param {File}   file
+ * @param {number} size    - max dimension in px (default 120)
  * @param {number} quality - JPEG quality 0-1 (default 0.6)
  * @returns {Promise<string>} base64 data URL
  */
@@ -19,7 +21,12 @@ export function compressImage(file, size = 120, quality = 0.6) {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       resolve(canvas.toDataURL('image/jpeg', quality))
     }
-    img.onerror = reject
+    img.onerror = (err) => { URL.revokeObjectURL(url); reject(err) }
     img.src = url
   })
+}
+
+/** Stronger compression preset (larger max dimension, lower quality). */
+export function compressImageStrong(file) {
+  return compressImage(file, 1000, 0.60)
 }

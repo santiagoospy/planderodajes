@@ -103,7 +103,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
     .sort((a, b) => a.colorIdx - b.colorIdx)
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', padding: '0 16px 48px' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', padding: '0 16px 48px' }}>
       {/* Header */}
       {onBack && (
         <div style={{ position: 'sticky', top: 0, background: 'var(--bg-primary)', padding: '14px 0', zIndex: 10, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>

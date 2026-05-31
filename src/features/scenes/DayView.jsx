@@ -129,7 +129,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
   const sceneCardProps = { color, isAdmin, dayId: day.id, depts, onSelectScene, onToggleScene, onDeleteScene, onEditSceneName, editingSceneId, setEditingSceneId, editingSceneName, setEditingSceneName }
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
+    <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
       {/* Header */}
       <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>

@@ -230,7 +230,7 @@ export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta }) => {
   const sceneFiles = scene.files || [];
   const setSceneFiles = (files) => onUpdateMeta({ ...scene, files });
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
       <div style={{ background: 'var(--bg-secondary)', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom: '1px solid #ede9e3', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10, padding: 0 }}>‹ Volver a Scouting</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -305,7 +305,7 @@ export const ScoutingView = ({ project, onBack }) => {
     }
   }
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
       <div style={{ background: 'var(--bg-secondary)', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px', borderBottom: '1px solid #ede9e3', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10, padding: 0 }}>‹ Volver</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

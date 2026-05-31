@@ -8,13 +8,7 @@ import { buildProjectUrl, buildProductoraUrl } from '../utils/urls'
 import { uid } from '../utils/uid'
 import { DEPT_DEFAULTS } from '../constants/depts'
 
-const THEMES = {
-  celeste:  { grad: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', light: false },
-  coral:    { grad: '#C45A3C', light: false },
-  oscuro:   { grad: 'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', light: false },
-  claro:    { grad: '#F1FAEE', light: true },
-  amarillo: { grad: '#F5A52A', light: true },
-}
+import { THEMES, getTheme } from '../constants/themes'
 
 /** @param {{ productoraId: string }} props */
 export default function ProductoraShell({ productoraId }) {
@@ -68,7 +62,7 @@ export default function ProductoraShell({ productoraId }) {
   }, [productoraId])
 
   const themeKey = productora?.colorTheme || 'celeste'
-  const theme    = THEMES[themeKey] || THEMES.celeste
+  const theme    = getTheme(themeKey)
   const isLight  = theme.light
   const tc = (dark, light) => isLight ? light : dark
 
@@ -141,7 +135,7 @@ export default function ProductoraShell({ productoraId }) {
   if (loading) return <LoadingScreen text="Cargando espacio..." />
 
   if (notFound) return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: THEMES.celeste.grad, gap: 14, padding: 32, fontFamily: 'inherit' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: THEMES.celeste.grad, gap: 14, padding: 32, fontFamily: 'inherit' }}>
       <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', textAlign: 'center' }}>Productora no encontrada</div>
       <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 1.6, maxWidth: 300 }}>
         No existe ninguna productora con el nombre <strong style={{ color: 'rgba(255,200,160,0.9)' }}>"{productoraId}"</strong>.<br />Verificá que esté bien escrito.
@@ -152,7 +146,7 @@ export default function ProductoraShell({ productoraId }) {
 
   // ── Auth gate ────────────────────────────────────────────────
   if (!unlocked && productora?.password) return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: theme.grad, padding: 32, fontFamily: 'inherit' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: theme.grad, padding: 32, fontFamily: 'inherit' }}>
       <button onClick={() => window.location.href = '/'} style={{ position: 'absolute', top: 20, left: 20, background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', fontFamily: 'inherit' }}>← Inicio</button>
       <div style={{ width: '100%', maxWidth: 340 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -181,7 +175,7 @@ export default function ProductoraShell({ productoraId }) {
 
   // ── Hub ──────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: theme.grad, fontFamily: 'inherit' }}>
+    <div style={{ minHeight: '100dvh', background: theme.grad, fontFamily: 'inherit' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '56px 20px 48px' }}>
 
         {/* Back to home */}
