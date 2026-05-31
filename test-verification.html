@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Verification Test</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    // Esperar a que main.jsx se cargue y asigne window._fb
+    setTimeout(() => {
+      if (window._fb) {
+        console.log('✓ window._fb existe');
+        console.log('✓ onDeptData:', typeof window._fb.onDeptData);
+        console.log('✓ saveDeptData:', typeof window._fb.saveDeptData);
+        console.log('✓ getMsgArchive:', typeof window._fb.getMsgArchive);
+        document.body.innerHTML = '<h1>✅ window._fb está correctamente inicializado!</h1>';
+      } else {
+        console.error('❌ window._fb NO existe');
+        document.body.innerHTML = '<h1>❌ ERROR: window._fb no está disponible</h1>';
+      }
+    }, 2000);
+  </script>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

@@ -72,4 +72,12 @@ export const api = {
   async saveDeptData(projectId, deptKey, section, data) {
     return this.set(`dept:${projectId}:${deptKey}`, section, data)
   },
+
+  async getMsgArchive(projectId) {
+    try {
+      return await this.get(`messages:${projectId}`, 'archive')
+    } catch {
+      return []
+    }
+  },
 }

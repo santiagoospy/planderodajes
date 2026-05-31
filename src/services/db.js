@@ -96,9 +96,22 @@ export function saveProductora(id, data) {
   })
 }
 
+/**
+ * Get message archive for a project.
+ */
+export async function getMsgArchive(projectId) {
+  try {
+    const data = await api.getMsgArchive(projectId)
+    return data || []
+  } catch {
+    return []
+  }
+}
+
 export const db = {
   onDeptData,
   saveDeptData,
   saveProject,
   saveProductora,
+  getMsgArchive,
 }
