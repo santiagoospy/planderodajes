@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
-import { db } from '../../../services/db'
+import { api } from '../../../services/api'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { PinModal } from '../../../components/ui/PinModal'
@@ -21,25 +21,27 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
     if (deptKey !== 'produccion') return
     const DEPTS = ['direccion','fotografia','sonido','arte','locaciones','casting','catering']
     Promise.all(DEPTS.map(d =>
-      db.getDeptData(projectId, d, 'gastos')
+      api.getDeptData(projectId, d, 'gastos')
         .then(data => ({ dept: d, gastos: (data || []).map(g => ({ ...g, presupuestado: parseFloat(g.presupuestado) || 0 })) }))
         .catch(() => ({ dept: d, gastos: [] }))
     )).then(results => {
       const out = {}
       results.forEach(r => { out[r.dept] = r.gastos })
       setGastosDepts(out)
-    })
+    }).catch(() => {})
   }, [projectId, deptKey])
 
   useEffect(() => {
-    db.getDeptData(projectId, deptKey, 'presup_general')
+    if (!projectId || !deptKey) return
+    api.getDeptData(projectId, deptKey, 'presup_general')
       .then(d => setPresupGeneralRaw(d && d[0] ? d[0].valor : null))
       .catch(() => {})
   }, [projectId, deptKey])
 
   useEffect(() => {
     if (deptKey !== 'produccion') return
-    db.getDeptData(projectId, deptKey, 'dinero_entregado')
+    if (!projectId) return
+    api.getDeptData(projectId, deptKey, 'dinero_entregado')
       .then(d => setDineroEntregadoRaw(d && d[0] ? d[0].valor : null))
       .catch(() => {})
   }, [projectId, deptKey])
