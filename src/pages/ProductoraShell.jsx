@@ -183,6 +183,14 @@ export default function ProductoraShell({ productoraId }) {
     <div style={{ minHeight: '100vh', background: theme.grad, fontFamily: 'inherit' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '56px 20px 48px' }}>
 
+        {/* Back to home */}
+        <button
+          onClick={() => window.location.href = '/'}
+          style={{ background: 'none', border: 'none', fontSize: 13, color: tc('rgba(255,255,255,0.5)', 'rgba(0,0,0,0.4)'), cursor: 'pointer', fontFamily: 'inherit', padding: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <ChevronLeft size={14} color="currentColor" /> Inicio
+        </button>
+
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <div style={{ fontSize: 10, color: tc('rgba(255,255,255,0.4)', 'rgba(0,0,0,0.35)'), letterSpacing: '0.12em', fontWeight: 600 }}>PRODUCTORA</div>

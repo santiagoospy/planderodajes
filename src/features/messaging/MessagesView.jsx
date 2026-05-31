@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, MailOpen, ThumbsUp } from 'lucide-react';
 
-export const MessagesView = ({ project, onBack }) => {
+const MessagesView = ({ project, onBack }) => {
   const [archive, setArchive] = useState([]);
 
   useEffect(() => {
@@ -70,3 +70,5 @@ export const MessagesView = ({ project, onBack }) => {
     </div>
   );
 };
+
+export default MessagesView;

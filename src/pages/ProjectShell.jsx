@@ -15,10 +15,11 @@ const CitacionesView = lazy(() => import('../features/citaciones/CitacionesGloba
 const MessagesView   = lazy(() => import('../features/messaging/MessagesView'))
 const DropboxView    = lazy(() => import('../features/dropbox/DropboxView'))
 
-// DemoShell keeps its own project state so admin changes survive lock/unlock
+// DemoShell loads from API (recovers saved user data), falls back to SEED_PROJECT
 function DemoShell() {
-  const [project, setProject] = useState(SEED_PROJECT)
-  return <ProjectViews project={project} projectId="proj_demo" save={setProject} />
+  const { project, loading, save } = useProject('proj_demo')
+  if (loading) return <LoadingScreen text="Cargando proyecto..." />
+  return <ProjectViews project={project || SEED_PROJECT} projectId="proj_demo" save={save} />
 }
 
 function LiveShell({ projectId }) {
