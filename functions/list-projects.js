@@ -13,7 +13,7 @@ export default async (req) => {
     for (const blob of blobs) {
       const project = await store.get(blob.key, { type: "json" });
       if (project) {
-        projects.push(project);
+        projects.push({ ...project, _blobKey: blob.key });
       }
     }
 

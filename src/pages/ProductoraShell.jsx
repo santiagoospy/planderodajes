@@ -9,10 +9,11 @@ import { uid } from '../utils/uid'
 import { DEPT_DEFAULTS } from '../constants/depts'
 
 const THEMES = {
-  celeste: { grad: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', light: false },
-  coral:   { grad: '#C45A3C', light: false },
-  oscuro:  { grad: 'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', light: false },
-  claro:   { grad: '#F1FAEE', light: true },
+  celeste:  { grad: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', light: false },
+  coral:    { grad: '#C45A3C', light: false },
+  oscuro:   { grad: 'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', light: false },
+  claro:    { grad: '#F1FAEE', light: true },
+  amarillo: { grad: '#F5A52A', light: true },
 }
 
 /** @param {{ productoraId: string }} props */

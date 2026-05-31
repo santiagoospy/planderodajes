@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 
+const WORKSPACE_THEMES = {
+  celeste:  { grad: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', label: 'Celeste' },
+  coral:    { grad: '#C45A3C', label: 'Coral' },
+  oscuro:   { grad: 'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)', label: 'Oscuro' },
+  claro:    { grad: '#F1FAEE', label: 'Claro' },
+  amarillo: { grad: '#F5A52A', label: 'Amarillo' },
+};
+
 const productoraSlug = (text) => {
     return (text || '').toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -18,6 +26,7 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
     const [error, setError] = useState('');
     const [slugManual, setSlugManual] = useState(false);
     const [slug, setSlug] = useState('');
+    const [colorTheme, setColorTheme] = useState('celeste');
 
     useEffect(() => {
         if (!slugManual) setSlug(productoraSlug(name));
@@ -42,6 +51,7 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
                 id: slug,
                 name: name.trim(),
                 password: password,
+                colorTheme: colorTheme,
                 createdAt: Date.now(),
             };
             await api.saveProductora(slug, prod);
@@ -87,7 +97,32 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
                         onKeyDown={e => { if(e.key === 'Enter') submit(); }}
                         style={{ width: '100%', fontFamily: 'inherit', fontSize: 15, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '12px 14px', color: '#fff', outline: 'none', marginBottom: 6, boxSizing: 'border-box' }} />
 
-                    <div style={{ fontSize: 11, color: '#F59E0B', background: '#1a1410', padding: '12px 14px', borderRadius: 8, border: '1px solid #3a2a14', marginTop: 16, lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em', marginBottom: 10, fontWeight: 600, marginTop: 18 }}>COLOR DEL ESPACIO</div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                        {Object.entries(WORKSPACE_THEMES).map(([key, theme]) => (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => setColorTheme(key)}
+                                title={theme.label}
+                                style={{
+                                    width: colorTheme === key ? 36 : 26,
+                                    height: colorTheme === key ? 36 : 26,
+                                    borderRadius: '50%',
+                                    background: theme.grad,
+                                    border: colorTheme === key ? '3px solid #fff' : '2px solid rgba(255,255,255,0.3)',
+                                    boxShadow: colorTheme === key ? '0 0 0 2px rgba(0,0,0,0.3)' : 'none',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    flexShrink: 0,
+                                    transition: 'all 0.15s',
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 18 }}>{WORKSPACE_THEMES[colorTheme]?.label}</div>
+
+                    <div style={{ fontSize: 11, color: '#F59E0B', background: '#1a1410', padding: '12px 14px', borderRadius: 8, border: '1px solid #3a2a14', marginTop: 0, lineHeight: 1.5 }}>
                         🔒 Guardá esta contraseña: si la perdés no podrás recuperarla. <br />
                         Compartila solo con tu equipo de confianza.
                     </div>

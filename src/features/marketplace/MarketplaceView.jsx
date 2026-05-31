@@ -342,7 +342,7 @@ export function MarketplaceView({ onBack }) {
   )
 
   return (
-    <div className="min-h-screen bg-[#f7f5f2] font-[Inter] flex flex-col">
+    <div className="min-h-screen font-[Inter] flex flex-col" style={{ background: 'linear-gradient(165deg, #062F38 0%, #084C5A 60%, #0A6070 100%)' }}>
       {/* Header */}
       <div className="bg-gradient-to-br from-[#084C5A] via-[#0B7285] to-[#2EC4B6] px-5 pt-4 pb-5 sticky top-0 z-10 flex flex-col">
         <button
@@ -386,15 +386,15 @@ export function MarketplaceView({ onBack }) {
       {/* Items */}
       <div className="flex-1 p-4 pb-8">
         {loading ? (
-          <div className="text-center py-[60px] text-[#bbb]">
+          <div className="text-center py-[60px] text-white/50">
             <div
-              className="w-8 h-8 border-[3px] border-[#e5e2dd] border-t-[#0B7285] rounded-full animate-spin mx-auto mb-3"
+              className="w-8 h-8 border-[3px] border-white/20 border-t-white/70 rounded-full animate-spin mx-auto mb-3"
             />
             <div className="text-xs">Cargando publicaciones…</div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-[60px] text-[#bbb]">
-            <div className="mb-1"><Icon name="ShoppingCart" size={40} color="var(--text-primary)" /></div>
+          <div className="text-center py-[60px] text-white/50">
+            <div className="mb-1"><Icon name="ShoppingCart" size={40} color="rgba(255,255,255,0.5)" /></div>
             <div className="text-base font-semibold mb-1.5">{search ? 'Sin resultados' : 'El marketplace está vacío'}</div>
             <div className="text-xs">{search ? 'Probá con otra búsqueda' : 'Sé el primero en publicar'}</div>
           </div>

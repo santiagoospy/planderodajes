@@ -12,9 +12,10 @@ import { SEED_PROJECT } from '../constants/seed'
 import { api } from '../services/api'
 
 const THEMES = {
-  celeste: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
-  coral:   '#C45A3C',
-  oscuro:  'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
+  celeste:  'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)',
+  coral:    '#C45A3C',
+  oscuro:   'linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%)',
+  amarillo: '#F5A52A',
 }
 
 const LANDING_ACTIONS = [
@@ -25,12 +26,53 @@ const LANDING_ACTIONS = [
   { key: 'admin',       icon: 'Settings',     label: 'Admin',                  desc: 'Ver productoras y proyectos' },
 ]
 
+function AdminPinPrompt({ onCorrect, onBack }) {
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+
+  const check = () => {
+    if (pin === '4862') { onCorrect() }
+    else { setError('PIN incorrecto'); setPin('') }
+  }
+
+  return (
+    <div className="px-5 slide-up">
+      <button onClick={onBack} className="tap flex items-center gap-2 text-white/60 text-sm mb-6 bg-transparent border-0 cursor-pointer">
+        <Icon name="ChevronLeft" size={16} color="rgba(255,255,255,0.6)" />
+        Volver
+      </button>
+      <div className="text-xl font-bold text-white mb-2">Admin</div>
+      <div className="text-sm text-white/50 mb-6">Ingresá el PIN para continuar</div>
+      <input
+        type="password"
+        value={pin}
+        onChange={e => { setPin(e.target.value); setError('') }}
+        onKeyDown={e => e.key === 'Enter' && check()}
+        placeholder="PIN"
+        autoFocus
+        className="w-full rounded-[14px] px-4 py-3.5 text-base outline-none mb-3 font-[Inter] text-center tracking-widest"
+        style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+      />
+      {error && <div className="text-red-300 text-sm text-center mb-3">{error}</div>}
+      <button
+        onClick={check}
+        disabled={!pin}
+        className="tap w-full py-3.5 rounded-[14px] text-base font-bold text-white border-0 cursor-pointer disabled:opacity-40"
+        style={{ background: 'rgba(255,255,255,0.2)' }}
+      >
+        Ingresar
+      </button>
+    </div>
+  )
+}
+
 function AdminView({ onBack }) {
   const [productoras,  setProductoras]  = useState([])
   const [projects,     setProjects]     = useState([])
   const [loading,      setLoading]      = useState(true)
   const [confirmDel,   setConfirmDel]   = useState(null)  // { type, id, label }
   const [deleting,     setDeleting]     = useState(null)
+  const [deleteError,  setDeleteError]  = useState('')
 
   const load = () => {
     setLoading(true)
@@ -47,12 +89,17 @@ function AdminView({ onBack }) {
   const handleDelete = async () => {
     if (!confirmDel) return
     setDeleting(confirmDel.id)
+    setDeleteError('')
+    const key = confirmDel._blobKey || confirmDel.id
     try {
-      await api.delete(confirmDel.type === 'productora' ? 'productoras' : 'projects', confirmDel.id)
-      if (confirmDel.type === 'productora') setProductoras(prev => prev.filter(p => p.id !== confirmDel.id))
-      else setProjects(prev => prev.filter(p => p.id !== confirmDel.id))
+      await api.delete(confirmDel.type === 'productora' ? 'productoras' : 'projects', key)
+      if (confirmDel.type === 'productora') setProductoras(prev => prev.filter(p => (p._blobKey || p.id) !== key))
+      else setProjects(prev => prev.filter(p => (p._blobKey || p.id) !== key))
+      setConfirmDel(null)
+    } catch (e) {
+      setDeleteError('Error al borrar: ' + (e.message || 'intenta de nuevo'))
     } finally {
-      setDeleting(null); setConfirmDel(null)
+      setDeleting(null)
     }
   }
 
@@ -63,9 +110,9 @@ function AdminView({ onBack }) {
     projectsByProductora[key].push(p)
   })
 
-  const DelBtn = ({ type, id, label }) => (
+  const DelBtn = ({ type, id, blobKey, label }) => (
     <button
-      onClick={e => { e.stopPropagation(); setConfirmDel({ type, id, label }) }}
+      onClick={e => { e.stopPropagation(); setConfirmDel({ type, id, _blobKey: blobKey, label }); setDeleteError('') }}
       className="flex-shrink-0 tap"
       style={{ background: 'rgba(255,80,60,0.2)', border: 'none', borderRadius: 8, color: 'rgba(255,160,140,0.9)', fontSize: 12, cursor: 'pointer', padding: '5px 10px', fontFamily: 'inherit' }}
     >
@@ -87,8 +134,9 @@ function AdminView({ onBack }) {
         <div className="rounded-[14px] p-4 mb-6" style={{ background: 'rgba(255,80,60,0.15)', border: '1px solid rgba(255,80,60,0.3)' }}>
           <div className="text-sm font-bold text-white mb-1">¿Borrar "{confirmDel.label}"?</div>
           <div className="text-xs text-white/50 mb-3">Esta acción no se puede deshacer.</div>
+          {deleteError && <div className="text-xs text-red-300 mb-2">{deleteError}</div>}
           <div className="flex gap-2">
-            <button onClick={() => setConfirmDel(null)} className="tap flex-1 text-xs py-2 rounded-[10px] border-0 cursor-pointer font-[Inter]" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}>Cancelar</button>
+            <button onClick={() => { setConfirmDel(null); setDeleteError('') }} className="tap flex-1 text-xs py-2 rounded-[10px] border-0 cursor-pointer font-[Inter]" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}>Cancelar</button>
             <button onClick={handleDelete} disabled={!!deleting} className="tap flex-1 text-xs font-bold py-2 rounded-[10px] border-0 cursor-pointer font-[Inter]" style={{ background: 'rgba(255,80,60,0.8)', color: '#fff' }}>
               {deleting ? 'Borrando…' : 'Sí, borrar'}
             </button>
@@ -114,7 +162,7 @@ function AdminView({ onBack }) {
                     <div className="text-sm font-bold text-white truncate">{p.name || p.id}</div>
                     <div className="text-xs text-white/40">{p.id} · {projs.length} proyecto{projs.length !== 1 ? 's' : ''}</div>
                   </button>
-                  <DelBtn type="productora" id={p.id} label={p.name || p.id} />
+                  <DelBtn type="productora" id={p.id} blobKey={p._blobKey} label={p.name || p.id} />
                 </div>
               )
             })}
@@ -128,12 +176,12 @@ function AdminView({ onBack }) {
               </div>
               <div className="flex flex-col gap-2 mb-6">
                 {projectsByProductora['__sin_productora__'].map(p => (
-                  <div key={p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                    <button onClick={() => window.location.href = buildProjectUrl(p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
-                      <div className="text-sm font-bold text-white truncate">{p.title || p.id}</div>
-                      <div className="text-xs text-white/40">{p.id}</div>
+                  <div key={p._blobKey || p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                    <button onClick={() => window.location.href = buildProjectUrl(p._blobKey || p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{p.title || p._blobKey || p.id}</div>
+                      <div className="text-xs text-white/40">{p._blobKey || p.id}</div>
                     </button>
-                    <DelBtn type="project" id={p.id} label={p.title || p.id} />
+                    <DelBtn type="project" id={p.id} blobKey={p._blobKey} label={p.title || p._blobKey || p.id} />
                   </div>
                 ))}
               </div>
@@ -146,12 +194,12 @@ function AdminView({ onBack }) {
           </div>
           <div className="flex flex-col gap-2">
             {projects.map(p => (
-              <div key={p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                <button onClick={() => window.location.href = buildProjectUrl(p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
-                  <div className="text-sm font-bold text-white truncate">{p.title || p.id}</div>
-                  <div className="text-xs text-white/40">{p.productoraId ? `${p.productoraId} · ` : ''}{p.id}</div>
+              <div key={p._blobKey || p.id} className="flex items-center gap-2 rounded-[14px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                <button onClick={() => window.location.href = buildProjectUrl(p._blobKey || p.id)} className="tap flex-1 text-left bg-transparent border-0 cursor-pointer p-0 min-w-0">
+                  <div className="text-sm font-bold text-white truncate">{p.title || p._blobKey || p.id}</div>
+                  <div className="text-xs text-white/40">{p.productoraId ? `${p.productoraId} · ` : ''}{p._blobKey || p.id}</div>
                 </button>
-                <DelBtn type="project" id={p.id} label={p.title || p.id} />
+                <DelBtn type="project" id={p.id} blobKey={p._blobKey} label={p.title || p._blobKey || p.id} />
               </div>
             ))}
           </div>
@@ -166,6 +214,7 @@ export default function LandingPage() {
   const [modo, setModo]   = useState(null)  // null | 'enter' | 'create' | 'marketplace' | 'admin'
   const [codigo, setCodigo] = useState('')
   const [pinnedList, setPinnedList] = useState(() => getPinnedProjects())
+  const [adminUnlocked, setAdminUnlocked] = useState(false)
 
   const grad = THEMES[theme] || THEMES.celeste
 
@@ -318,14 +367,17 @@ export default function LandingPage() {
         )}
 
         {/* Admin mode */}
-        {modo === 'admin' && (
-          <AdminView onBack={() => setModo(null)} />
+        {modo === 'admin' && !adminUnlocked && (
+          <AdminPinPrompt onCorrect={() => setAdminUnlocked(true)} onBack={() => setModo(null)} />
+        )}
+        {modo === 'admin' && adminUnlocked && (
+          <AdminView onBack={() => { setModo(null); setAdminUnlocked(false) }} />
         )}
       </div>
 
       {/* Theme picker */}
       <div className="flex items-center justify-center gap-3 pb-8 pt-6 max-w-[480px] mx-auto w-full">
-        {Object.entries(THEMES).filter(([k]) => ['celeste','coral','oscuro'].includes(k)).map(([key, grad]) => (
+        {Object.entries(THEMES).filter(([k]) => ['celeste','coral','oscuro','amarillo'].includes(k)).map(([key, grad]) => (
           <button
             key={key}
             onClick={() => changeTheme(key)}
