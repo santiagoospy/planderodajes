@@ -1,0 +1,10 @@
+{
+  "name": "planderodajes.com",
+  "short_name": "PlanRodaje",
+  "description": "Gestión de rodajes audiovisuales",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0B7285"
+}

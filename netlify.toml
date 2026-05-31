@@ -1,6 +1,6 @@
 [build]
-  command = "npm install"
-  publish = "."
+  command = "echo pre-built"
+  publish = "dist"
 
 [functions]
   directory    = "functions"
