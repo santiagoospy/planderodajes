@@ -75,7 +75,7 @@ export const api = {
 
   async getMsgArchive(projectId) {
     try {
-      return await this.get(`messages:${projectId}`, 'archive')
+      return await this.getDeptData(projectId, '_global', 'msg_archive')
     } catch {
       return []
     }
