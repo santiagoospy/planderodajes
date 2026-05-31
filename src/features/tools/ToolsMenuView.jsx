@@ -1,12 +1,25 @@
-import { Sun, Thermometer, Video, Clapperboard, ChevronRight } from 'lucide-react';
+import { useState } from 'react'
+import { Sun, Thermometer, Video, Clapperboard, ChevronRight } from 'lucide-react'
+import SunARView from './SunARView'
+import ColorTempView from './ColorTempView'
+import DirectorViewfinderView from './DirectorViewfinderView'
+import ClaquetaView from './ClaquetaView'
 
-export const ToolsMenuView = ({ onBack, onSelectTool }) => {
-  const tools = [
-    { key: 'sun-ar', icon: Sun, title: 'Sun AR', desc: 'Trayectoria del sol en tiempo real' },
-    { key: 'color-temp', icon: Thermometer, title: 'Color Temperature', desc: 'Temperatura de color en Kelvin' },
-    { key: 'viewfinder', icon: Video, title: "Director's Viewfinder", desc: 'Previsualización por sensor + lente' },
-    { key: 'claqueta', icon: Clapperboard, title: 'Claqueta', desc: 'Sincronización con sonido' },
-  ];
+const TOOLS = [
+  { key: 'sun-ar', icon: Sun, title: 'Sun AR', desc: 'Trayectoria del sol en tiempo real' },
+  { key: 'color-temp', icon: Thermometer, title: 'Color Temperature', desc: 'Temperatura de color en Kelvin' },
+  { key: 'viewfinder', icon: Video, title: "Director's Viewfinder", desc: 'Previsualización por sensor + lente' },
+  { key: 'claqueta', icon: Clapperboard, title: 'Claqueta', desc: 'Sincronización con sonido' },
+]
+
+export default function ToolsMenuView({ onBack, project, projectId }) {
+  const [tool, setTool] = useState(null)
+  const back = () => setTool(null)
+
+  if (tool === 'sun-ar')     return <SunARView project={project} onBack={back} />
+  if (tool === 'color-temp') return <ColorTempView project={project} onBack={back} />
+  if (tool === 'viewfinder') return <DirectorViewfinderView project={project} projectId={projectId} onBack={back} />
+  if (tool === 'claqueta')   return <ClaquetaView project={project} onBack={back} />
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', padding: '52px 20px 20px' }} className="slide-l">
@@ -18,12 +31,12 @@ export const ToolsMenuView = ({ onBack, onSelectTool }) => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {tools.map(tool => {
-          const IconComponent = tool.icon;
+        {TOOLS.map(t => {
+          const IconComponent = t.icon
           return (
             <button
-              key={tool.key}
-              onClick={() => onSelectTool(tool.key)}
+              key={t.key}
+              onClick={() => setTool(t.key)}
               className="tap"
               style={{
                 display: 'flex',
@@ -42,14 +55,14 @@ export const ToolsMenuView = ({ onBack, onSelectTool }) => {
                 <IconComponent size={22} color="var(--text-primary)" strokeWidth={1.8} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 3 }}>{tool.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{tool.desc}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 3 }}>{t.title}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{t.desc}</div>
               </div>
               <ChevronRight size={16} color="var(--text-light)" />
             </button>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}

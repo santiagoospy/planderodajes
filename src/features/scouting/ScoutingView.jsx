@@ -327,3 +327,5 @@ export const ScoutingView = ({ project, onBack }) => {
     </div>
   );
 };
+
+export default ScoutingView;
