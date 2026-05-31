@@ -1,19 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
-  },
-  server: {
-    port: 5173,
-    fs: { strict: false },
-    // Fix Windows MIME type issue for .js modules
-    middlewareMode: false,
-  },
   build: {
     outDir: 'dist',
     emptyOutDir: false,
@@ -26,6 +16,15 @@ export default defineConfig({
             return 'react-vendor'
           }
         },
+      },
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
       },
     },
   },
