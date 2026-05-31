@@ -73,6 +73,10 @@ export const api = {
     return this.set(`dept:${projectId}:${deptKey}`, section, data)
   },
 
+  async deleteDeptData(projectId, deptKey, section) {
+    return this.delete(`dept:${projectId}:${deptKey}`, section)
+  },
+
   async getMsgArchive(projectId) {
     try {
       return await this.getDeptData(projectId, '_global', 'msg_archive')

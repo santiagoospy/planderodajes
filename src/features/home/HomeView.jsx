@@ -79,7 +79,7 @@ export default function HomeView({
     try {
       const archive = await api.getDeptData(projectId, '_global', 'msg_archive').catch(() => [])
       await api.saveDeptData(projectId, '_global', 'msg_archive', [...(archive||[]), msg])
-      await api.saveDeptData(projectId, '_global', 'msg', null)
+      await api.deleteDeptData(projectId, '_global', 'msg')
     } catch {}
     setMsg(null)
   }

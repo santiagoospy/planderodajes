@@ -1,13 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Mail, MailOpen, ThumbsUp } from 'lucide-react';
+import { Mail, MailOpen, ThumbsUp, Trash2 } from 'lucide-react';
+import { api } from '../../services/api';
 
-const MessagesView = ({ project, onBack }) => {
+const MessagesView = ({ project, projectId, isAdmin, onBack }) => {
   const [archive, setArchive] = useState([]);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    const db = window._fb;
-    if (db) db.getMsgArchive(project.id).then(setArchive).catch(() => {});
-  }, [project.id]);
+    if (!projectId) return;
+    api.getMsgArchive(projectId).then(data => setArchive(Array.isArray(data) ? data : [])).catch(() => {});
+  }, [projectId]);
+
+  const deleteMsg = async (id) => {
+    const updated = archive.filter(m => m.id !== id);
+    setArchive(updated);
+    setDeletingId(null);
+    try {
+      if (updated.length === 0) {
+        await api.deleteDeptData(projectId, '_global', 'msg_archive');
+      } else {
+        await api.saveDeptData(projectId, '_global', 'msg_archive', updated);
+      }
+    } catch {}
+  };
 
   const fmt = (ts) => new Date(ts).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -37,7 +52,28 @@ const MessagesView = ({ project, onBack }) => {
         )}
         {[...archive].reverse().map((m, i) => (
           <div key={m.id || i} style={{ background: 'var(--bg-secondary)', borderRadius: 14, padding: 16, marginBottom: 12, border: '1px solid var(--border-light)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontSize: 10, color: '#d48c0e', letterSpacing: '0.08em', fontFamily: 'inherit', marginBottom: 6 }}>MENSAJE GENERAL</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ fontSize: 10, color: '#d48c0e', letterSpacing: '0.08em', fontFamily: 'inherit', fontWeight: 600 }}>MENSAJE GENERAL</div>
+              {isAdmin && (
+                deletingId === (m.id || i) ? (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => setDeletingId(null)}
+                      style={{ fontSize: 10, fontFamily: 'inherit', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', borderRadius: 8, padding: '3px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                      Cancelar
+                    </button>
+                    <button onClick={() => deleteMsg(m.id || i)}
+                      style={{ fontSize: 10, fontFamily: 'inherit', fontWeight: 700, background: '#FF375F', border: 'none', borderRadius: 8, padding: '3px 10px', cursor: 'pointer', color: '#fff' }}>
+                      Eliminar
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setDeletingId(m.id || i)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--text-muted)' }}>
+                    <Trash2 size={14} />
+                  </button>
+                )
+              )}
+            </div>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit', lineHeight: 1.6, marginBottom: 8 }}>{m.text}</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'inherit', marginBottom: 10 }}>{fmt(m.ts)}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
