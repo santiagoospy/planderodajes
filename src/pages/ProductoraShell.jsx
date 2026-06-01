@@ -35,7 +35,13 @@ export default function ProductoraShell({ productoraId }) {
     api.getProductora(productoraId)
       .then(data => {
         if (cancelled) return
-        if (!data) { setNotFound(true); setLoading(false); return }
+        if (!data) {
+          const cached = storage.getProductora(productoraId)
+          if (cached) { setProductora(cached); if (!cached.password) setUnlocked(true) }
+          else setNotFound(true)
+          setLoading(false)
+          return
+        }
         setProductora(data)
         storage.setProductora(productoraId, data)
 

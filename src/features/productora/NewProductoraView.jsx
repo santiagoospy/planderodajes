@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { storage } from '../../services/storage';
 import { THEMES as WORKSPACE_THEMES } from '../../constants/themes';
 
 const productoraSlug = (text) => {
@@ -48,6 +49,7 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
                 createdAt: Date.now(),
             };
             await api.saveProductora(slug, prod);
+            storage.setProductora(slug, prod);
             try { localStorage.setItem(`prod_pwd_${slug}`, password); } catch { }
             onCreated(prod);
         } catch (e) {
@@ -60,7 +62,7 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
 
     return (
         <div style={{ minHeight: '100dvh', background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', padding: '0 20px 40px', fontFamily: 'inherit' }}>
-            <div style={{ maxWidth: '480px', margin: '0 auto', paddingTop: 52 }}>
+            <div style={{ maxWidth: '480px', margin: '0 auto', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 20px)' }}>
                 <button onClick={onCancel} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>← Cancelar</button>
                 <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.5px' }}>Creá el nombre de la carpeta o productora</div>
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 28, lineHeight: 1.6 }}>
@@ -122,14 +124,14 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
 
                     {error && <div style={{ fontSize: 12, color: 'rgba(255,200,160,0.9)', marginTop: 12, textAlign: 'center', fontWeight: 600 }}>{error}</div>}
 
-                    <div style={{ display: 'flex', gap: 8, marginTop: 22 }}>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
                         <button onClick={onCancel} disabled={creating}
-                            style={{ flex: 1, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)', border: 'none', borderRadius: 10, padding: '14px', cursor: 'pointer' }}>
+                            style={{ flex: 1, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, padding: '14px', cursor: 'pointer' }}>
                             Cancelar
                         </button>
                         <button onClick={submit} disabled={creating}
-                            style={{ flex: 2, fontFamily: 'inherit', fontSize: 14, fontWeight: 900, letterSpacing: '0.02em', background: creating ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.9)', color: creating ? 'rgba(255,255,255,0.4)' : '#0B7285', border: 'none', borderRadius: 0, padding: '14px', cursor: creating? 'wait' : 'pointer', boxShadow: creating ? 'none' : '4px 4px 0px rgba(0,0,0,0.4)' }}>
-                            {creating ? 'Creando...' : 'CREAR PRODUCTORA'}
+                            style={{ flex: 2, fontFamily: 'inherit', fontSize: 15, fontWeight: 700, background: creating ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.95)', color: creating ? 'rgba(255,255,255,0.4)' : '#0B7285', border: 'none', borderRadius: 12, padding: '15px 20px', cursor: creating ? 'wait' : 'pointer', transition: 'all 0.15s' }}>
+                            {creating ? 'Creando...' : 'Crear productora'}
                         </button>
                     </div>
                 </div>
