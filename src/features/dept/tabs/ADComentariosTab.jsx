@@ -37,7 +37,7 @@ export default function ADComentariosTab({ color, deptKey, projectId, project, i
       <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:14, border:`1px solid ${color}20`, marginBottom:16 }}>
         <textarea value={texto} onChange={e => setTexto(e.target.value)} placeholder="Anotá un pedido o nota interna..." rows={3}
           style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', resize:'none', marginBottom:8 }} />
-        <button onClick={add} disabled={!texto.trim()} style={{ width:'100%', fontFamily:'inherit', fontSize:12, fontWeight:700, background:texto.trim()?color:'#e5e2dd', color:texto.trim()?'#fff':'#bbb', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>
+        <button onClick={add} disabled={!texto.trim()} style={{ width:'100%', fontFamily:'inherit', fontSize:12, fontWeight:700, background:texto.trim()?color:'var(--border-light)', color:texto.trim()?'#fff':'#bbb', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>
           Publicar pedido
         </button>
       </div>
@@ -47,7 +47,7 @@ export default function ADComentariosTab({ color, deptKey, projectId, project, i
           <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', marginBottom:6 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>{fmt(c.ts)}</div>
-              <button onClick={() => del(c.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0 }}>✕</button>
+              <button onClick={() => del(c.id)} style={{ background:'none', border:'none', color:'var(--border-light)', cursor:'pointer', padding:0 }}>✕</button>
             </div>
           </div>
           <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.5 }}>{c.texto}</div>

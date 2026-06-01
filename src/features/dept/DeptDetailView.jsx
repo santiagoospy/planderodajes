@@ -73,10 +73,10 @@ export default function DeptDetailView({
   const tabProps = { color, deptKey, deptMeta, projectId, project, isAdmin, onUpdateProject }
 
   return (
-    <div style={{ minHeight:'100dvh', background:`color-mix(in srgb, ${color} 6%, var(--bg-primary))`, display:'flex', flexDirection:'column' }} className="slide-r">
+    <div style={{ minHeight:'100dvh', background:'transparent', display:'flex', flexDirection:'column' }} className="slide-r">
 
       {/* Header */}
-      <div style={{ background:`linear-gradient(180deg, ${color}18 0%, var(--bg-secondary) 100%)`, padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 0', borderBottom:`1px solid ${color}20`, position:'sticky', top:0, zIndex:10 }}>
+      <div className="theme-surface" style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 0', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap"
           style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>
           ‹ Volver
@@ -117,7 +117,7 @@ export default function DeptDetailView({
       {showManageSections && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:600, display:'flex', alignItems:'flex-end' }}
           onClick={() => setShowManageSections(false)}>
-          <div style={{ background:'var(--bg-secondary)', borderRadius:'20px 20px 0 0', width:'100%', padding:'20px 20px 32px', maxHeight:'85vh', overflowY:'auto' }}
+          <div style={{ background:'var(--bg-elevated)', borderRadius:'20px 20px 0 0', width:'100%', padding:'20px 20px 32px', maxHeight:'85vh', overflowY:'auto' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
               <div style={{ width:36, height:4, background:'#e0ddd8', borderRadius:2 }}/>
@@ -217,7 +217,7 @@ export default function DeptDetailView({
       </div>
 
       {/* Bottom bar */}
-      <div style={{ position:'sticky', bottom:0, background:'var(--bg-secondary)', borderTop:'1px solid var(--border-light)', padding:'8px 20px calc(env(safe-area-inset-bottom,0px) + 8px)', display:'flex', alignItems:'center', gap:12, zIndex:10 }}>
+      <div className="theme-surface" style={{ position:'sticky', bottom:0, borderTop:'1px solid var(--border-light)', padding:'8px 20px calc(env(safe-area-inset-bottom,0px) + 8px)', display:'flex', alignItems:'center', gap:12, zIndex:10 }}>
         <button onClick={onBack} className="tap"
           style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 20px', borderRadius:12, color:'var(--text-secondary)', fontFamily:'inherit', minWidth:72 }}>
           <Icon name="ChevronLeft" size={20} color="var(--text-secondary)"/>

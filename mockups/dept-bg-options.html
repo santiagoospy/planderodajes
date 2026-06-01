@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup — Fondo de departamentos</title>
+<style>
+  :root{
+    --bg-primary:#f7f5f2; --bg-secondary:#ffffff; --bg-card-dark:#f0ede8;
+    --border-light:#e5e2dd; --text-primary:#1a1714; --text-tertiary:#7a7570; --text-muted:#a09a94;
+  }
+  *{box-sizing:border-box;font-family:'Inter',-apple-system,Arial,sans-serif;}
+  body{margin:0;background:#2a2a2a;padding:24px;display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+  .phone{width:340px;border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4);background:var(--bg-primary);}
+  .caption{color:#fff;font-size:13px;font-weight:700;margin:0 0 8px;text-align:center;}
+  .subcap{color:#bbb;font-size:11px;margin:0 0 10px;text-align:center;line-height:1.4;max-width:340px;}
+  .col{display:flex;flex-direction:column;align-items:center;}
+
+  /* HEADER */
+  .hdr{padding:16px 18px 0;border-bottom:1px solid var(--border-light);}
+  .back{font-size:12px;color:var(--text-tertiary);margin-bottom:10px;}
+  .titrow{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .tit{font-size:18px;font-weight:700;color:var(--text-primary);}
+  .sub{font-size:10px;color:#aaa;letter-spacing:.06em;}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;}
+  .tab{font-size:11px;font-weight:700;letter-spacing:.04em;padding:7px 12px;border-radius:8px;white-space:nowrap;background:var(--bg-card-dark);color:#999;}
+  .tab.on{color:#fff;}
+
+  /* BODY */
+  .body{padding:18px 16px 28px;min-height:300px;}
+  .progress{display:flex;justify-content:space-between;align-items:center;background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .progress .l{font-size:13px;font-weight:700;color:var(--text-primary);}
+  .card{display:flex;align-items:center;gap:12px;background:var(--bg-secondary);border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid var(--border-light);}
+  .chk{width:24px;height:24px;border-radius:7px;flex-shrink:0;}
+  .ctxt{font-size:13px;color:var(--text-primary);}
+  .addbtn{width:100%;font-size:13px;font-weight:700;color:#fff;border:none;border-radius:14px;padding:14px;margin-top:8px;}
+
+  /* dark-text helpers for light themes */
+</style>
+</head>
+<body>
+
+<!-- ============ ACTUAL: tinte color del DEPARTAMENTO ============ -->
+<div class="col">
+  <p class="caption">ACTUAL — tinte del departamento</p>
+  <p class="subcap">Cada depto usa SU color (Producción = naranja).<br>El fondo cambia según el depto.</p>
+  <div class="phone" style="background:color-mix(in srgb,#F97316 6%,#f7f5f2);">
+    <div class="hdr" style="background:linear-gradient(180deg,#F9731618 0%,#ffffff 100%);border-bottom:1px solid #F9731620;">
+      <div class="back">‹ Volver</div>
+      <div class="titrow">
+        <div class="avatar" style="background:#F97316;">📋</div>
+        <div><div class="tit">Producción</div><div class="sub">DEPARTAMENTO · 5 escenas</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on" style="background:#F97316;">CHECKLIST</div>
+        <div class="tab">PEDIDOS</div><div class="tab">GASTOS</div><div class="tab">CREW</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="progress"><span class="l">0 / 5 completados</span><span style="color:#F97316;font-weight:700;">0%</span></div>
+      <div class="card"><div class="chk" style="border:2px solid #F9731666;"></div><div class="ctxt">Conseguir transporte</div></div>
+      <div class="card"><div class="chk" style="border:2px solid #F9731666;"></div><div class="ctxt">Reservar catering</div></div>
+      <button class="addbtn" style="background:#F97316;">+ Nueva tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPCIÓN B: tinte del ACCENT de la productora ============ -->
+<div class="col">
+  <p class="caption">OPCIÓN B — tinte de la productora (sutil)</p>
+  <p class="subcap">Todos los deptos comparten el color de la<br>productora (celeste #0B7285). Cambio mínimo,<br>el contenido interior sigue igual.</p>
+  <div class="phone" style="background:color-mix(in srgb,#0B7285 6%,#f7f5f2);">
+    <div class="hdr" style="background:linear-gradient(180deg,#0B728518 0%,#ffffff 100%);border-bottom:1px solid #0B728520;">
+      <div class="back">‹ Volver</div>
+      <div class="titrow">
+        <div class="avatar" style="background:#F97316;">📋</div>
+        <div><div class="tit">Producción</div><div class="sub">DEPARTAMENTO · 5 escenas</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on" style="background:#0B7285;">CHECKLIST</div>
+        <div class="tab">PEDIDOS</div><div class="tab">GASTOS</div><div class="tab">CREW</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="progress"><span class="l">0 / 5 completados</span><span style="color:#0B7285;font-weight:700;">0%</span></div>
+      <div class="card"><div class="chk" style="border:2px solid #0B728566;"></div><div class="ctxt">Conseguir transporte</div></div>
+      <div class="card"><div class="chk" style="border:2px solid #0B728566;"></div><div class="ctxt">Reservar catering</div></div>
+      <button class="addbtn" style="background:#0B7285;">+ Nueva tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPCIÓN C: header con gradiente productora + cuerpo claro ============ -->
+<div class="col">
+  <p class="caption">OPCIÓN C — header con gradiente productora</p>
+  <p class="subcap">Solo el header lleva el gradiente completo<br>de la productora. El cuerpo queda claro.<br>El avatar mantiene el color del depto.</p>
+  <div class="phone" style="background:#f7f5f2;">
+    <div class="hdr" style="background:linear-gradient(165deg,#084C5A 0%,#0B7285 50%,#2EC4B6 100%);border-bottom:none;">
+      <div class="back" style="color:rgba(255,255,255,.7);">‹ Volver</div>
+      <div class="titrow">
+        <div class="avatar" style="background:#F97316;border:2px solid rgba(255,255,255,.4);">📋</div>
+        <div><div class="tit" style="color:#fff;">Producción</div><div class="sub" style="color:rgba(255,255,255,.7);">DEPARTAMENTO · 5 escenas</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on" style="background:rgba(255,255,255,.95);color:#0B7285;">CHECKLIST</div>
+        <div class="tab" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);">PEDIDOS</div>
+        <div class="tab" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);">GASTOS</div>
+        <div class="tab" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);">CREW</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="progress"><span class="l">0 / 5 completados</span><span style="color:#0B7285;font-weight:700;">0%</span></div>
+      <div class="card"><div class="chk" style="border:2px solid #0B728566;"></div><div class="ctxt">Conseguir transporte</div></div>
+      <div class="card"><div class="chk" style="border:2px solid #0B728566;"></div><div class="ctxt">Reservar catering</div></div>
+      <button class="addbtn" style="background:#0B7285;">+ Nueva tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPCIÓN A: gradiente completo de fondo ============ -->
+<div class="col">
+  <p class="caption">OPCIÓN A — gradiente completo (como el Home)</p>
+  <p class="subcap" style="color:#ff9d9d;">⚠ Requiere adaptar TODO el contenido interior<br>a fondo oscuro (cards, texto, inputs). Es el<br>cambio más grande y arriesgado.</p>
+  <div class="phone" style="background:linear-gradient(165deg,#084C5A 0%,#0B7285 50%,#2EC4B6 100%);">
+    <div class="hdr" style="background:transparent;border-bottom:1px solid rgba(255,255,255,.12);">
+      <div class="back" style="color:rgba(255,255,255,.7);">‹ Volver</div>
+      <div class="titrow">
+        <div class="avatar" style="background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);">📋</div>
+        <div><div class="tit" style="color:#fff;">Producción</div><div class="sub" style="color:rgba(255,255,255,.7);">DEPARTAMENTO · 5 escenas</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on" style="background:rgba(255,255,255,.95);color:#0B7285;">CHECKLIST</div>
+        <div class="tab" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);">PEDIDOS</div>
+        <div class="tab" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);">GASTOS</div>
+        <div class="tab" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);">CREW</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="progress" style="background:rgba(255,255,255,.12);border:none;"><span class="l" style="color:#fff;">0 / 5 completados</span><span style="color:#fff;font-weight:700;">0%</span></div>
+      <div class="card" style="background:rgba(255,255,255,.12);border:none;"><div class="chk" style="border:2px solid rgba(255,255,255,.5);"></div><div class="ctxt" style="color:#fff;">Conseguir transporte</div></div>
+      <div class="card" style="background:rgba(255,255,255,.12);border:none;"><div class="chk" style="border:2px solid rgba(255,255,255,.5);"></div><div class="ctxt" style="color:#fff;">Reservar catering</div></div>
+      <button class="addbtn" style="background:rgba(255,255,255,.95);color:#0B7285;">+ Nueva tarea</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

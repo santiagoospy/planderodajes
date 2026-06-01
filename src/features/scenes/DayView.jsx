@@ -43,7 +43,7 @@ function SceneCard({ scene, momento, sceneIndex, dayScenes, depts, color, isAdmi
               onBlur={() => { if (editingSceneName.trim()) onEditSceneName(dayId, scene.id, editingSceneName); setEditingSceneId(null) }}
               onKeyDown={e => { if(e.key==='Enter') { if(editingSceneName.trim()) onEditSceneName(dayId, scene.id, editingSceneName); setEditingSceneId(null) } if(e.key==='Escape') setEditingSceneId(null) }}
               autoFocus onClick={e => e.stopPropagation()}
-              style={{ fontSize:11, letterSpacing:'0.08em', color, fontFamily:'inherit', fontWeight:700, border:`1.5px solid ${color}`, background:'var(--bg-primary)', borderRadius:6, padding:'3px 8px', maxWidth:150, outline:'none' }}
+              style={{ fontSize:11, letterSpacing:'0.08em', color, fontFamily:'inherit', fontWeight:700, border:`1.5px solid ${color}`, background:'var(--bg-card-dark)', borderRadius:6, padding:'3px 8px', maxWidth:150, outline:'none' }}
             />
           ) : (
             <span style={{ fontSize:10, letterSpacing:'0.1em', color:scene.done?'var(--text-muted)':color, fontFamily:'inherit', fontWeight:700 }}>{scene.num}</span>
@@ -131,7 +131,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
   return (
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
       {/* Header */}
-      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
+      <div className="theme-surface" style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:8, padding:0 }}>
           ‹ Inicio
         </button>
@@ -196,7 +196,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
             <div style={{ display:'flex', gap:6, marginBottom:12 }}>
               {[['mañana','Sunrise'],['tarde','Cloud'],['noche','Moon']].map(([m,ic]) => (
                 <button key={m} onClick={() => setAddMomento(m)}
-                  style={{ flex:1, fontFamily:'inherit', fontSize:12, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:addMomento===m?color:'#f0ede8', color:addMomento===m?'#fff':'#888', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                  style={{ flex:1, fontFamily:'inherit', fontSize:12, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:addMomento===m?color:'var(--bg-card-dark)', color:addMomento===m?'#fff':'#888', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
                   <Icon name={ic} size={12} color={addMomento===m?'#fff':'#888'}/> {m}
                 </button>
               ))}
@@ -210,7 +210,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
       </div>
 
       {/* Bottom nav bar */}
-      <div style={{ position:'sticky', bottom:0, background:'var(--bg-secondary)', borderTop:'1px solid var(--border-light)', padding:'8px 20px calc(env(safe-area-inset-bottom,0px) + 8px)', display:'flex', alignItems:'center', gap:12, zIndex:10 }}>
+      <div className="theme-surface" style={{ position:'sticky', bottom:0, borderTop:'1px solid var(--border-light)', padding:'8px 20px calc(env(safe-area-inset-bottom,0px) + 8px)', display:'flex', alignItems:'center', gap:12, zIndex:10 }}>
         <button onClick={onBack} className="tap"
           style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 20px', borderRadius:12, color:'var(--text-secondary)', fontFamily:'inherit', minWidth:72 }}>
           <Icon name="Home" size={20} color="var(--text-secondary)"/>

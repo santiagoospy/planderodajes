@@ -138,7 +138,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
           <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:10 }}>
             <span style={{ fontSize:11, color:'#0fa87e', fontFamily:'inherit' }}>Gs.</span>
             <input type="number" value={dineroEntregado != null ? dineroEntregado : ''} onChange={e => saveDineroEntregado(e.target.value ? parseFloat(e.target.value) : null)} placeholder="0"
-              style={{ flex:1, fontFamily:'inherit', fontSize:16, fontWeight:700, background:'#ffffff', border:'1px solid #0fa87e44', borderRadius:10, padding:'10px 12px', color:'#0fa87e', outline:'none' }} />
+              style={{ flex:1, fontFamily:'inherit', fontSize:16, fontWeight:700, background:'var(--bg-card-dark)', border:'1px solid #0fa87e44', borderRadius:10, padding:'10px 12px', color:'#0fa87e', outline:'none' }} />
           </div>
           {presupGeneral != null && dineroEntregado != null && (function() {
             var faltaPorCobrar = Math.max(0, presupGeneral - dineroEntregado)
@@ -146,7 +146,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
             var montoNeto = presupGeneral - totalPresup
             return (
               <div>
-                <div style={{ background:'var(--bg-primary)', borderRadius:10, padding:'12px 14px', marginBottom:8, border:'1px solid #0fa87e22' }}>
+                <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px 14px', marginBottom:8, border:'1px solid #0fa87e22' }}>
                   <div style={{ fontSize:10, color:'#0fa87e', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>FALTA POR COBRAR</div>
                   <div style={{ fontSize:16, fontWeight:700, color:'#0fa87e', fontFamily:'inherit' }}>{gs(faltaPorCobrar)}</div>
                 </div>
@@ -172,7 +172,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
         var enRojo  = diff != null && diff < 0
         var enVerde = diff != null && diff > 0
         return (
-          <div key={e.id} style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:'1px solid ' + (enRojo ? '#d94f2b33' : enVerde ? '#0fa87e33' : '#ede9e3') }}>
+          <div key={e.id} style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:'1px solid ' + (enRojo ? '#d94f2b33' : enVerde ? '#0fa87e33' : 'var(--border-light)') }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:8 }}>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', fontWeight:700 }}>{e.desc}</div>
@@ -189,7 +189,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
                 <div style={{ fontSize:9, color:'var(--text-muted)', fontFamily:'inherit' }}>PRESUP.</div>
                 <div style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', fontFamily:'inherit' }}>{gs(pres)}</div>
               </div>
-              {cerr != null && <div style={{ flex:1, background:enRojo ? '#fff0f0' : enVerde ? '#e8f8f0' : '#faf8f5', borderRadius:8, padding:'6px 10px' }}>
+              {cerr != null && <div style={{ flex:1, background:enRojo ? '#fff0f0' : enVerde ? '#e8f8f0' : 'var(--bg-card-dark)', borderRadius:8, padding:'6px 10px' }}>
                 <div style={{ fontSize:9, color:'var(--text-muted)', fontFamily:'inherit' }}>CERRADO</div>
                 <div style={{ fontSize:12, fontWeight:700, color:enRojo ? '#d94f2b' : enVerde ? '#0fa87e' : '#555', fontFamily:'inherit' }}>{gs(cerr)}</div>
               </div>}
@@ -266,7 +266,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
                   var dept = entry[0]; var gastos = entry[1]
                   var total = gastos.reduce(function(a, g) { return a + (g.presupuestado || 0) }, 0)
                   return (
-                    <div key={dept} style={{ background:'var(--bg-primary)', borderRadius:10, padding:'12px 14px', textAlign:'center' }}>
+                    <div key={dept} style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px 14px', textAlign:'center' }}>
                       <div style={{ fontSize:10, color:'var(--text-tertiary)', fontFamily:'inherit', marginBottom:4, textTransform:'capitalize', fontWeight:600 }}>{dept}</div>
                       <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{gs(total)}</div>
                     </div>
@@ -283,7 +283,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
                 <SectionLabel>RESUMEN FINANCIERO TOTAL</SectionLabel>
                 <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:'1px solid var(--border-light)' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
-                    <div style={{ background:'var(--bg-primary)', borderRadius:10, padding:'12px 14px' }}>
+                    <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px 14px' }}>
                       <div style={{ fontSize:10, color:'var(--text-tertiary)', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>PRESUPUESTO</div>
                       <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{gs(presupGeneral)}</div>
                     </div>
@@ -293,11 +293,11 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
                     </div>
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
-                    <div style={{ background:'var(--bg-primary)', borderRadius:10, padding:'12px 14px' }}>
+                    <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px 14px' }}>
                       <div style={{ fontSize:10, color:'var(--text-tertiary)', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>GASTOS PRODUCCION</div>
                       <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{gs(totalPresup)}</div>
                     </div>
-                    <div style={{ background:'var(--bg-primary)', borderRadius:10, padding:'12px 14px' }}>
+                    <div style={{ background:'var(--bg-card-dark)', borderRadius:10, padding:'12px 14px' }}>
                       <div style={{ fontSize:10, color:'var(--text-tertiary)', fontFamily:'inherit', marginBottom:4, fontWeight:600 }}>OTROS DEPTS</div>
                       <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{gs(gastosAllDepts)}</div>
                     </div>

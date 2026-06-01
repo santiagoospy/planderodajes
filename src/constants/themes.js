@@ -39,3 +39,56 @@ export function getTheme(key) {
   const canonical = THEME_ALIASES[key] || key
   return THEMES[canonical] || THEMES.celeste
 }
+
+/**
+ * CSS custom-property overrides for a productora theme.
+ *
+ * Applied inline on the project root container so the ENTIRE interior
+ * (cards, inputs, text, borders) re-skins automatically from the
+ * shared `var(--token)` design tokens — no per-component edits needed.
+ *
+ * The container itself paints the gradient; here `--bg-primary` and
+ * `--bg-header` become transparent so the gradient shows through, and
+ * cards/inputs become translucent "glass" that reads on the gradient.
+ *
+ * Returns an object suitable for spreading into a React `style` prop.
+ */
+export function getThemeVars(key) {
+  const t = getTheme(key)
+  if (t.light) {
+    // Light gradient/background → dark text, subtle dark glass.
+    return {
+      '--theme-grad':              t.grad,
+      '--bg-primary':              'transparent',
+      '--bg-secondary':            'rgba(255,255,255,0.72)',
+      '--bg-card-dark':            'rgba(0,0,0,0.04)',
+      '--bg-card-dark-secondary':  'rgba(0,0,0,0.08)',
+      '--bg-header':               'transparent',
+      '--bg-error':                'rgba(239,68,68,0.12)',
+      '--bg-elevated':             '#ffffff',
+      '--text-primary':            '#1a1714',
+      '--text-secondary':          '#403b36',
+      '--text-tertiary':           '#6a6560',
+      '--text-muted':              '#8a847e',
+      '--text-light':              '#aaa49e',
+      '--border-light':            'rgba(0,0,0,0.1)',
+    }
+  }
+  // Dark/saturated gradient → white text, white glass.
+  return {
+    '--theme-grad':              t.grad,
+    '--bg-primary':              'transparent',
+    '--bg-secondary':            'rgba(255,255,255,0.10)',
+    '--bg-card-dark':            'rgba(255,255,255,0.07)',
+    '--bg-card-dark-secondary':  'rgba(255,255,255,0.14)',
+    '--bg-header':               'transparent',
+    '--bg-error':                'rgba(239,68,68,0.18)',
+    '--bg-elevated':             '#1f1d1a',
+    '--text-primary':            '#ffffff',
+    '--text-secondary':          'rgba(255,255,255,0.86)',
+    '--text-tertiary':           'rgba(255,255,255,0.66)',
+    '--text-muted':              'rgba(255,255,255,0.5)',
+    '--text-light':              'rgba(255,255,255,0.36)',
+    '--border-light':            'rgba(255,255,255,0.15)',
+  }
+}

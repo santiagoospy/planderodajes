@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useProject } from '../hooks/useProject'
 import { LoadingScreen, NotFoundScreen } from '../components/ui/LoadingScreen'
 import { SEED_PROJECT } from '../constants/seed'
-import { getTheme } from '../constants/themes'
+import { getTheme, getThemeVars } from '../constants/themes'
 import { api } from '../services/api'
 import { uid } from '../utils/uid'
 
@@ -44,16 +44,24 @@ function ProjectViews({ project, projectId, save }) {
   const [isAdmin, setIsAdmin]       = useState(false)
   const [theme, setTheme]           = useState(() => localStorage.getItem('pdr:theme') || 'light')
   const [localProject, setLocalProject] = useState(project)
-  const [accentColor, setAccentColor]   = useState(() => getTheme('celeste').accent)
+  const [themeKey, setThemeKey]         = useState('celeste')
 
-  // Load the productora's chosen color theme so interior pages
-  // (scenes, citaciones…) share the same accent color.
+  // Load the productora's chosen color theme so the WHOLE project
+  // (home, depts, scenes, scouting, citaciones, messages, tools…)
+  // shares the same gradient background and palette. Changing the
+  // productora color re-skins everything from here.
   useEffect(() => {
     if (!project.productoraId) return
     api.getProductora(project.productoraId)
-      .then(prod => { if (prod?.colorTheme) setAccentColor(getTheme(prod.colorTheme).accent) })
+      .then(prod => { if (prod?.colorTheme) setThemeKey(prod.colorTheme) })
       .catch(() => {})
   }, [project.productoraId])
+
+  const themeObj   = getTheme(themeKey)
+  const themeGrad  = themeObj.grad
+  const themeLight = themeObj.light
+  const accentColor = themeObj.accent
+  const themeVars  = getThemeVars(themeKey)
 
   // Track whether admin has made changes this session.
   // Once true, we stop auto-syncing from the server prop so stale API
@@ -161,10 +169,18 @@ function ProjectViews({ project, projectId, save }) {
     goDropbox:    () => setView('dropbox'),
   }
 
-  const common = { project: localProject, isAdmin, save: updateProject, depts, projectId, accentColor }
+  const common = { project: localProject, isAdmin, save: updateProject, depts, projectId, accentColor, themeGrad, themeLight }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]" data-theme={theme}>
+    <div
+      data-theme={theme}
+      style={{
+        ...themeVars,
+        background: themeGrad,
+        backgroundAttachment: 'fixed',
+        minHeight: '100dvh',
+      }}
+    >
       <Suspense fallback={<LoadingScreen />}>
         {view === 'home' && (
           <HomeView

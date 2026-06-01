@@ -74,7 +74,7 @@ export default function CateringTab({ color, projectId, project }) {
         <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'14px 16px', border:'1px solid var(--border-light)', marginBottom:20 }}>
           <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:12, fontFamily:'inherit' }}>RESUMEN ALIMENTARIO</div>
           <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-            <div style={{ flex:1, background:'var(--bg-primary)', borderRadius:10, padding:'10px 12px', textAlign:'center' }}>
+            <div style={{ flex:1, background:'var(--bg-card-dark)', borderRadius:10, padding:'10px 12px', textAlign:'center' }}>
               <div style={{ fontSize:22, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{todos.length}</div>
               <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit' }}>TOTAL</div>
             </div>
@@ -115,7 +115,7 @@ export default function CateringTab({ color, projectId, project }) {
               const override = overrideMap[p.id] !== undefined
               const isOpen = openId===p.id
               return (
-                <div key={p.id} style={{ background:'var(--bg-secondary)', borderRadius:12, marginBottom:6, border:`1px solid ${cond?color+'30':'#ede9e3'}`, overflow:'hidden' }}>
+                <div key={p.id} style={{ background:'var(--bg-secondary)', borderRadius:12, marginBottom:6, border:`1px solid ${cond?color+'30':'var(--border-light)'}`, overflow:'hidden' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px' }}>
                     <div style={{ width:32, height:32, borderRadius:8, background:(cond?color:dmColor)+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                       <Icon name={cond?iconoCondicion(cond):'User'} size={15} color={cond?color:dmColor} />
@@ -129,15 +129,15 @@ export default function CateringTab({ color, projectId, project }) {
                         : <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', fontStyle:'italic', marginTop:2 }}>Sin cargar</div>
                       }
                     </div>
-                    <button onClick={() => setOpenId(isOpen?null:p.id)} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, background:cond?'#f0ede8':color, color:cond?'#888':'#fff', border:'none', borderRadius:8, padding:'6px 10px', cursor:'pointer' }}>{cond?'✎':'Elegir'}</button>
-                    {isExtra && <button onClick={() => delExtra(p.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0, marginLeft:4 }}>✕</button>}
+                    <button onClick={() => setOpenId(isOpen?null:p.id)} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, background:cond?'var(--bg-card-dark)':color, color:cond?'#888':'#fff', border:'none', borderRadius:8, padding:'6px 10px', cursor:'pointer' }}>{cond?'✎':'Elegir'}</button>
+                    {isExtra && <button onClick={() => delExtra(p.id)} style={{ background:'none', border:'none', color:'var(--border-light)', cursor:'pointer', padding:0, marginLeft:4 }}>✕</button>}
                   </div>
                   {isOpen && (
                     <div style={{ padding:'0 14px 12px', borderTop:'1px solid #f5f3f0', paddingTop:10 }}>
                       <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>CONDICIÓN ALIMENTARIA</div>
                       <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:8 }}>
                         {CONDICIONES_PRESET.map(c => (
-                          <button key={c} onClick={() => { setOverride(p.id, c); setOpenId(null) }} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:cond===c?color:'#f0ede8', color:cond===c?'#fff':'#888' }}>{c}</button>
+                          <button key={c} onClick={() => { setOverride(p.id, c); setOpenId(null) }} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:cond===c?color:'var(--bg-card-dark)', color:cond===c?'#fff':'#888' }}>{c}</button>
                         ))}
                       </div>
                       {override&&!isExtra&&p.condicionOriginal&&(
@@ -163,7 +163,7 @@ export default function CateringTab({ color, projectId, project }) {
               <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>CONDICIÓN ALIMENTARIA</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:10 }}>
                 {CONDICIONES_PRESET.map(c => (
-                  <button key={c} onClick={() => setExtraForm(f=>({...f,condicion:c}))} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:extraForm.condicion===c?color:'#f0ede8', color:extraForm.condicion===c?'#fff':'#888' }}>{c}</button>
+                  <button key={c} onClick={() => setExtraForm(f=>({...f,condicion:c}))} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:extraForm.condicion===c?color:'var(--bg-card-dark)', color:extraForm.condicion===c?'#fff':'#888' }}>{c}</button>
                 ))}
               </div>
               <div style={{ display:'flex', gap:8 }}>

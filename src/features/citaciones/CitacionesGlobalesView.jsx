@@ -106,7 +106,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
     <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', padding: '0 16px 48px' }}>
       {/* Header */}
       {onBack && (
-        <div style={{ position: 'sticky', top: 0, background: 'var(--bg-primary)', padding: '14px 0', zIndex: 10, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div className="theme-surface" style={{ position: 'sticky', top: 0, padding: '14px 16px', margin: '0 -16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <button onClick={onBack} className="tap" style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
             ‹ Volver
           </button>

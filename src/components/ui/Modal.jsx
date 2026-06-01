@@ -35,7 +35,7 @@ export function Modal({ open, onClose, children, position = 'bottom', className 
     >
       <div
         className={[
-          'bg-[var(--bg-secondary)] overflow-y-auto max-h-[90vh]',
+          'bg-[var(--bg-elevated)] overflow-y-auto max-h-[90vh]',
           isBottom
             ? 'w-full mt-auto rounded-t-[20px] p-5 pb-8 shadow-modal slide-up'
             : 'mx-auto my-auto rounded-[18px] p-6 w-[calc(100%-40px)] max-w-sm shadow-modal',

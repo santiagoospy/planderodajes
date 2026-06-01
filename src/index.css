@@ -14,6 +14,7 @@
   --bg-card-dark-secondary: #e8e5e0;
   --bg-header:           rgba(247,245,242,0.95);
   --bg-error:            #fff0ee;
+  --bg-elevated:         #ffffff;   /* solid surface for modals/sheets */
 
   --text-primary:    #1a1714;
   --text-secondary:  #4a4540;
@@ -38,6 +39,7 @@
   --bg-card-dark-secondary: #2e2b28;
   --bg-header:           rgba(15,14,12,0.95);
   --bg-error:            #2d1a18;
+  --bg-elevated:         #1f1d1a;   /* solid surface for modals/sheets */
 
   --text-primary:    #f5f0eb;
   --text-secondary:  #c5bfb8;
@@ -116,6 +118,16 @@ html, body {
 
 @media (min-width: 480px) { .responsive-grid { gap: 16px; } }
 @media (min-width: 1024px) { .responsive-grid { gap: 20px; } }
+
+/* ─── Productora theme surface ──────────────────────────── */
+/* Sticky headers / bottom bars paint the productora gradient with
+   fixed attachment so they align seamlessly with the page gradient
+   behind them and hide content scrolling underneath. Falls back to
+   the neutral surface when no productora theme var is present. */
+.theme-surface {
+  background: var(--theme-grad, var(--bg-secondary));
+  background-attachment: fixed;
+}
 
 /* ─── Tap / touch feedback ──────────────────────────────── */
 .tap {

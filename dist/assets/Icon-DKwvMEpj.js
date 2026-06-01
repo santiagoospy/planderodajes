@@ -1,1 +1,0 @@
-import{j as c}from"./react-vendor-DhEz86-d.js";import{i as u}from"./lucide-vendor-DSRHxRHt.js";function m({name:o,size:n=18,color:t="currentColor",strokeWidth:e=1.8,className:i="",style:s}){const r=u[o];return r?c.jsx(r,{size:n,color:t,strokeWidth:e,className:i,style:{flexShrink:0,...s}}):null}export{m as I};

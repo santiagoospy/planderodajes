@@ -28,7 +28,7 @@ const MessagesView = ({ project, projectId, isAdmin, onBack }) => {
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }} className="slide-r">
-      <div style={{ background: 'var(--bg-secondary)', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom: '1px solid #ede9e3', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div className="theme-surface" style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 20px 18px', borderBottom: '1px solid var(--border-light)', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={onBack} className="tap pwa-back-top" style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 8, padding: 0 }}>
           ‹ Volver
         </button>
@@ -58,7 +58,7 @@ const MessagesView = ({ project, projectId, isAdmin, onBack }) => {
                 deletingId === (m.id || i) ? (
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => setDeletingId(null)}
-                      style={{ fontSize: 10, fontFamily: 'inherit', background: 'var(--bg-primary)', border: '1px solid var(--border-light)', borderRadius: 8, padding: '3px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                      style={{ fontSize: 10, fontFamily: 'inherit', background: 'var(--bg-card-dark)', border: '1px solid var(--border-light)', borderRadius: 8, padding: '3px 10px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                       Cancelar
                     </button>
                     <button onClick={() => deleteMsg(m.id || i)}

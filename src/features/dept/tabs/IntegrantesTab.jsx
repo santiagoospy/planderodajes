@@ -110,7 +110,7 @@ export default function IntegrantesTab({ color, deptKey, projectId }) {
           <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:10 }}>
             {CONDICIONES.map(c => (
               <button key={c} onClick={() => set('condicionAlimentaria', form.condicionAlimentaria===c ? '' : c)}
-                style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:form.condicionAlimentaria===c?color:'#f0ede8', color:form.condicionAlimentaria===c?'#fff':'#888' }}>
+                style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:form.condicionAlimentaria===c?color:'var(--bg-card-dark)', color:form.condicionAlimentaria===c?'#fff':'#888' }}>
                 {c}
               </button>
             ))}

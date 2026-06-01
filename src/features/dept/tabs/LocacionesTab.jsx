@@ -7,7 +7,7 @@ function StarRating({ value, onChange }) {
   return (
     <div style={{ display:'flex', gap:4 }}>
       {[1,2,3,4,5].map(n => (
-        <button key={n} onClick={() => onChange(n)} style={{ background:'none', border:'none', cursor:'pointer', padding:2, fontSize:24, color: n<=value ? '#f5a623' : '#e5e2dd' }}>★</button>
+        <button key={n} onClick={() => onChange(n)} style={{ background:'none', border:'none', cursor:'pointer', padding:2, fontSize:24, color: n<=value ? '#f5a623' : 'var(--border-light)' }}>★</button>
       ))}
     </div>
   )
@@ -115,7 +115,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
                   <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{l.nombre}</div>
                   {l.rating > 0 && (
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3 }}>
-                      <div style={{ display:'flex', gap:1 }}>{[1,2,3,4,5].map(n => <span key={n} style={{ fontSize:13, color:n<=l.rating?'#f5a623':'#e5e2dd', lineHeight:1 }}>★</span>)}</div>
+                      <div style={{ display:'flex', gap:1 }}>{[1,2,3,4,5].map(n => <span key={n} style={{ fontSize:13, color:n<=l.rating?'#f5a623':'var(--border-light)', lineHeight:1 }}>★</span>)}</div>
                       <span style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', fontWeight:700 }}>{l.rating}/5</span>
                     </div>
                   )}
@@ -173,7 +173,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
                   {todasEscenas.map(sc => {
                     const sel = (form.escenas||[]).includes(sc.id)
                     return (
-                      <div key={sc.id} onClick={() => toggleEscena(sc.id)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, cursor:'pointer', background:sel?color+'12':'#faf8f5', border:`1px solid ${sel?color+'44':'#e5e2dd'}` }}>
+                      <div key={sc.id} onClick={() => toggleEscena(sc.id)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, cursor:'pointer', background:sel?color+'12':'var(--bg-card-dark)', border:`1px solid ${sel?color+'44':'var(--border-light)'}` }}>
                         <div style={{ width:16, height:16, borderRadius:4, background:sel?color:'transparent', border:sel?'none':`2px solid ${color}66`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                           {sel && <span style={{ color:'#fff', fontSize:10, fontWeight:700 }}>✓</span>}
                         </div>

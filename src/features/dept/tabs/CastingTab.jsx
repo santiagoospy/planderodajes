@@ -45,7 +45,7 @@ function ActorForm({ color, project, form, set, editId, onSave, onCancel, label 
             {todasEscenas.map(sc => {
               const sel = (form.escenas||[]).includes(sc.id)
               return (
-                <div key={sc.id} onClick={() => toggleEscena(sc.id)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, cursor:'pointer', background:sel?color+'12':'#faf8f5', border:`1px solid ${sel?color+'44':'#e5e2dd'}` }}>
+                <div key={sc.id} onClick={() => toggleEscena(sc.id)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, cursor:'pointer', background:sel?color+'12':'var(--bg-card-dark)', border:`1px solid ${sel?color+'44':'var(--border-light)'}` }}>
                   <div style={{ width:16, height:16, borderRadius:4, background:sel?color:'transparent', border:sel?'none':`2px solid ${color}66`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     {sel && <span style={{ color:'#fff', fontSize:10, fontWeight:700 }}>✓</span>}
                   </div>
@@ -188,7 +188,7 @@ export default function CastingTab({ color, projectId, project }) {
     <div>
       <div style={{ display:'flex', gap:8, marginBottom:20 }}>
         {[['principales','Principales'],['extras','Extras']].map(([k,l]) => (
-          <button key={k} onClick={() => setSubTab(k)} style={{ flex:1, fontFamily:'inherit', fontSize:13, fontWeight:700, padding:'12px 8px', borderRadius:14, cursor:'pointer', border:'none', background:subTab===k?color:'#f0ede8', color:subTab===k?'#fff':'#888' }}>{l}</button>
+          <button key={k} onClick={() => setSubTab(k)} style={{ flex:1, fontFamily:'inherit', fontSize:13, fontWeight:700, padding:'12px 8px', borderRadius:14, cursor:'pointer', border:'none', background:subTab===k?color:'var(--bg-card-dark)', color:subTab===k?'#fff':'#888' }}>{l}</button>
         ))}
       </div>
       {subTab==='principales' && <CastingPrincipales color={color} projectId={projectId} project={project} />}

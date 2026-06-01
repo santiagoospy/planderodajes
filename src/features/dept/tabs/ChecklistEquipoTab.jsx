@@ -47,7 +47,7 @@ export default function ChecklistEquipoTab({ color, deptKey, projectId }) {
             <div style={{ fontSize:13, color:item.done?'var(--text-muted)':'var(--text-primary)', fontFamily:'inherit', textDecoration:item.done?'line-through':'none' }}>{item.texto}</div>
             {item.ts && <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}><Icon name="Clock" size={9} color="var(--text-muted)" /> {fmtTs(item.ts)}</div>}
           </div>
-          <button onClick={() => del(item.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0 }}>✕</button>
+          <button onClick={() => del(item.id)} style={{ background:'none', border:'none', color:'var(--border-light)', cursor:'pointer', padding:0 }}>✕</button>
         </div>
       ))}
       {!showAdd

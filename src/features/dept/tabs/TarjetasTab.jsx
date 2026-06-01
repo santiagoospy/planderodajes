@@ -70,7 +70,7 @@ export default function TarjetasTab({ color, deptKey, projectId, project }) {
                       const sel = (t.escenas||[]).includes(sc.id)
                       return (
                         <button key={sc.id} onClick={() => toggleEscena(t.id, sc.id)} title={sc.title}
-                          style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:20, cursor:'pointer', border:'none', fontFamily:'inherit', fontSize:11, fontWeight:700, background:sel?color:'#f0ede8', color:sel?'#fff':'#888' }}>
+                          style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:20, cursor:'pointer', border:'none', fontFamily:'inherit', fontSize:11, fontWeight:700, background:sel?color:'var(--bg-card-dark)', color:sel?'#fff':'#888' }}>
                           {sel && <span style={{ fontSize:10 }}>✓</span>}
                           {sc.num}
                         </button>

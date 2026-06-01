@@ -147,14 +147,14 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
             <div style={{ fontSize:11, fontWeight:700, color, fontFamily:'inherit' }}>{m.autor}</div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>{fmt(m.ts)}</div>
-              <button onClick={() => del(m.id)} style={{ background:'none', border:'none', color:'#e5e2dd', cursor:'pointer', padding:0 }}>✕</button>
+              <button onClick={() => del(m.id)} style={{ background:'none', border:'none', color:'var(--border-light)', cursor:'pointer', padding:0 }}>✕</button>
             </div>
           </div>
           {m.adjunto?.tipo==='imagen' && <img src={m.adjunto.data||m.adjunto.url} alt={m.adjunto.nombre} style={{ width:'100%', borderRadius:8, maxHeight:260, objectFit:'cover' }}/>}
           {m.adjunto?.tipo==='video'  && <video src={m.adjunto.data||m.adjunto.url} controls style={{ width:'100%', borderRadius:8, maxHeight:260 }}/>}
           {(m.adjunto?.tipo==='archivo'||m.adjunto?.tipo==='pdf') && (
             <a href={m.adjunto.data||m.adjunto.url} download={m.adjunto.nombre}
-              style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
+              style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card-dark)', borderRadius:8, padding:'10px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
               <Icon name={m.adjunto.tipo==='pdf'?'FileText':'Paperclip'} size={20} color="var(--text-secondary)"/>
               <span style={{ flex:1 }}>{m.adjunto.nombre}</span>
               <span style={{ color, fontWeight:700 }}>↓ Descargar</span>
@@ -162,7 +162,7 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
           )}
           {m.adjunto?.tipo==='link' && (
             <a href={m.adjunto.url} target="_blank" rel="noopener noreferrer"
-              style={{ display:'flex', alignItems:'center', gap:10, background:'var(--bg-primary)', borderRadius:8, padding:'10px 12px', textDecoration:'none', border:`1px solid ${color}22` }}>
+              style={{ display:'flex', alignItems:'center', gap:10, background:'var(--bg-card-dark)', borderRadius:8, padding:'10px 12px', textDecoration:'none', border:`1px solid ${color}22` }}>
               <Icon name={m.adjunto.linkIcon||'Link'} size={22} color={color} style={{ flexShrink:0 }}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:12, fontWeight:700, color, fontFamily:'inherit', marginBottom:2 }}>{m.adjunto.nombre}</div>

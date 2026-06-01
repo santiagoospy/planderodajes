@@ -66,7 +66,7 @@ export default function ChecklistTab({ color, deptKey, projectId, project }) {
       <div style={{ display:'flex', gap:6, marginBottom:8 }}>
         {[['todos','TODOS'],['pendientes','PEND.'],['listos','LISTOS']].map(([k,l]) => (
           <button key={k} onClick={() => setFilterEstado(k)}
-            style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, letterSpacing:'0.05em', padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:filterEstado===k?color:'#f0ede8', color:filterEstado===k?'#fff':'#999' }}>
+            style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, letterSpacing:'0.05em', padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:filterEstado===k?color:'var(--bg-card-dark)', color:filterEstado===k?'#fff':'#999' }}>
             {l}
           </button>
         ))}
@@ -113,7 +113,7 @@ export default function ChecklistTab({ color, deptKey, projectId, project }) {
                 </div>
               )}
             </div>
-            <button onClick={() => del(item.id)} style={{ background:'none', border:'none', color:'#e5e2dd', fontSize:16, cursor:'pointer', padding:0, flexShrink:0 }}>✕</button>
+            <button onClick={() => del(item.id)} style={{ background:'none', border:'none', color:'var(--border-light)', fontSize:16, cursor:'pointer', padding:0, flexShrink:0 }}>✕</button>
           </div>
         )
       })}

@@ -305,7 +305,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
   return (
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
       {/* Header */}
-      <div style={{ background:'var(--bg-header)', padding:'14px 20px 0', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
+      <div className="theme-surface" style={{ padding:'14px 20px 0', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', marginBottom:8 }}>
           <button onClick={onBack} className="tap" style={{ background:'none', border:'none', fontSize:13, color:'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', padding:0 }}>
             ‹ Volver
@@ -319,7 +319,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
                   onBlur={() => { if (numDraft.trim()) onUpdateScene({...scene, num:numDraft.trim()}); setEditing(false) }}
                   onKeyDown={e => { if(e.key==='Enter'){ if(numDraft.trim()) onUpdateScene({...scene, num:numDraft.trim()}); setEditing(false) } if(e.key==='Escape') setEditing(false) }}
                   autoFocus
-                  style={{ fontSize:12, letterSpacing:'0.08em', color:'var(--text-tertiary)', fontFamily:'inherit', fontWeight:700, border:'1.5px solid var(--color-primary)', background:'var(--bg-primary)', borderRadius:6, padding:'3px 8px', outline:'none', maxWidth:160 }}/>
+                  style={{ fontSize:12, letterSpacing:'0.08em', color:'var(--text-tertiary)', fontFamily:'inherit', fontWeight:700, border:'1.5px solid var(--color-primary)', background:'var(--bg-card-dark)', borderRadius:6, padding:'3px 8px', outline:'none', maxWidth:160 }}/>
               ) : (
                 <span style={{ fontSize:11, letterSpacing:'0.1em', color:'var(--text-tertiary)', fontFamily:'inherit' }}>{scene.num}</span>
               )}
@@ -375,7 +375,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
               </label>
             </div>
             {storyboard.length === 0
-              ? <div style={{ background:'var(--bg-primary)', borderRadius:12, padding:28, textAlign:'center', color:'#ccc', fontSize:12, border:'1px dashed var(--border-light)' }}>Sin frames — subí las imágenes del storyboard</div>
+              ? <div style={{ background:'var(--bg-card-dark)', borderRadius:12, padding:28, textAlign:'center', color:'var(--text-muted)', fontSize:12, border:'1px dashed var(--border-light)' }}>Sin frames — subí las imágenes del storyboard</div>
               : storyboard.map((f,i) => (
                   <div key={f.id} style={{ position:'relative', borderRadius:12, overflow:'hidden', marginBottom:10 }}>
                     <img src={f.url||f.img} alt={`Frame ${i+1}`} style={{ width:'100%', display:'block', borderRadius:12, border:'1px solid var(--border-light)' }}/>
@@ -441,7 +441,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
       </div>
 
       {/* Bottom bar */}
-      <div style={{ position:'sticky', bottom:0, background:'var(--bg-secondary)', borderTop:'1px solid var(--border-light)', padding:'8px 20px calc(env(safe-area-inset-bottom,0px) + 8px)', display:'flex', alignItems:'center', gap:12, zIndex:10 }}>
+      <div className="theme-surface" style={{ position:'sticky', bottom:0, borderTop:'1px solid var(--border-light)', padding:'8px 20px calc(env(safe-area-inset-bottom,0px) + 8px)', display:'flex', alignItems:'center', gap:12, zIndex:10 }}>
         <button onClick={onBack} className="tap"
           style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'4px 20px', borderRadius:12, color:'var(--text-secondary)', fontFamily:'inherit', minWidth:72 }}>
           <Icon name="ChevronLeft" size={20} color="var(--text-secondary)"/>
