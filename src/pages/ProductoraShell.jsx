@@ -100,7 +100,7 @@ export default function ProductoraShell({ productoraId }) {
         client: '',
         dates: '',
         crew: 0,
-        pin: '',
+        pin: productora?.password || '',
         days: [],
         depts: { ...DEPT_DEFAULTS },
       }

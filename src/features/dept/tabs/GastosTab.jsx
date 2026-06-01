@@ -118,7 +118,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
         <button onClick={() => setShowPinModal(true)} style={{ fontFamily:'inherit', fontSize:14, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:14, padding:'12px 28px', cursor:'pointer' }}>
           Ingresar PIN
         </button>
-        {showPinModal && <PinModal title="Gastos" subtitle="PIN del proyecto" correctPin={project && project.pin} onSuccess={() => { setPinUnlocked(true); setShowPinModal(false) }} onCancel={() => setShowPinModal(false)} />}
+        {showPinModal && <PinModal title="Gastos" subtitle="PIN del proyecto" correctPin={project?.pin || '1234'} onSuccess={() => { setPinUnlocked(true); setShowPinModal(false) }} onCancel={() => setShowPinModal(false)} />}
       </div>
     )
   }
