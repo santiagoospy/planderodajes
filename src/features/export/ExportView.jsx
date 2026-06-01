@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
 
-export default function ExportView({ project, onBack, onDelete }) {
+export default function ExportView({ project, onBack, onDelete, accentColor }) {
   const allScenes = project?.days?.flatMap(d => d.scenes) || []
   const doneAll = allScenes.filter(s => s.done).length
   const [loaded] = useState(true)
+  const accent = accentColor || '#0B7285'
 
   return (
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100dvh', padding: '32px 28px', fontFamily: 'inherit' }}>
@@ -22,7 +23,7 @@ export default function ExportView({ project, onBack, onDelete }) {
 
       {/* PORTADA */}
       <div className="print-page">
-        <div style={{ borderBottom: '3px solid #d94f2b', paddingBottom: 20, marginBottom: 24 }}>
+        <div style={{ borderBottom: `3px solid ${accent}`, paddingBottom: 20, marginBottom: 24 }}>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.12em', marginBottom: 8 }}>PRODUCCIÓN AUDIOVISUAL — INFORME COMPLETO DE RODAJE</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {project?.logo && <img src={project.logo} alt="Logo" style={{ maxHeight: 80, maxWidth: 140, objectFit: 'contain' }} />}

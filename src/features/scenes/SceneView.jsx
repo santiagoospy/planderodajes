@@ -93,7 +93,6 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
   const [draft, setDraft] = useState(plano.comentario || '')
 
   const tags = [
-    plano.noche     && { label:'Noche',    icon:'Moon',          bg:'#e8e4ef', color:'#4a3fbf' },
     plano.lluvia    && { label:'Lluvia',   icon:'CloudRain',     bg:'#e4f0f7', color:'#2f7ed8' },
     plano.vfx       && { label:'VFX',      icon:'Sparkles',      bg:'#f5f0ff', color:'#7c3fbf' },
     plano.drone     && { label:'Drone',    icon:'Navigation',    bg:'#e8f8f0', color:'#0fa87e' },
@@ -116,6 +115,19 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
               </span>
             )}
           </div>
+          {(plano.tipo || plano.lente) && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:6 }}>
+              {plano.tipo && (
+                <span style={{ fontSize:10, fontWeight:600, color:color, fontFamily:'inherit' }}>{plano.tipo}</span>
+              )}
+              {plano.tipo && plano.lente && <span style={{ fontSize:10, color:'var(--text-muted)' }}>·</span>}
+              {plano.lente && (
+                <span style={{ fontSize:10, fontWeight:600, color:'var(--text-secondary)', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:3 }}>
+                  <Icon name="Aperture" size={10} color="currentColor"/> {plano.lente}
+                </span>
+              )}
+            </div>
+          )}
           {plano.descripcion && (
             <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.4, marginBottom:6 }}>{plano.descripcion}</div>
           )}
@@ -183,9 +195,10 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
   })
   const s = (k, v) => setForm(f => ({...f, [k]: v}))
 
-  const TIPOS = ['Plano general', 'Plano medio', 'Primer plano', 'Plano detalle', 'Plano americano', 'Plano picado', 'Contraplano', 'Travelling', 'Plano secuencia', 'Aéreo']
+  const TIPOS = ['Plano general', 'Plano medio', 'Plano cerrado', 'Primer plano', 'Plano detalle', 'Plano americano', 'Plano picado', 'Contraplano', 'Travelling', 'Plano secuencia', 'Aéreo']
+  const LENTES = ['10mm','12mm','14mm','16mm','18mm','21mm','24mm','28mm','35mm','40mm','50mm','65mm','75mm','85mm','100mm','135mm','150mm','180mm','200mm']
   const FLAGS = [
-    {k:'noche',icon:'Moon',label:'Noche'},{k:'lluvia',icon:'CloudRain',label:'Lluvia'},
+    {k:'lluvia',icon:'CloudRain',label:'Lluvia'},
     {k:'vfx',icon:'Sparkles',label:'VFX'},{k:'drone',icon:'Navigation',label:'Drone'},
     {k:'animales',icon:'PawPrint',label:'Animales'},{k:'actores',icon:'Theater',label:'Actores'},
     {k:'sonido',icon:'Mic',label:'Sonido'},
@@ -209,6 +222,27 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
       </select>
       <textarea value={form.descripcion} onChange={e=>s('descripcion',e.target.value)} placeholder="Descripción, movimiento de cámara, acción..." rows={2}
         style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', resize:'none', marginBottom:10 }}/>
+
+      {/* Lente */}
+      <div style={{ fontSize:10, color:'var(--text-tertiary)', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit', fontWeight:700 }}>LENTE</div>
+      <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+        <select value={LENTES.includes(form.lente) ? form.lente : ''} onChange={e=>s('lente',e.target.value)}
+          style={{ width:'42%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}>
+          <option value="">Elegí mm…</option>
+          {LENTES.map(l => <option key={l} value={l}>{l}</option>)}
+        </select>
+        <input value={form.lente} onChange={e=>s('lente',e.target.value)} placeholder="Ej: 35mm t2,5"
+          style={{ flex:1, fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
+      </div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:12 }}>
+        {LENTES.map(l => (
+          <button key={l} onClick={() => s('lente', l)}
+            style={{ fontFamily:'inherit', fontSize:10, padding:'3px 9px', borderRadius:16, border:`1px solid ${form.lente===l?color:'var(--border-light)'}`, background:form.lente===l?`${color}15`:'transparent', color:form.lente===l?color:'var(--text-muted)', cursor:'pointer' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
         {FLAGS.map(f => (
           <button key={f.k} onClick={() => s(f.k, !form[f.k])}
@@ -228,7 +262,7 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
 }
 
 // ── Main SceneView ────────────────────────────────────────────
-export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene, projectId }) {
+export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene, projectId, accentColor }) {
   const [section, setSection]   = useState('planos')
   const [planos, setPlanos]     = useState([])
   const [storyboard, setStory]  = useState([])
@@ -266,7 +300,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
 
   const assignedDepts = (scene.depts || []).filter(k => depts[k])
   const otherDepts    = Object.keys(depts).filter(k => !(scene.depts||[]).includes(k))
-  const color = '#d94f2b'
+  const color = accentColor || '#0B7285'
 
   return (
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">

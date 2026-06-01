@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useProject } from '../hooks/useProject'
 import { LoadingScreen, NotFoundScreen } from '../components/ui/LoadingScreen'
 import { SEED_PROJECT } from '../constants/seed'
+import { getTheme } from '../constants/themes'
+import { api } from '../services/api'
 import { uid } from '../utils/uid'
 
 const HomeView       = lazy(() => import('../features/home/HomeView'))
@@ -42,6 +44,16 @@ function ProjectViews({ project, projectId, save }) {
   const [isAdmin, setIsAdmin]       = useState(false)
   const [theme, setTheme]           = useState(() => localStorage.getItem('pdr:theme') || 'light')
   const [localProject, setLocalProject] = useState(project)
+  const [accentColor, setAccentColor]   = useState(() => getTheme('celeste').accent)
+
+  // Load the productora's chosen color theme so interior pages
+  // (scenes, citaciones…) share the same accent color.
+  useEffect(() => {
+    if (!project.productoraId) return
+    api.getProductora(project.productoraId)
+      .then(prod => { if (prod?.colorTheme) setAccentColor(getTheme(prod.colorTheme).accent) })
+      .catch(() => {})
+  }, [project.productoraId])
 
   // Track whether admin has made changes this session.
   // Once true, we stop auto-syncing from the server prop so stale API
@@ -149,7 +161,7 @@ function ProjectViews({ project, projectId, save }) {
     goDropbox:    () => setView('dropbox'),
   }
 
-  const common = { project: localProject, isAdmin, save: updateProject, depts, projectId }
+  const common = { project: localProject, isAdmin, save: updateProject, depts, projectId, accentColor }
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]" data-theme={theme}>
@@ -207,7 +219,7 @@ function ProjectViews({ project, projectId, save }) {
         {view === 'export'     && <ExportView    {...common} onBack={nav.goHome} />}
         {view === 'scouting'   && <ScoutingView  {...common} onBack={nav.goHome} />}
         {view === 'tools'      && <ToolsMenuView {...common} onBack={nav.goHome} />}
-        {view === 'citaciones' && <CitacionesView {...common} onBack={nav.goHome} />}
+        {view === 'citaciones' && <CitacionesView {...common} color={accentColor} onBack={nav.goHome} />}
         {view === 'messages'   && <MessagesView  {...common} onBack={nav.goHome} />}
         {view === 'dropbox'    && <DropboxView   {...common} onBack={nav.goHome} />}
       </Suspense>
