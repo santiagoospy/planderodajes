@@ -35,7 +35,7 @@ export function PinModal({ title, subtitle, onSuccess, onCancel, correctPin }) {
   }
 
   return (
-    <Modal open onClose={onCancel}>
+    <Modal open onClose={onCancel} position="center">
       <div className="text-center mb-6">
         <div className="flex justify-center mb-3">
           <Icon name="Lock" size={32} color="var(--text-primary)" />
