@@ -353,7 +353,39 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* Theme picker */}
+      {/* Theme picker — paleta de colores */}
+      <div className="flex items-center justify-center pb-8 pt-6 max-w-[480px] mx-auto w-full">
+        <div style={{ display:'flex', borderRadius:14, overflow:'hidden', boxShadow:'0 4px 20px rgba(0,0,0,0.35)' }}>
+          {THEME_KEYS.map((key) => {
+            const active = theme === key
+            return (
+              <button
+                key={key}
+                onClick={() => changeTheme(key)}
+                className="border-0 cursor-pointer p-0 flex-shrink-0 relative"
+                style={{
+                  width: active ? 72 : 52,
+                  height: 48,
+                  background: getTheme(key).grad,
+                  transition: 'width 0.2s ease',
+                }}
+              >
+                {active && (
+                  <span style={{
+                    position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)',
+                    width:6, height:6, borderRadius:'50%',
+                    background:'rgba(255,255,255,0.95)',
+                    boxShadow:'0 0 0 2px rgba(255,255,255,0.35)',
+                    display:'block',
+                  }}/>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Theme picker anterior — círculos (desactivado)
       <div className="flex items-center justify-center gap-3 pb-8 pt-6 max-w-[480px] mx-auto w-full">
         {THEME_KEYS.map((key) => (
           <button
@@ -369,6 +401,7 @@ export default function LandingPage() {
           />
         ))}
       </div>
+      */}
     </div>
   )
 }

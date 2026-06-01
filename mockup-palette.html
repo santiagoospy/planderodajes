@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup — Selector de Tema</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 60px;
+    flex-wrap: wrap;
+    padding: 40px;
+  }
+
+  .card {
+    background: #1a1a1a;
+    border-radius: 24px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    min-width: 260px;
+  }
+
+  .label {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  /* ── ANTES: círculos ── */
+  .circles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 0;
+  }
+
+  .circle {
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .circle.inactive { width: 22px; height: 22px; border: 2px solid rgba(255,255,255,0.3); }
+  .circle.active   { width: 32px; height: 32px; border: 3px solid #fff; }
+
+  /* ── DESPUÉS: paleta ── */
+  .palette {
+    display: flex;
+    align-items: center;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .swatch {
+    height: 48px;
+    width: 64px;
+    cursor: pointer;
+    position: relative;
+    transition: width 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .swatch.active {
+    width: 80px;
+  }
+
+  /* Tick para el seleccionado */
+  .swatch.active::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.4);
+  }
+
+  /* ── VARIANTE 2: más alta, más premium ── */
+  .palette-tall {
+    display: flex;
+    align-items: center;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .swatch-tall {
+    height: 56px;
+    width: 60px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: width 0.2s ease;
+  }
+  .swatch-tall.active {
+    width: 76px;
+  }
+  .swatch-tall.active::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.95);
+    font-size: 16px;
+    font-weight: 900;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  /* colores */
+  .c-celeste  { background: linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%); }
+  .c-coral    { background: #C45A3C; }
+  .c-oscuro   { background: linear-gradient(165deg, #1E1E2A 0%, #2A2A3A 50%, #363648 100%); }
+  .c-amarillo { background: #F5A52A; }
+
+  .divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.12);
+  }
+
+  /* landing preview */
+  .landing-preview {
+    width: 300px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%);
+    padding: 32px 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .landing-title { font-size: 26px; font-weight: 900; color: #fff; line-height: 1.1; }
+  .landing-sub   { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 6px; margin-bottom: 28px; }
+  .landing-row   { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .landing-icon  { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .landing-text  .t1 { font-size: 14px; font-weight: 700; color: #fff; }
+  .landing-text  .t2 { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .palette-inside {
+    display: flex;
+    align-items: center;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    align-self: center;
+  }
+  .si { height: 44px; width: 56px; cursor: pointer; position: relative; }
+  .si.active::after {
+    content: '';
+    position: absolute;
+    bottom: 7px; left: 50%;
+    transform: translateX(-50%);
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.35);
+  }
+</style>
+</head>
+<body>
+
+  <!-- ANTES -->
+  <div class="card">
+    <div class="label">Antes — Círculos</div>
+    <div class="circles">
+      <div class="circle c-celeste active"></div>
+      <div class="circle c-coral inactive"></div>
+      <div class="circle c-oscuro inactive"></div>
+      <div class="circle c-amarillo inactive"></div>
+    </div>
+  </div>
+
+  <!-- DESPUÉS opción A: paleta flat -->
+  <div class="card">
+    <div class="label">Opción A — Paleta flat</div>
+    <div class="palette">
+      <div class="swatch c-celeste active"></div>
+      <div class="swatch c-coral"></div>
+      <div class="swatch c-oscuro"></div>
+      <div class="swatch c-amarillo"></div>
+    </div>
+  </div>
+
+  <!-- DESPUÉS opción B: paleta con check -->
+  <div class="card">
+    <div class="label">Opción B — Con checkmark</div>
+    <div class="palette-tall">
+      <div class="swatch-tall c-celeste active"></div>
+      <div class="swatch-tall c-coral"></div>
+      <div class="swatch-tall c-oscuro"></div>
+      <div class="swatch-tall c-amarillo"></div>
+    </div>
+  </div>
+
+  <!-- Preview en contexto del landing -->
+  <div class="card">
+    <div class="label">En contexto — Landing</div>
+    <div class="landing-preview">
+      <div class="landing-title">Plan de Rodaje</div>
+      <div class="landing-sub">Organizá tus producciones</div>
+      <div class="landing-row">
+        <div class="landing-icon">→</div>
+        <div class="landing-text"><div class="t1">Ingresar</div><div class="t2">Accedé a tu espacio</div></div>
+      </div>
+      <div class="landing-row">
+        <div class="landing-icon">+</div>
+        <div class="landing-text"><div class="t1">Crear espacio</div><div class="t2">Freelance o productora</div></div>
+      </div>
+      <div class="landing-row" style="border-bottom:none">
+        <div class="landing-icon">▶</div>
+        <div class="landing-text"><div class="t1">Ver demo</div><div class="t2">Explorar el Proyecto Cero</div></div>
+      </div>
+      <div class="palette-inside">
+        <div class="si c-celeste active"></div>
+        <div class="si c-coral"></div>
+        <div class="si c-oscuro"></div>
+        <div class="si c-amarillo"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
