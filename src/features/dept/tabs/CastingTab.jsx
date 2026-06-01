@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
+import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 
 function ActorForm({ color, project, form, set, editId, onSave, onCancel, label }) {
   const todasEscenas = project ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id, label:`${s.num} — ${s.title.slice(0,25)}`, day:d.label }))) : []
@@ -71,6 +72,7 @@ function CastingPrincipales({ color, projectId, project }) {
   const { items: actores, save: setActores } = useDeptData(projectId, 'casting', 'principales', [])
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId]     = useState(null)
+  const [lightboxIdx, setLightboxIdx] = useState(-1)
   const emptyForm = { nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'' }
   const [form, setFormState] = useState(emptyForm)
   const set = (k, v) => setFormState(f => ({ ...f, [k]: v }))
@@ -86,16 +88,21 @@ function CastingPrincipales({ color, projectId, project }) {
   }
   const del = (id) => setActores(actores.filter(a => a.id !== id))
 
+  const actoresConFoto = actores.filter(a => a.foto)
+  const lightboxImages = actoresConFoto.map(a => ({ src: a.foto, alt: a.nombre }))
+
   return (
     <div>
+      {lightboxIdx >= 0 && <ImageLightbox images={lightboxImages} index={lightboxIdx} onClose={() => setLightboxIdx(-1)} />}
       <SectionLabel>ACTORES PRINCIPALES — {actores.length} cargados</SectionLabel>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
         {actores.map(a => {
           const escenaLabels = (a.escenas||[]).map(scId => project?.days.flatMap(d=>d.scenes).find(s=>s.id===scId)?.num).filter(Boolean)
+          const fotoIdx = actoresConFoto.findIndex(x => x.id === a.id)
           return (
             <div key={a.id} style={{ background:'var(--bg-secondary)', borderRadius:14, border:`1px solid ${color}20`, overflow:'hidden', position:'relative' }}>
               <div style={{ width:'100%', aspectRatio:'3/4', background:'var(--bg-card-dark-secondary)', overflow:'hidden' }}>
-                {a.foto ? <img src={a.foto} alt={a.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:36, color:'rgba(255,255,255,0.3)' }}>🎭</div>}
+                {a.foto ? <img src={a.foto} alt={a.nombre} onClick={() => fotoIdx >= 0 && setLightboxIdx(fotoIdx)} style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'zoom-in' }} /> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:36, color:'rgba(255,255,255,0.3)' }}>🎭</div>}
               </div>
               <div style={{ padding:'10px 10px 12px' }}>
                 <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:2 }}>{a.nombre}</div>
@@ -132,6 +139,7 @@ function CastingExtras({ color, projectId, project }) {
   const infoTexto = infoRaw && infoRaw[0] ? infoRaw[0].texto || '' : ''
   const saveInfo = (t) => saveInfoArr([{ texto: t }])
   const [showForm, setShowForm] = useState(false)
+  const [lightboxIdx, setLightboxIdx] = useState(-1)
   const [editId, setEditId]     = useState(null)
   const emptyForm = { nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'' }
   const [form, setFormState] = useState(emptyForm)
@@ -148,8 +156,12 @@ function CastingExtras({ color, projectId, project }) {
   const del = (id) => setExtras(extras.filter(e => e.id !== id))
   const todasEscenas = project ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id }))) : []
 
+  const extrasConFoto = extras.filter(e => e.foto)
+  const lightboxImages = extrasConFoto.map(e => ({ src: e.foto, alt: e.nombre }))
+
   return (
     <div>
+      {lightboxIdx >= 0 && <ImageLightbox images={lightboxImages} index={lightboxIdx} onClose={() => setLightboxIdx(-1)} />}
       <div style={{ marginBottom:20 }}>
         <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:8, fontFamily:'inherit' }}>INFO GENERAL PARA EXTRAS</div>
         <textarea value={infoTexto} onChange={e => saveInfo(e.target.value)} placeholder='Ej: "Nadie lleve ropa roja. Call time 07:00hs."' rows={3}
@@ -157,10 +169,12 @@ function CastingExtras({ color, projectId, project }) {
       </div>
       <SectionLabel>EXTRAS REGISTRADOS — {extras.length} personas</SectionLabel>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12 }}>
-        {extras.map(e => (
+        {extras.map(e => {
+          const fotoIdx = extrasConFoto.findIndex(x => x.id === e.id)
+          return (
           <div key={e.id} style={{ background:'var(--bg-secondary)', borderRadius:12, border:'1px solid var(--border-light)', overflow:'hidden', position:'relative' }}>
             <div style={{ width:'100%', aspectRatio:'1', background:'var(--bg-card-dark-secondary)', overflow:'hidden' }}>
-              {e.foto ? <img src={e.foto} alt={e.nombre} style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, color:'rgba(255,255,255,0.3)' }}>👤</div>}
+              {e.foto ? <img src={e.foto} alt={e.nombre} onClick={() => fotoIdx >= 0 && setLightboxIdx(fotoIdx)} style={{ width:'100%', height:'100%', objectFit:'cover', cursor:'zoom-in' }} /> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, color:'rgba(255,255,255,0.3)' }}>👤</div>}
             </div>
             <div style={{ padding:8 }}>
               <div style={{ fontSize:11, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{e.nombre}</div>
@@ -172,7 +186,8 @@ function CastingExtras({ color, projectId, project }) {
               <button onClick={() => del(e.id)} style={{ width:20, height:20, borderRadius:'50%', background:'rgba(200,0,0,0.5)', border:'none', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
       {!showForm
         ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar extra</button>

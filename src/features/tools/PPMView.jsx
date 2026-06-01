@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { api } from '../../services/api'
+import { ImageLightbox } from '../../components/ui/ImageLightbox'
 
 // ── Default sections ────────────────────────────────────────────
 const DEFAULT_SECTIONS = [
@@ -34,9 +35,12 @@ function fileIcon(name = '') {
 
 // ── Item renderer (edit mode) ────────────────────────────────────
 function ItemRow({ item, onRemove, onUpdate }) {
+  const [showLightbox, setShowLightbox] = useState(false)
   if (item.type === 'image') return (
+    <>
+      {showLightbox && <ImageLightbox images={[{ src: item.url, alt: item.caption || '' }]} index={0} onClose={() => setShowLightbox(false)} />}
     <div style={{ position:'relative', marginBottom:8 }}>
-      <img src={item.url} alt={item.caption || ''} style={{ width:'100%', borderRadius:10, objectFit:'cover', maxHeight:160 }} />
+      <img src={item.url} alt={item.caption || ''} onClick={() => setShowLightbox(true)} style={{ width:'100%', borderRadius:10, objectFit:'cover', maxHeight:160, cursor:'zoom-in' }} />
       <input
         value={item.caption || ''}
         onChange={e => onUpdate({ caption: e.target.value })}
@@ -45,6 +49,7 @@ function ItemRow({ item, onRemove, onUpdate }) {
       />
       <button onClick={onRemove} style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', borderRadius:6, width:24, height:24, cursor:'pointer', fontSize:13, fontFamily:'inherit' }}>✕</button>
     </div>
+    </>
   )
 
   if (item.type === 'file') return (

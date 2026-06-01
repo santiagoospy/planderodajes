@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
+import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 
 function StarRating({ value, onChange }) {
   return (
@@ -16,6 +17,7 @@ function StarRating({ value, onChange }) {
 function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
   const [uploading, setUploading] = useState(false)
   const [progreso, setProgreso] = useState({ done:0, total:0 })
+  const [lightboxIdx, setLightboxIdx] = useState(-1)
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
@@ -36,16 +38,19 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
     e.target.value = ''
   }
   const eliminar = (id) => setFotos(fotos.filter(f => f.id !== id))
+  const lightboxImages = fotos.map(f => ({ src: f.data || f.url, alt: f.nombre || '' }))
+
   return (
     <div>
+      {lightboxIdx >= 0 && <ImageLightbox images={lightboxImages} index={lightboxIdx} onClose={() => setLightboxIdx(-1)} />}
       <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>
         {label.toUpperCase()} ({fotos.length}/{max})
       </div>
       {fotos.length > 0 && (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6, marginBottom:8 }}>
-          {fotos.map(f => (
+          {fotos.map((f, i) => (
             <div key={f.id} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden' }}>
-              <img src={f.data || f.url} alt={f.nombre||''} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
+              <img src={f.data || f.url} alt={f.nombre||''} onClick={() => setLightboxIdx(i)} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', cursor:'zoom-in' }} />
               <button onClick={() => eliminar(f.id)} style={{ position:'absolute', top:3, right:3, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }}>✕</button>
             </div>
           ))}
@@ -63,6 +68,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
   const { items: locs, save: setLocs } = useDeptData(projectId, deptKey, 'locs', [])
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId]     = useState(null)
+  const [lightbox, setLightbox] = useState({ images: [], idx: -1 })
   const [form, setForm] = useState({ nombre:'', url:'', escenas:[], notas:'', fotos:[], rating:0, comentarioReview:'' })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -103,6 +109,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
 
   return (
     <div>
+      {lightbox.idx >= 0 && <ImageLightbox images={lightbox.images} index={lightbox.idx} onClose={() => setLightbox({ images: [], idx: -1 })} />}
       <SectionLabel>LOCACIONES — {locs.length} cargadas</SectionLabel>
       {locs.map(l => {
         const escenaLabels = (l.escenas||[]).map(scId => todasEscenas.find(x=>x.id===scId)?.label?.split('—')[0]?.trim()).filter(Boolean)
@@ -140,11 +147,14 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
                 <div style={{ marginTop:12 }}>
                   <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>FOTOS ({fotos.length})</div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6 }}>
-                    {fotos.map(f => (
-                      <div key={f.id} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden' }}>
-                        <img src={f.data||f.url} alt={f.nombre||''} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
-                      </div>
-                    ))}
+                    {fotos.map((f, fi) => {
+                      const imgs = fotos.map(x => ({ src: x.data||x.url, alt: x.nombre||'' }))
+                      return (
+                        <div key={f.id} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden' }}>
+                          <img src={f.data||f.url} alt={f.nombre||''} onClick={() => setLightbox({ images: imgs, idx: fi })} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', cursor:'zoom-in' }} />
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

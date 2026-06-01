@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
+import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 
 const fmt = (ts) => new Date(ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})
 
 export default function DeptMuralTab({ color, deptKey, projectId }) {
   const { items: mensajes, save: saveMensajes } = useDeptData(projectId, deptKey, 'mural', [])
+  const [lightboxSrc, setLightboxSrc] = useState(null)
   const [autor, setAutor]           = useState('')
   const [adjunto, setAdjunto]       = useState(null)
   const [uploading, setUploading]   = useState(false)
@@ -59,6 +61,7 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
 
   return (
     <div>
+      {lightboxSrc && <ImageLightbox images={[{ src: lightboxSrc }]} index={0} onClose={() => setLightboxSrc(null)} />}
       <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:10, fontFamily:'inherit' }}>ARCHIVOS DEL DEPARTAMENTO</div>
 
       {/* Upload panel */}
@@ -140,7 +143,7 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
               <button onClick={() => del(m.id)} style={{ background:'none', border:'none', color:'var(--border-light)', cursor:'pointer', padding:0 }}>✕</button>
             </div>
           </div>
-          {m.adjunto?.tipo==='imagen' && <img src={m.adjunto.data||m.adjunto.url} alt={m.adjunto.nombre} style={{ width:'100%', borderRadius:8, maxHeight:260, objectFit:'cover' }}/>}
+          {m.adjunto?.tipo==='imagen' && <img src={m.adjunto.data||m.adjunto.url} alt={m.adjunto.nombre} onClick={() => setLightboxSrc(m.adjunto.data||m.adjunto.url)} style={{ width:'100%', borderRadius:8, maxHeight:260, objectFit:'cover', cursor:'zoom-in' }}/>}
           {m.adjunto?.tipo==='video'  && <video src={m.adjunto.data||m.adjunto.url} controls style={{ width:'100%', borderRadius:8, maxHeight:260 }}/>}
           {(m.adjunto?.tipo==='archivo'||m.adjunto?.tipo==='pdf') && (
             <a href={m.adjunto.data||m.adjunto.url} download={m.adjunto.nombre}

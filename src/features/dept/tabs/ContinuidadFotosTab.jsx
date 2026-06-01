@@ -2,10 +2,12 @@ import { useState, useRef } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
+import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 
 export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
   const { items: fotos, save: setFotos } = useDeptData(projectId, deptKey, 'continuidad_fotos', [])
   const [showAdd, setShowAdd] = useState(false)
+  const [lightboxIdx, setLightboxIdx] = useState(-1)
   const [editId, setEditId]   = useState(null)
   const [form, setForm] = useState({ escena:'', descripcion:'', data:'' })
   const [cameraMode, setCameraMode] = useState(false)
@@ -53,13 +55,16 @@ export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
   }
   const del = (id) => setFotos(fotos.filter(f => f.id !== id))
 
+  const lightboxImages = fotos.filter(f => f.data).map(f => ({ src: f.data, alt: `Escena ${f.escena}` }))
+
   return (
     <div>
+      {lightboxIdx >= 0 && <ImageLightbox images={lightboxImages} index={lightboxIdx} onClose={() => setLightboxIdx(-1)} />}
       <SectionLabel>FOTOS DE CONTINUIDAD — {fotos.length} fotos</SectionLabel>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
         {fotos.map(foto => (
           <div key={foto.id} style={{ position:'relative', borderRadius:12, overflow:'hidden', background:'var(--bg-secondary)', border:`1px solid ${color}20` }}>
-            {foto.data && <img src={foto.data} alt="continuidad" style={{ width:'100%', height:150, objectFit:'cover' }} />}
+            {foto.data && <img src={foto.data} alt="continuidad" onClick={() => setLightboxIdx(fotos.findIndex(f => f.id === foto.id))} style={{ width:'100%', height:150, objectFit:'cover', cursor:'zoom-in' }} />}
             <div style={{ padding:10 }}>
               <div style={{ fontSize:11, fontWeight:700, color, marginBottom:4, fontFamily:'inherit' }}>Escena {foto.escena}</div>
               <div style={{ fontSize:10, color:'var(--text-secondary)', marginBottom:6, minHeight:30, fontFamily:'inherit' }}>{foto.descripcion}</div>

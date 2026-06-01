@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Camera, Paperclip, Map, Link, FileText, ClipboardList, Clapperboard, Palette, Wrench, Mic, Lightbulb, Car, Utensils, Laptop, Plug, Navigation, Scissors, Music } from 'lucide-react';
+import { ImageLightbox } from '../../components/ui/ImageLightbox';
 
 const SCOUT_DEPT_PRESETS = [
   { key: 'tecnica', label: 'Técnica', color: '#2f7ed8', icon: 'Wrench', seed: ['Energía eléctrica', 'Lugar para estacionar el camión', 'Acceso para equipos pesados', 'Generador disponible'] },
@@ -39,6 +40,7 @@ const MiniChecklist = ({ items, setItems, color }) => {
 const MultiPhotoUploader = ({ fotos, setFotos, color, label = 'Fotos', max = 24 }) => {
   const [uploading, setUploading] = useState(false);
   const [progreso, setProgreso] = useState({ done: 0, total: 0 });
+  const [lightboxIdx, setLightboxIdx] = useState(-1);
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -61,10 +63,12 @@ const MultiPhotoUploader = ({ fotos, setFotos, color, label = 'Fotos', max = 24 
     e.target.value = '';
   };
   const eliminar = (id) => setFotos(fotos.filter(f => f.id !== id));
+  const lightboxImages = fotos.map(f => ({ src: f.data || f.url, alt: f.nombre || '' }));
   return (
     <div>
+      {lightboxIdx >= 0 && <ImageLightbox images={lightboxImages} index={lightboxIdx} onClose={() => setLightboxIdx(-1)} />}
       <div style={{ fontSize: 10, color: '#aaa', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}><Camera size={10} style={{ display: 'inline', marginRight: 4 }} /> {label.toUpperCase()} ({fotos.length}/{max})</div>
-      {fotos.length > 0 && (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginBottom: 8 }}>{fotos.map(f => (<div key={f.id} style={{ position: 'relative', paddingTop: '75%', background: 'var(--bg-card-dark-secondary)', borderRadius: 8, overflow: 'hidden' }}><img src={f.data || f.url} alt={f.nombre || ''} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} /><button onClick={() => eliminar(f.id)} style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>✕</button></div>))}</div>)}
+      {fotos.length > 0 && (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginBottom: 8 }}>{fotos.map((f, i) => (<div key={f.id} style={{ position: 'relative', paddingTop: '75%', background: 'var(--bg-card-dark-secondary)', borderRadius: 8, overflow: 'hidden' }}><img src={f.data || f.url} alt={f.nombre || ''} onClick={() => setLightboxIdx(i)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }} /><button onClick={() => eliminar(f.id)} style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>✕</button></div>))}</div>)}
       <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--bg-card-dark)', border: `1px dashed ${color}55`, borderRadius: 10, padding: '12px', cursor: uploading ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 12, color: uploading ? '#aaa' : color, fontWeight: 700 }}>{uploading ? `⏳ Comprimiendo ${progreso.done}/${progreso.total}…` : `Subir fotos (se pueden seleccionar varias)`}<input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple onChange={handleFiles} disabled={uploading} style={{ display: 'none' }} /></label>
     </div>
   );
