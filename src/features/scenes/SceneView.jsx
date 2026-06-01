@@ -75,6 +75,7 @@ function PlanosTab({ scene, planos, depts, color, isAdmin, projectId, onUpdateSc
           onOpenDept={onOpenDept}
           onToggleEstrella={() => toggleEstrella(p.id)}
           onSaveComentario={txt => savePlanos(planos.map(x => x.id===p.id ? {...x,comentario:txt} : x))}
+          onToggleDeptOk={(dk) => savePlanos(planos.map(x => x.id===p.id ? {...x, deptsOk:{...(x.deptsOk||{}), [dk]:!(x.deptsOk?.[dk])}} : x))}
         />
       ))}
 
@@ -88,18 +89,11 @@ function PlanosTab({ scene, planos, depts, color, isAdmin, projectId, onUpdateSc
   )
 }
 
-function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept, onToggleEstrella, onSaveComentario }) {
+function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept, onToggleEstrella, onSaveComentario, onToggleDeptOk }) {
   const [showComment, setShowComment] = useState(false)
   const [draft, setDraft] = useState(plano.comentario || '')
 
-  const tags = [
-    plano.lluvia    && { label:'Lluvia',   icon:'CloudRain',     bg:'#e4f0f7', color:'#2f7ed8' },
-    plano.vfx       && { label:'VFX',      icon:'Sparkles',      bg:'#f5f0ff', color:'#7c3fbf' },
-    plano.drone     && { label:'Drone',    icon:'Navigation',    bg:'#e8f8f0', color:'#0fa87e' },
-    plano.animales  && { label:'Animales', icon:'PawPrint',      bg:'#fff8ec', color:'#d48c0e' },
-    plano.actores   && { label:'Actores',  icon:'Theater',       bg:'#f5f0ff', color:'#7c3fbf' },
-    plano.sonido    && { label:'Sonido',   icon:'Mic',           bg:'#e8f8f0', color:'#0fa87e' },
-  ].filter(Boolean)
+  const assignedDepts = (plano.depts || []).map(dk => ({ dk, meta: depts?.[dk] })).filter(x => x.meta)
 
   return (
     <div style={{ background:'var(--bg-secondary)', borderRadius:14, border:`1px solid ${color}22`, marginBottom:10, overflow:'hidden' }}>
@@ -131,13 +125,19 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onOpenDept
           {plano.descripcion && (
             <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.4, marginBottom:6 }}>{plano.descripcion}</div>
           )}
-          {tags.length > 0 && (
-            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:6 }}>
-              {tags.map(t => (
-                <span key={t.label} style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:t.bg, color:t.color, display:'inline-flex', alignItems:'center', gap:3 }}>
-                  <Icon name={t.icon} size={9} color={t.color}/> {t.label}
-                </span>
-              ))}
+          {assignedDepts.length > 0 && (
+            <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:8, marginTop:4 }}>
+              {assignedDepts.map(({ dk, meta }) => {
+                const ok = plano.deptsOk?.[dk]
+                return (
+                  <button key={dk} onClick={() => onToggleDeptOk(dk)} className="tap"
+                    style={{ display:'flex', alignItems:'center', gap:8, background: ok ? `${meta.color}18` : 'var(--bg-card)', border:`1px solid ${ok ? meta.color+'55' : 'var(--border-light)'}`, borderRadius:8, padding:'5px 10px', cursor:'pointer', textAlign:'left' }}>
+                    <Icon name={ok ? 'CheckSquare' : 'Square'} size={13} color={ok ? meta.color : 'var(--text-muted)'}/>
+                    <Icon name={meta.icon || 'Clapperboard'} size={12} color={ok ? meta.color : 'var(--text-muted)'}/>
+                    <span style={{ fontSize:11, fontWeight:600, color: ok ? meta.color : 'var(--text-secondary)', fontFamily:'inherit' }}>{meta.label}</span>
+                  </button>
+                )
+              })}
             </div>
           )}
           {plano.comentario && !showComment && (
@@ -185,24 +185,19 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
     tipo: plano?.tipo || '',
     lente: plano?.lente || '',
     noche: plano?.noche || false,
-    lluvia: plano?.lluvia || false,
-    vfx: plano?.vfx || false,
-    drone: plano?.drone || false,
-    animales: plano?.animales || false,
-    actores: plano?.actores || false,
-    sonido: plano?.sonido || false,
+    depts: plano?.depts || [],
+    deptsOk: plano?.deptsOk || {},
     ...plano,
   })
   const s = (k, v) => setForm(f => ({...f, [k]: v}))
+  const toggleDept = (dk) => setForm(f => {
+    const curr = f.depts || []
+    return { ...f, depts: curr.includes(dk) ? curr.filter(k => k !== dk) : [...curr, dk] }
+  })
 
   const TIPOS = ['Plano general', 'Plano medio', 'Plano cerrado', 'Primer plano', 'Plano detalle', 'Plano americano', 'Plano picado', 'Contraplano', 'Travelling', 'Plano secuencia', 'Aéreo']
   const LENTES = ['10mm','12mm','14mm','16mm','18mm','21mm','24mm','28mm','35mm','40mm','50mm','65mm','75mm','85mm','100mm','135mm','150mm','180mm','200mm']
-  const FLAGS = [
-    {k:'lluvia',icon:'CloudRain',label:'Lluvia'},
-    {k:'vfx',icon:'Sparkles',label:'VFX'},{k:'drone',icon:'Navigation',label:'Drone'},
-    {k:'animales',icon:'PawPrint',label:'Animales'},{k:'actores',icon:'Theater',label:'Actores'},
-    {k:'sonido',icon:'Mic',label:'Sonido'},
-  ]
+  const deptEntries = Object.entries(depts || {})
 
   return (
     <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30`, marginBottom:12 }}>
@@ -243,14 +238,22 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
         ))}
       </div>
 
-      <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
-        {FLAGS.map(f => (
-          <button key={f.k} onClick={() => s(f.k, !form[f.k])}
-            style={{ fontFamily:'inherit', fontSize:11, padding:'4px 10px', borderRadius:20, border:`1px solid ${form[f.k]?color:'var(--border-light)'}`, background:form[f.k]?`${color}15`:'transparent', color:form[f.k]?color:'var(--text-muted)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4 }}>
-            <Icon name={f.icon} size={11} color={form[f.k]?color:'currentColor'}/> {f.label}
-          </button>
-        ))}
-      </div>
+      {deptEntries.length > 0 && (
+        <>
+          <div style={{ fontSize:10, color:'var(--text-tertiary)', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit', fontWeight:700 }}>DEPARTAMENTOS</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
+            {deptEntries.map(([dk, meta]) => {
+              const sel = (form.depts || []).includes(dk)
+              return (
+                <button key={dk} onClick={() => toggleDept(dk)}
+                  style={{ fontFamily:'inherit', fontSize:11, padding:'4px 10px', borderRadius:20, border:`1px solid ${sel ? meta.color+'88' : 'var(--border-light)'}`, background: sel ? `${meta.color}18` : 'transparent', color: sel ? meta.color : 'var(--text-muted)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4 }}>
+                  <Icon name={meta.icon || 'Clapperboard'} size={11} color={sel ? meta.color : 'currentColor'}/> {meta.label}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
       <div style={{ display:'flex', gap:8 }}>
         <button onClick={onCancel} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card)', color:'var(--text-tertiary)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
         <button onClick={() => onSave(form)} style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>
