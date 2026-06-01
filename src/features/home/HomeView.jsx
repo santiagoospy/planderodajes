@@ -8,6 +8,7 @@ import { api } from '../../services/api'
 import { getTheme } from '../../constants/themes'
 import WeatherWidget from '../weather/WeatherWidget'
 import IMessageChat from '../messaging/IMessageChat'
+import { downloadProject, isDownloaded, getDownloadedAt } from '../../services/offline'
 
 function CoverPositionPicker({ src, initial, onSave, onCancel }) {
   const parse = (s) => {
@@ -105,10 +106,38 @@ export default function HomeView({
   const [editingDayDate, setEditingDayDate]   = useState('')
   const [showPinModal, setShowPinModal]       = useState(false)
   const [showCoverPicker, setShowCoverPicker] = useState(false)
+  const [online, setOnline]                   = useState(navigator.onLine)
+  const [downloading, setDownloading]         = useState(false)
+  const [dlProgress, setDlProgress]           = useState(null)
+  const [downloaded, setDownloaded]           = useState(() => isDownloaded(projectId))
 
   const allScenes = project.days.flatMap(d => d.scenes)
   const doneAll   = allScenes.filter(s => s.done).length
   const pct       = allScenes.length ? doneAll / allScenes.length : 0
+
+  // Online / offline detection
+  useEffect(() => {
+    const up   = () => setOnline(true)
+    const down = () => setOnline(false)
+    window.addEventListener('online',  up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
+
+  const handleDownload = async () => {
+    if (downloading) return
+    setDownloading(true)
+    setDlProgress({ done: 0, total: 1, label: 'Iniciando...' })
+    try {
+      await downloadProject(projectId, project, prog => setDlProgress(prog))
+      setDownloaded(true)
+    } catch {
+      alert('Error al descargar. Intentá de nuevo con conexión.')
+    } finally {
+      setDownloading(false)
+      setDlProgress(null)
+    }
+  }
 
   // Load productora theme
   useEffect(() => {
@@ -319,9 +348,16 @@ export default function HomeView({
               </button>
             </div>
           </div>
-          <div style={{ fontSize:12, color:subColor, fontFamily:'inherit' }}>
-            {project.client || ''}{project.client ? ' · ' : ''}
-            {project.days.length} días · {project.days.reduce((s,d) => s+d.scenes.length, 0)} escenas
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            <div style={{ fontSize:12, color:subColor, fontFamily:'inherit' }}>
+              {project.client || ''}{project.client ? ' · ' : ''}
+              {project.days.length} días · {project.days.reduce((s,d) => s+d.scenes.length, 0)} escenas
+            </div>
+            {!online && (
+              <span style={{ background:'rgba(255,160,0,0.25)', border:'1px solid rgba(255,160,0,0.5)', borderRadius:6, padding:'2px 7px', fontSize:10, fontWeight:700, color:'#ffb300', fontFamily:'inherit', letterSpacing:'0.04em' }}>
+                SIN CONEXIÓN
+              </span>
+            )}
           </div>
         </div>
 
@@ -353,6 +389,37 @@ export default function HomeView({
               <input type="file" accept="image/*" style={{ display:'none' }} onChange={e => uploadCoverPhoto(e.target.files[0])}/>
             </label>
           ) : null}
+
+          {/* Descargar para set */}
+          <button
+            onClick={handleDownload}
+            disabled={downloading || !online}
+            className="tap"
+            style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', boxSizing:'border-box', background:subGlass, border:`1px solid ${dimBorder}`, borderRadius:12, padding:'11px 14px', cursor: (downloading || !online) ? 'default' : 'pointer', marginBottom:16, opacity: (!online && !downloaded) ? 0.5 : 1 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <Icon name={downloaded ? 'WifiOff' : 'Download'} size={15} color={subColor} />
+              <div style={{ textAlign:'left' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:textColor, fontFamily:'inherit' }}>
+                  {downloading ? 'Descargando para set...' : downloaded ? 'Disponible sin conexión' : 'Descargar para set'}
+                </div>
+                <div style={{ fontSize:11, color:subColor, fontFamily:'inherit', marginTop:1 }}>
+                  {downloading && dlProgress
+                    ? `${dlProgress.label} (${dlProgress.done}/${dlProgress.total})`
+                    : downloaded
+                      ? `Actualizado ${getDownloadedAt(projectId)?.toLocaleDateString('es-AR') || ''} · Tocá para re-descargar`
+                      : 'Guardá el proyecto para usar sin wifi'
+                  }
+                </div>
+              </div>
+            </div>
+            {downloading && dlProgress ? (
+              <div style={{ fontSize:12, fontWeight:700, color:subColor, fontFamily:'inherit', flexShrink:0 }}>
+                {Math.round((dlProgress.done / dlProgress.total) * 100)}%
+              </div>
+            ) : (
+              <Icon name="ChevronRight" size={14} color={subColor} />
+            )}
+          </button>
 
           {/* Progress */}
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, padding:'0 4px' }}>

@@ -13,6 +13,13 @@ window.compressImageStrong = compressImageStrong
 // Make database functions globally available for Scouting and Messaging views
 window._fb = db
 
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

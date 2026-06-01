@@ -19,8 +19,21 @@ function ytThumb(url) {
   return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : null
 }
 
+// ── File icon helper ─────────────────────────────────────────────
+function fileIcon(name = '') {
+  const ext = name.split('.').pop().toLowerCase()
+  if (['pdf'].includes(ext)) return 'FileText'
+  if (['doc','docx'].includes(ext)) return 'FileText'
+  if (['xls','xlsx'].includes(ext)) return 'FileSpreadsheet'
+  if (['ppt','pptx'].includes(ext)) return 'Presentation'
+  if (['mp4','mov','avi'].includes(ext)) return 'Video'
+  if (['mp3','wav','aac'].includes(ext)) return 'Music'
+  if (['zip','rar'].includes(ext)) return 'Archive'
+  return 'Paperclip'
+}
+
 // ── Item renderer (edit mode) ────────────────────────────────────
-function ItemRow({ item, sectionId, onRemove, onUpdate }) {
+function ItemRow({ item, onRemove, onUpdate }) {
   if (item.type === 'image') return (
     <div style={{ position:'relative', marginBottom:8 }}>
       <img src={item.url} alt={item.caption || ''} style={{ width:'100%', borderRadius:10, objectFit:'cover', maxHeight:160 }} />
@@ -31,6 +44,29 @@ function ItemRow({ item, sectionId, onRemove, onUpdate }) {
         style={{ width:'100%', boxSizing:'border-box', marginTop:4, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:8, padding:'6px 10px', fontSize:12, color:'var(--text-primary)', fontFamily:'inherit', outline:'none' }}
       />
       <button onClick={onRemove} style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', borderRadius:6, width:24, height:24, cursor:'pointer', fontSize:13, fontFamily:'inherit' }}>✕</button>
+    </div>
+  )
+
+  if (item.type === 'file') return (
+    <div style={{ display:'flex', alignItems:'center', gap:10, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', marginBottom:8, position:'relative' }}>
+      <div style={{ width:36, height:36, borderRadius:8, background:'var(--bg-card)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <Icon name={fileIcon(item.name)} size={18} color="var(--text-tertiary)" />
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name || 'Archivo'}</div>
+        <input
+          value={item.caption || ''}
+          onChange={e => onUpdate({ caption: e.target.value })}
+          placeholder="Descripción opcional..."
+          style={{ width:'100%', background:'transparent', border:'none', fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit', outline:'none', padding:0, marginTop:2 }}
+        />
+      </div>
+      <a href={item.url} target="_blank" rel="noreferrer" style={{ flexShrink:0, padding:4 }}>
+        <Icon name="ExternalLink" size={14} color="var(--text-tertiary)" />
+      </a>
+      <button onClick={onRemove} style={{ background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', padding:4, flexShrink:0 }}>
+        <Icon name="X" size={14} color="var(--text-muted)" />
+      </button>
     </div>
   )
 
@@ -80,25 +116,28 @@ function ItemRow({ item, sectionId, onRemove, onUpdate }) {
 
 // ── Section card (edit mode) ─────────────────────────────────────
 function SectionCard({ section, isEnabled, isExpanded, onToggleEnabled, onToggleExpand, onUpdate, onAddItem, onRemoveItem, onUpdateItem }) {
+  const imgRef  = useRef(null)
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
 
-  const handleImagePick = () => fileRef.current?.click()
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+  const upload = async (file, isImage) => {
     setUploading(true)
     try {
       const { url } = await window.uploadFileToR2(file)
-      onAddItem({ id: 'img_' + Date.now(), type: 'image', url, caption: '' })
+      if (isImage) {
+        onAddItem({ id: 'img_' + Date.now(), type: 'image', url, caption: '' })
+      } else {
+        onAddItem({ id: 'file_' + Date.now(), type: 'file', url, name: file.name, caption: '' })
+      }
     } catch {
-      alert('Error al subir imagen')
+      alert('Error al subir archivo')
     } finally {
       setUploading(false)
-      e.target.value = ''
     }
   }
+
+  const handleImgChange  = (e) => { const f = e.target.files[0]; if (f) upload(f, true);  e.target.value = '' }
+  const handleFileChange = (e) => { const f = e.target.files[0]; if (f) upload(f, false); e.target.value = '' }
 
   const handleAddLink = () => {
     const url = prompt('URL del link:')
@@ -161,11 +200,16 @@ function SectionCard({ section, isEnabled, isExpanded, onToggleEnabled, onToggle
 
                 {/* Add buttons */}
                 <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
-                  <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display:'none' }} onChange={handleFileChange} />
-                  <button onClick={handleImagePick} disabled={uploading} className="tap"
+                  <input ref={imgRef}  type="file" accept="image/*" style={{ display:'none' }} onChange={handleImgChange} />
+                  <input ref={fileRef} type="file" accept="*/*"     style={{ display:'none' }} onChange={handleFileChange} />
+                  <button onClick={() => imgRef.current?.click()} disabled={uploading} className="tap"
                     style={{ display:'flex', alignItems:'center', gap:6, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:8, padding:'7px 12px', fontSize:12, color:'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>
                     <Icon name="Image" size={13} color="var(--text-secondary)" />
                     {uploading ? 'Subiendo...' : 'Foto'}
+                  </button>
+                  <button onClick={() => fileRef.current?.click()} disabled={uploading} className="tap"
+                    style={{ display:'flex', alignItems:'center', gap:6, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:8, padding:'7px 12px', fontSize:12, color:'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>
+                    <Icon name="Paperclip" size={13} color="var(--text-secondary)" /> Archivo
                   </button>
                   <button onClick={handleAddLink} className="tap"
                     style={{ display:'flex', alignItems:'center', gap:6, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:8, padding:'7px 12px', fontSize:12, color:'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>
@@ -238,6 +282,19 @@ function PrintView({ sections, enabled, project }) {
                   </div>
                 )
               })}
+
+              {/* File attachments */}
+              {s.items.filter(i => i.type === 'file').length > 0 && (
+                <div className="ppm-files">
+                  {s.items.filter(i => i.type === 'file').map(item => (
+                    <div key={item.id} className="ppm-file-row">
+                      <span className="ppm-file-name">{item.name || 'Archivo'}</span>
+                      {item.caption && <span className="ppm-file-caption"> — {item.caption}</span>}
+                      <span className="ppm-file-url">{item.url}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Text blocks */}
               {s.items.filter(i => i.type === 'text').map(item => (

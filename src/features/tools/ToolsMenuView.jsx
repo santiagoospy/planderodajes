@@ -7,11 +7,11 @@ import ClaquetaView from './ClaquetaView'
 import PPMView from './PPMView'
 
 const TOOLS = [
-  { key: 'ppm', icon: Presentation, title: 'PPM', desc: 'Presentación Pre-Production Meeting' },
   { key: 'sun-ar', icon: Sun, title: 'Sun AR', desc: 'Trayectoria del sol en tiempo real' },
   { key: 'color-temp', icon: Thermometer, title: 'Color Temperature', desc: 'Temperatura de color en Kelvin' },
   { key: 'viewfinder', icon: Video, title: "Director's Viewfinder", desc: 'Previsualización por sensor + lente' },
   { key: 'claqueta', icon: Clapperboard, title: 'Claqueta', desc: 'Sincronización con sonido' },
+  { key: 'ppm', icon: Presentation, title: 'PPM', desc: 'Presentación Pre-Production Meeting' },
 ]
 
 export default function ToolsMenuView({ onBack, project, projectId }) {
