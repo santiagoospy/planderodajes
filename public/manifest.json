@@ -1,10 +1,24 @@
 {
-  "name": "planderodajes.com",
+  "name": "Plan de Rodajes",
   "short_name": "PlanRodaje",
   "description": "Gestión de rodajes audiovisuales",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0B7285"
+  "background_color": "#0B7285",
+  "theme_color": "#0B7285",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

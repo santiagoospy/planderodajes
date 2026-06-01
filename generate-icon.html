@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Icon Generator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap');
+    body { background: #111; display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px 32px; font-family: Inter, sans-serif; }
+    canvas { border-radius: 22%; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+    .variant-label { color: #fff; font-size: 13px; font-weight: 600; margin-bottom: 16px; letter-spacing: 0.04em; }
+    .sub-label { color: #666; font-size: 10px; letter-spacing: 0.08em; text-align: center; margin-top: 6px; }
+    .pair { display: flex; flex-direction: column; align-items: center; }
+    .sizes { display: flex; gap: 32px; align-items: flex-end; }
+    .variant { display: flex; flex-direction: column; align-items: center; background: #1a1a1a; border-radius: 20px; padding: 24px 28px; border: 1px solid #2a2a2a; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 760px; }
+  </style>
+</head>
+<body>
+  <div style="color:#aaa; font-size:11px; letter-spacing:0.1em; margin-bottom:-20px;">OPCIONES DE ÍCONO — "Pr"</div>
+  <div class="grid" id="variants-container">
+    <!-- generado por JS -->
+  </div>
+
+  <script>
+    // Generar markup antes del script principal
+    const varDefs = [
+      { id:'A', label:'A — Gradiente teal suave' },
+      { id:'B', label:'B — Oscuro elegante' },
+      { id:'C', label:'C — Blanco + texto oscuro' },
+      { id:'D', label:'D — Gradiente azul noche' },
+    ];
+    const container = document.getElementById('variants-container');
+    varDefs.forEach(v => {
+      container.innerHTML += `
+        <div class="variant">
+          <div class="variant-label">${v.label}</div>
+          <div class="sizes">
+            <div class="pair">
+              <canvas id="v${v.id}-512" width="512" height="512" style="width:160px;height:160px"></canvas>
+              <div class="sub-label">512×512</div>
+            </div>
+            <div class="pair">
+              <canvas id="v${v.id}-192" width="192" height="192" style="width:80px;height:80px"></canvas>
+              <div class="sub-label">192×192</div>
+            </div>
+            <div class="pair">
+              <canvas id="v${v.id}-60" width="60" height="60" style="width:50px;height:50px"></canvas>
+              <div class="sub-label">60px</div>
+            </div>
+          </div>
+        </div>`;
+    });
+  </script>
+
+  <script>
+    // === VARIANTES ===
+    const variants = [
+      {
+        id: 'A',
+        label: 'A — Gradiente teal suave',
+        draw(ctx, s) {
+          const g = ctx.createLinearGradient(0, s, s, 0);
+          g.addColorStop(0, '#0B7285');
+          g.addColorStop(1, '#2EC4B6');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, s, s);
+          ctx.fillStyle = 'rgba(255,255,255,0.92)';
+          ctx.font = `300 ${s * 0.5}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('pr', s * 0.5, s * 0.52);
+        }
+      },
+      {
+        id: 'B',
+        label: 'B — Oscuro elegante',
+        draw(ctx, s) {
+          ctx.fillStyle = '#071e24';
+          ctx.fillRect(0, 0, s, s);
+          // glow radial sutil
+          const g = ctx.createRadialGradient(s*0.5, s*0.5, 0, s*0.5, s*0.5, s*0.6);
+          g.addColorStop(0, 'rgba(46,196,182,0.18)');
+          g.addColorStop(1, 'rgba(46,196,182,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, s, s);
+          ctx.fillStyle = '#2EC4B6';
+          ctx.font = `300 ${s * 0.5}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('pr', s * 0.5, s * 0.52);
+        }
+      },
+      {
+        id: 'C',
+        label: 'C — Blanco + texto oscuro',
+        draw(ctx, s) {
+          ctx.fillStyle = '#f0fafa';
+          ctx.fillRect(0, 0, s, s);
+          // borde teal interior sutil
+          ctx.strokeStyle = '#2EC4B6';
+          ctx.lineWidth = s * 0.025;
+          ctx.strokeRect(s*0.05, s*0.05, s*0.9, s*0.9);
+          ctx.fillStyle = '#0B7285';
+          ctx.font = `300 ${s * 0.5}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('pr', s * 0.5, s * 0.52);
+        }
+      },
+      {
+        id: 'D',
+        label: 'D — Gradiente azul noche',
+        draw(ctx, s) {
+          const g = ctx.createLinearGradient(0, 0, s, s);
+          g.addColorStop(0, '#0a2a35');
+          g.addColorStop(1, '#0fa87e');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, s, s);
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.font = `300 ${s * 0.5}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('pr', s * 0.5, s * 0.52);
+        }
+      },
+    ];
+
+    function renderVariant(variant, size) {
+      const c = document.getElementById(`v${variant.id}-${size}`);
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      variant.draw(ctx, size);
+    }
+
+    variants.forEach(v => {
+      [512, 192, 60].forEach(sz => renderVariant(v, sz));
+    });
+
+    window.getIconDataURL = (variantId, size) => {
+      const c = document.getElementById(`v${variantId}-${size}`);
+      return c.toDataURL('image/png');
+    };
+  </script>
+</body>
+</html>
