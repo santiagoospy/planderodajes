@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Producto
+
+**Plan de Rodajes** es una app de gestión colaborativa para producciones audiovisuales. Permite a directores, productoras y equipos de rodaje organizar todos los aspectos de una producción: días de filmación, departamentos, crew, equipos, locaciones, presupuesto y comunicación interna.
+
+**Usuarios objetivo:** productoras, directores de fotografía, jefes de departamento, y equipos técnicos de cine/video.
+
+**Norte del producto:** la app debe funcionar en set, donde la conexión es inestable. Tiene que ser rápida, funcionar offline, y sincronizarse automáticamente cuando vuelve la red. El diseño y UX son prioritarios — la experiencia debe sentirse nativa, fluida y profesional.
+
+### Features principales
+
+- **Rodajes / Proyectos** — crear y organizar producciones por productora
+- **Departamentos** (14+) — Producción, Dirección, Locaciones, Arte, Fotografía (DF), Cámara, Drone, Sonido, Foto Fija, Técnica, Casting, Catering, Continuidad, Cliente
+- **Días y escenas** — planificación diaria con seguimiento de progreso
+- **Por departamento:** checklists, gastos, citaciones, integrantes, tarjetas de equipo, mural, info general
+- **Mensajes** — chat interno global y por proyecto
+- **Scouting** — gestión de locaciones con fotos y notas
+- **Herramientas de rodaje** — claqueta, posición del sol, temperatura de color, visor del director
+- **Marketplace** — equipos, props y servicios
+- **Exportación** — generación de documentos de producción
+
 ## Quick Commands
 
 ```bash

@@ -70,7 +70,7 @@ export default function DeptDetailView({
     onUpdateProject({ ...project, depts: { ...project.depts, [deptKey]: { ...deptMeta, ...updates } } })
   }
 
-  const tabProps = { color, deptKey, projectId, project, isAdmin, onUpdateProject }
+  const tabProps = { color, deptKey, deptMeta, projectId, project, isAdmin, onUpdateProject }
 
   return (
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
