@@ -338,7 +338,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
         <div style={{ display:'flex' }}>
           {[['planos',`Tomas (${planos.length})`],['storyboard','Story'],['deptos','Deptos']].map(([k,l]) => (
             <button key={k} onClick={() => setSection(k)}
-              style={{ flex:1, fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'10px 4px', border:'none', background:'none', cursor:'pointer', color:section===k?color:'var(--text-tertiary)', borderBottom:section===k?`2px solid ${color}`:'2px solid transparent' }}>
+              style={{ flex:1, fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'10px 4px', border:'none', background:'none', cursor:'pointer', color:section===k?'var(--text-primary)':'var(--text-muted)', borderBottom:section===k?`2px solid ${color}`:'2px solid transparent' }}>
               {l}
             </button>
           ))}

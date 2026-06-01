@@ -118,7 +118,7 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
             <input type="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={handleFile} style={{ display:'none' }}/>
           </label>
           <button onClick={() => setShowLinkForm(!showLinkForm)}
-            style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card)', border:`1px dashed ${color}66`, borderRadius:10, padding:12, cursor:'pointer', fontFamily:'inherit', fontSize:12, color, fontWeight:600 }}>
+            style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card)', border:`1px dashed ${color}66`, borderRadius:10, padding:12, cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', fontWeight:600 }}>
             <Icon name="Link" size={13} color={color}/> Link
           </button>
           {adjunto && (

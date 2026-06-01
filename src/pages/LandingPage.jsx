@@ -224,6 +224,8 @@ export default function LandingPage() {
     setPinnedList(unpinProject(id))
   }
 
+  if (modo === 'marketplace') return <MarketplaceView onBack={() => setModo(null)} />
+
   return (
     <div
       className="min-h-screen flex flex-col font-[Inter] transition-all duration-300"
@@ -336,11 +338,6 @@ export default function LandingPage() {
             }}
             onCancel={() => setModo(null)}
           />
-        )}
-
-        {/* Marketplace mode */}
-        {modo === 'marketplace' && (
-          <MarketplaceView onBack={() => setModo(null)} />
         )}
 
         {/* Admin mode */}
