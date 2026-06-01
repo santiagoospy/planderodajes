@@ -12,8 +12,17 @@ export default function IMessageChat({ project, isAdmin, projectId }) {
   const [draft, setDraft]       = useState('')
   const [author, setAuthor]     = useState('')
   const [deleteId, setDeleteId] = useState(null)
+  const [open, setOpen]         = useState(() => {
+    try { return localStorage.getItem('pdr:chat-open') !== 'false' } catch { return true }
+  })
   const endRef   = useRef(null)
   const inputRef = useRef(null)
+
+  const toggleOpen = () => setOpen(v => {
+    const next = !v
+    try { localStorage.setItem('pdr:chat-open', String(next)) } catch {}
+    return next
+  })
 
   // Load chat from API
   useEffect(() => {
@@ -82,15 +91,16 @@ export default function IMessageChat({ project, isAdmin, projectId }) {
 
   return (
     <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:18, overflow:'hidden', marginBottom:16 }}>
-      {/* Header */}
-      <div style={{ padding:'10px 14px 8px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', gap:8 }}>
+      {/* Header — tap to collapse */}
+      <button onClick={toggleOpen} className="tap"
+        style={{ width:'100%', padding:'10px 14px 10px', borderBottom: open ? '1px solid rgba(255,255,255,0.08)' : 'none', display:'flex', alignItems:'center', gap:8, background:'none', border:'none', cursor:'pointer' }}>
         <Icon name="MessageSquare" size={15} color="rgba(255,255,255,0.9)"/>
-        <div style={{ flex:1, fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.55)', letterSpacing:'0.1em' }}>CHAT DEL EQUIPO</div>
-        <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontWeight:500 }}>{messages.length} msg</div>
-      </div>
+        <div style={{ flex:1, fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.55)', letterSpacing:'0.1em', textAlign:'left' }}>CHAT DEL EQUIPO</div>
+        <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontWeight:500, marginRight:6 }}>{messages.length} msg</div>
+        <Icon name={open ? 'ChevronUp' : 'ChevronDown'} size={14} color="rgba(255,255,255,0.35)"/>
+      </button>
 
-      {/* Messages */}
-      <div style={{ maxHeight:260, overflowY:'auto', padding:'10px 12px 6px', display:'flex', flexDirection:'column', gap:2 }}>
+      {open && <div style={{ maxHeight:260, overflowY:'auto', padding:'10px 12px 6px', display:'flex', flexDirection:'column', gap:2 }}>
         {grouped.length === 0 && (
           <div style={{ textAlign:'center', padding:'24px 0', color:'rgba(255,255,255,0.28)', fontSize:12, fontStyle:'italic' }}>
             Nadie habló todavía. ¡Rompan el hielo!
@@ -133,10 +143,9 @@ export default function IMessageChat({ project, isAdmin, projectId }) {
           )
         })}
         <div ref={endRef}/>
-      </div>
+      </div>}
 
-      {/* Input */}
-      <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', padding:'8px 10px 10px' }}>
+      {open && <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', padding:'8px 10px 10px' }}>
         {!author ? (
           <div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:7, letterSpacing:'0.06em', fontWeight:600 }}>¿QUIÉN SOS?</div>
@@ -167,7 +176,7 @@ export default function IMessageChat({ project, isAdmin, projectId }) {
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   )
 }

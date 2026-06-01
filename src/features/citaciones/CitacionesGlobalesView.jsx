@@ -106,7 +106,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
     <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)', padding: '0 16px 48px' }}>
       {/* Header */}
       {onBack && (
-        <div className="theme-surface" style={{ position: 'sticky', top: 0, padding: '14px 16px', margin: '0 -16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div className="theme-surface" style={{ position: 'sticky', top: 0, padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 16px 14px', margin: '0 -16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <button onClick={onBack} className="tap" style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
             ‹ Volver
           </button>
@@ -142,7 +142,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
                   {(date || dia).toUpperCase()}
                 </div>
                 {date && dia !== date && <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit' }}>{dia}</div>}
-                <div style={{ marginLeft: 'auto', fontSize: 10, color: diaColor, fontFamily: 'inherit', fontWeight: 700 }}>
+                <div style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'inherit', fontWeight: 600 }}>
                   {cs.length} evento{cs.length !== 1 ? 's' : ''}
                 </div>
               </div>
