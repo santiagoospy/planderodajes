@@ -43,6 +43,7 @@ export const DEPT_SECTION_OPTIONS = [
   { key: 'checklist',   label: 'Checklist',   desc: 'Lista de tareas y pendientes' },
   { key: 'gastos',      label: 'Gastos',      desc: 'Control de presupuesto' },
   { key: 'citaciones',  label: 'Citación',    desc: 'Horarios y call times' },
+  { key: 'pedidos',     label: 'Pedidos',     desc: 'Pedidos y requisiciones' },
   { key: 'mural',       label: 'Archivos',    desc: 'Fotos, videos y documentos' },
   { key: 'integrantes', label: 'Crew',        desc: 'Integrantes del departamento' },
   { key: 'info',        label: 'General',     desc: 'Info, notas y responsable' },

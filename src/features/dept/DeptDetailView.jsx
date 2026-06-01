@@ -31,6 +31,7 @@ const TAB_TO_SECTION = {
   crew_total:'integrantes', rental:'info', elenco:'checklist',
   menu:'integrantes', tarjetas:'checklist', checklist_equipo:'checklist',
   locaciones:'info', continuidad_notas:'checklist', continuidad_fotos:'mural',
+  pedidos:'pedidos',
 }
 
 export default function DeptDetailView({
