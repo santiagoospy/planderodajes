@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
-import { db } from '../../../services/db'
+import { api } from '../../../services/api'
 import { Icon } from '../../../components/ui/Icon'
 
 const CONDICIONES_PRESET = ['Sin restricciones','Vegetariano','Vegano','Celíaco','Sin gluten','Sin lactosa','Sin mariscos','Kosher','Halal','Diabético']
@@ -30,7 +30,7 @@ export default function CateringTab({ color, projectId, project }) {
     const deptKeys = Object.keys(project.depts)
     Promise.all(
       deptKeys.map(dk =>
-        db.getDeptData(projectId, dk, 'integrantes').then(d =>
+        api.getDeptData(projectId, dk, 'integrantes').then(d =>
           (d||[]).map(p => ({
             id:`${dk}__${p.id}`, nombre:p.nombre||'', apodo:p.apodo||'', rol:p.rol||'',
             condicionOriginal:p.condicionAlimentaria||'',

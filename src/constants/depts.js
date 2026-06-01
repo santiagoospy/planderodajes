@@ -56,7 +56,7 @@ export const TABS_BY_DEPT = {
   produccion:  [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['crew_total','CREW TOTAL'],['pedidos','PEDIDOS'],['rental','RENTAL'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
   tecnica:     [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
   casting:     [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['elenco','ELENCO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
-  catering:    [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['menu','PARTICIPANTES'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
+  catering:    [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['menu','COMENSALES'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
   camara:      [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['tarjetas','TARJETAS'],['checklist_equipo','EQUIPO'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
   drone:       [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['tarjetas','TARJETAS SD'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
   continuidad: [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['continuidad_notas','NOTAS'],['continuidad_fotos','FOTOS'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
