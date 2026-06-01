@@ -73,10 +73,10 @@ export default function DeptDetailView({
   const tabProps = { color, deptKey, deptMeta, projectId, project, isAdmin, onUpdateProject }
 
   return (
-    <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
+    <div style={{ minHeight:'100dvh', background:`color-mix(in srgb, ${color} 6%, var(--bg-primary))`, display:'flex', flexDirection:'column' }} className="slide-r">
 
       {/* Header */}
-      <div style={{ background:'var(--bg-secondary)', padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 0', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ background:`linear-gradient(180deg, ${color}18 0%, var(--bg-secondary) 100%)`, padding:'calc(env(safe-area-inset-top,0px) + 14px) 20px 0', borderBottom:`1px solid ${color}20`, position:'sticky', top:0, zIndex:10 }}>
         <button onClick={onBack} className="tap"
           style={{ background:'none', border:'none', fontSize:13, color:'var(--text-tertiary)', cursor:'pointer', fontFamily:'inherit', marginBottom:10, padding:0 }}>
           ‹ Volver

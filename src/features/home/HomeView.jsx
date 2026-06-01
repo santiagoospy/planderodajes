@@ -204,7 +204,9 @@ export default function HomeView({
   // ── Main home view ─────────────────────────────────────────────
   const textColor = isLightTheme ? '#1a1714' : '#fff'
   const subColor  = isLightTheme ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.6)'
-  const glass     = 'rgba(0,0,0,0.15)'
+  const glass     = isLightTheme ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.1)'
+  const subGlass  = isLightTheme ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.12)'
+  const dimBorder = isLightTheme ? 'rgba(0,0,0,0.1)'  : 'rgba(255,255,255,0.15)'
 
   return (
     <div style={{ minHeight:'100dvh', background:productoraGrad, display:'flex', flexDirection:'column' }}>
@@ -220,7 +222,7 @@ export default function HomeView({
                   onBlur={() => { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }) }}
                   onKeyDown={e => { if (e.key==='Enter') { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }) }}}
                   autoFocus
-                  style={{ fontFamily:'inherit', fontSize:22, fontWeight:800, border:'none', borderBottom:'2px solid rgba(255,255,255,0.5)', borderRadius:0, padding:'2px 0', background:'transparent', color:textColor, outline:'none', width:'100%' }}
+                  style={{ fontFamily:'inherit', fontSize:22, fontWeight:800, border:'none', borderBottom:`2px solid ${isLightTheme ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'}`, borderRadius:0, padding:'2px 0', background:'transparent', color:textColor, outline:'none', width:'100%' }}
                 />
               ) : (
                 <span onClick={() => isAdmin && setEditingProjectName(true)}
@@ -243,7 +245,7 @@ export default function HomeView({
               )}
               <button onClick={() => window.location.href = '/'} className="tap"
                 style={{ background:'rgba(0,0,0,0.2)', border:'none', cursor:'pointer', padding:'6px 8px', borderRadius:8 }}>
-                <Icon name="Home" size={16} color="rgba(255,255,255,0.8)"/>
+                <Icon name="Home" size={16} color={textColor}/>
               </button>
             </div>
           </div>
@@ -271,8 +273,8 @@ export default function HomeView({
               )}
             </div>
           ) : isAdmin ? (
-            <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'rgba(255,255,255,0.12)', border:'1.5px dashed rgba(255,255,255,0.3)', borderRadius:14, padding:'32px 20px', cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.8)', width:'100%', marginBottom:16, boxSizing:'border-box' }}>
-              <Icon name="Camera" size={13} color="rgba(255,255,255,0.7)" style={{marginRight:4}}/> SUBIR FOTO DE PORTADA
+            <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:subGlass, border:`1.5px dashed ${dimBorder}`, borderRadius:14, padding:'32px 20px', cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:600, color:subColor, width:'100%', marginBottom:16, boxSizing:'border-box' }}>
+              <Icon name="Camera" size={13} color={subColor} style={{marginRight:4}}/> SUBIR FOTO DE PORTADA
               <input type="file" accept="image/*" style={{ display:'none' }} onChange={e => uploadCoverPhoto(e.target.files[0])}/>
             </label>
           ) : null}
@@ -301,31 +303,31 @@ export default function HomeView({
               <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:10 }}>
                 <Icon name="Megaphone" size={18} color="rgba(255,255,255,0.9)"/>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:3, fontWeight:600 }}>MENSAJE GENERAL</div>
-                  <div style={{ fontSize:13, color:'#fff', lineHeight:1.5 }}>{msg.text}</div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:4 }}>
+                  <div style={{ fontSize:10, color:subColor, letterSpacing:'0.08em', marginBottom:3, fontWeight:600 }}>MENSAJE GENERAL</div>
+                  <div style={{ fontSize:13, color:textColor, lineHeight:1.5 }}>{msg.text}</div>
+                  <div style={{ fontSize:10, color:subColor, marginTop:4 }}>
                     {new Date(msg.ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}
                   </div>
                 </div>
                 {isAdmin && (
-                  <button onClick={archiveMsg} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.5)', fontSize:16, cursor:'pointer', padding:0 }}>✕</button>
+                  <button onClick={archiveMsg} style={{ background:'none', border:'none', color:subColor, fontSize:16, cursor:'pointer', padding:0 }}>✕</button>
                 )}
               </div>
               {Object.keys(project.depts).length > 0 && (
-                <div style={{ borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:10 }}>
-                  <div style={{ fontSize:9, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', marginBottom:7, fontWeight:600 }}>ACUSE DE LECTURA</div>
+                <div style={{ borderTop:`1px solid ${dimBorder}`, paddingTop:10 }}>
+                  <div style={{ fontSize:9, color:subColor, letterSpacing:'0.08em', marginBottom:7, fontWeight:600 }}>ACUSE DE LECTURA</div>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
                     {Object.entries(project.depts).map(([k,m]) => {
                       const acked = msg.acks.includes(k)
                       return (
                         <button key={k} onClick={() => ackMsg(k)}
-                          style={{ fontFamily:'inherit', fontSize:10, fontWeight:700, padding:'4px 10px', cursor:'pointer', border:'none', borderRadius:20, background: acked ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)', color: acked ? '#0B7285' : 'rgba(255,255,255,0.7)' }}>
+                          style={{ fontFamily:'inherit', fontSize:10, fontWeight:700, padding:'4px 10px', cursor:'pointer', border:'none', borderRadius:20, background: acked ? 'rgba(255,255,255,0.9)' : subGlass, color: acked ? '#0B7285' : subColor }}>
                           {acked ? '✓ ' : ''}{m.label}
                         </button>
                       )
                     })}
                   </div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:7 }}>
+                  <div style={{ fontSize:10, color:subColor, marginTop:7 }}>
                     {msg.acks.length}/{Object.keys(project.depts).length} departamentos confirmaron
                   </div>
                 </div>
@@ -333,17 +335,17 @@ export default function HomeView({
             </div>
           ) : (isAdmin && !showMsgForm && (
             <button onClick={() => setShowMsgForm(true)}
-              style={{ width:'100%', fontFamily:'inherit', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.6)', background:glass, border:'1px dashed rgba(255,255,255,0.2)', borderRadius:14, padding:'13px 16px', cursor:'pointer', marginBottom:16, textAlign:'left', display:'flex', alignItems:'center', gap:6 }}>
-              <Icon name="Megaphone" size={13} color="rgba(255,255,255,0.5)"/> Escribir mensaje general
+              style={{ width:'100%', fontFamily:'inherit', fontSize:13, fontWeight:600, color:subColor, background:glass, border:`1px dashed ${dimBorder}`, borderRadius:14, padding:'13px 16px', cursor:'pointer', marginBottom:16, textAlign:'left', display:'flex', alignItems:'center', gap:6 }}>
+              <Icon name="Megaphone" size={13} color={subColor}/> Escribir mensaje general
             </button>
           ))}
           {isAdmin && showMsgForm && (
             <div style={{ background:'rgba(0,0,0,0.18)', borderRadius:14, padding:16, marginBottom:16 }}>
               <textarea value={msgDraft} onChange={e => setMsgDraft(e.target.value)} placeholder="Mensaje para el equipo..." rows={3} autoFocus
-                style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:10, padding:'10px 12px', color:'#fff', outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
+                style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:subGlass, border:`1px solid ${dimBorder}`, borderRadius:10, padding:'10px 12px', color:textColor, outline:'none', resize:'none', marginBottom:10, boxSizing:'border-box' }}/>
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={() => { setShowMsgForm(false); setMsgDraft('') }}
-                  style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:600, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.6)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
+                  style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:600, background:subGlass, color:subColor, border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
                 <button onClick={postMsg}
                   style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:'rgba(255,255,255,0.9)', color:'#0B7285', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Publicar</button>
               </div>
@@ -359,10 +361,10 @@ export default function HomeView({
           {Object.keys(project.depts).length > 0 && (
             <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.12em', fontFamily:'inherit', fontWeight:600 }}>DEPARTAMENTOS</div>
+                <div style={{ fontSize:10, color:subColor, letterSpacing:'0.12em', fontFamily:'inherit', fontWeight:600 }}>DEPARTAMENTOS</div>
                 {isAdmin && (
                   <button onClick={() => setShowAddDept(true)} className="tap"
-                    style={{ fontFamily:'inherit', fontSize:11, color:'rgba(255,255,255,0.6)', background:glass, border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>
+                    style={{ fontFamily:'inherit', fontSize:11, color:subColor, background:glass, border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>
                     + Agregar
                   </button>
                 )}
@@ -387,7 +389,7 @@ export default function HomeView({
                           </div>
                         </foreignObject>
                       </svg>
-                      <div style={{ fontSize:9, fontWeight:700, color:'#fff', textAlign:'center', letterSpacing:'0.01em', lineHeight:1.2 }}>{m.label}</div>
+                      <div style={{ fontSize:9, fontWeight:700, color:textColor, textAlign:'center', letterSpacing:'0.01em', lineHeight:1.2 }}>{m.label}</div>
                       {isAdmin && (
                         <button onClick={() => removeDept(k)}
                           style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>
@@ -405,10 +407,10 @@ export default function HomeView({
           {project.days.length > 0 && (
             <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', letterSpacing:'0.12em', fontFamily:'inherit', fontWeight:600 }}>DÍAS DE RODAJE</div>
+                <div style={{ fontSize:10, color:subColor, letterSpacing:'0.12em', fontFamily:'inherit', fontWeight:600 }}>DÍAS DE RODAJE</div>
                 {isAdmin && (
                   <button onClick={addDay} className="tap"
-                    style={{ fontFamily:'inherit', fontSize:11, color:'rgba(255,255,255,0.6)', background:glass, border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>
+                    style={{ fontFamily:'inherit', fontSize:11, color:subColor, background:glass, border:'none', borderRadius:20, padding:'4px 12px', cursor:'pointer', fontWeight:600 }}>
                     + Agregar día
                   </button>
                 )}
@@ -438,23 +440,23 @@ export default function HomeView({
                   return (
                     <div key={day.id} style={{ position:'relative' }}>
                       <button onClick={() => onSelectDay(day.id)} className="tap"
-                        style={{ display:'flex', alignItems:'center', gap:12, background:glass, padding:'13px 14px', border:'none', borderBottom:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontFamily:'inherit', textAlign:'left', width:'100%', borderRadius:radius }}>
+                        style={{ display:'flex', alignItems:'center', gap:12, background:glass, padding:'13px 14px', border:'none', borderBottom:`1px solid ${dimBorder}`, cursor:'pointer', fontFamily:'inherit', textAlign:'left', width:'100%', borderRadius:radius }}>
                         <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(0,0,0,0.25)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                           <span style={{ fontSize:15, fontWeight:700, color:'#fff' }}>{i+1}</span>
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:14, fontWeight:700, color:'#fff' }}>{day.label}</div>
-                          <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginBottom:5 }}>{day.date} · {day.scenes.length} escenas</div>
-                          <div style={{ background:'rgba(255,255,255,0.15)', height:3, borderRadius:3, overflow:'hidden' }}>
-                            <div style={{ background:'rgba(255,255,255,0.85)', height:'100%', width:`${p*100}%`, borderRadius:3 }}/>
+                          <div style={{ fontSize:14, fontWeight:700, color:textColor }}>{day.label}</div>
+                          <div style={{ fontSize:11, color:subColor, marginBottom:5 }}>{day.date} · {day.scenes.length} escenas</div>
+                          <div style={{ background:subGlass, height:3, borderRadius:3, overflow:'hidden' }}>
+                            <div style={{ background: isLightTheme ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.85)', height:'100%', width:`${p*100}%`, borderRadius:3 }}/>
                           </div>
                         </div>
-                        <span style={{ fontSize:18, color:'rgba(255,255,255,0.3)', fontWeight:300 }}>›</span>
+                        <span style={{ fontSize:18, color:subColor, fontWeight:300 }}>›</span>
                       </button>
                       {isAdmin && (
                         <div style={{ position:'absolute', top:-6, right:-6, display:'flex', gap:4, zIndex:5 }}>
-                          <button onClick={() => startEditDay(day)} style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✎</button>
-                          <button onClick={() => deleteDay(day.id)} style={{ width:22, height:22, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1.5px solid rgba(255,255,255,0.4)', color:'#fff', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                          <button onClick={() => startEditDay(day)} style={{ width:22, height:22, borderRadius:'50%', background:subGlass, border:`1.5px solid ${dimBorder}`, color:textColor, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✎</button>
+                          <button onClick={() => deleteDay(day.id)} style={{ width:22, height:22, borderRadius:'50%', background:subGlass, border:`1.5px solid ${dimBorder}`, color:textColor, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
                         </div>
                       )}
                     </div>
@@ -475,24 +477,24 @@ export default function HomeView({
               { onClick:togglePin,        icon:pinned?'PinOff':'Pin', label:pinned?'Pineado':'Pinear', sub:pinned?'Quitar del inicio':'Acceso directo', active:pinned },
             ].map(a => (
               <button key={a.label} onClick={a.onClick} className="tap"
-                style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: a.active ? 'rgba(255,255,255,0.12)' : glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
-                <Icon name={a.icon} size={22} color="#fff"/>
-                <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>{a.label}</div>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{a.sub}</div>
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: a.active ? subGlass : glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
+                <Icon name={a.icon} size={22} color={textColor}/>
+                <div style={{ fontSize:12, fontWeight:600, color:textColor }}>{a.label}</div>
+                <div style={{ fontSize:10, color:subColor }}>{a.sub}</div>
               </button>
             ))}
             {isAdmin && (
               <>
                 <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
-                  <Icon name="FileText" size={22} color="#fff"/>
-                  <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Exportar PDF</div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Resumen completo</div>
+                  <Icon name="FileText" size={22} color={textColor}/>
+                  <div style={{ fontSize:12, fontWeight:600, color:textColor }}>Exportar PDF</div>
+                  <div style={{ fontSize:10, color:subColor }}>Resumen completo</div>
                 </button>
                 {onNewProject && (
                   <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
-                    <Icon name="PlusCircle" size={22} color="#fff"/>
-                    <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>Nuevo proyecto</div>
-                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Crear rodaje</div>
+                    <Icon name="PlusCircle" size={22} color={textColor}/>
+                    <div style={{ fontSize:12, fontWeight:600, color:textColor }}>Nuevo proyecto</div>
+                    <div style={{ fontSize:10, color:subColor }}>Crear rodaje</div>
                   </button>
                 )}
               </>
