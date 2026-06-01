@@ -28,7 +28,7 @@ import ContinuidadFotosTab from './tabs/ContinuidadFotosTab'
 const TAB_TO_SECTION = {
   info:'info', checklist:'checklist', gastos:'gastos', citaciones:'citaciones',
   mural:'mural', integrantes:'integrantes', adcomentarios:'info',
-  crew_total:'integrantes', pedidos:'info', rental:'info', elenco:'checklist',
+  crew_total:'integrantes', rental:'info', elenco:'checklist',
   menu:'integrantes', tarjetas:'checklist', checklist_equipo:'checklist',
   locaciones:'info', continuidad_notas:'checklist', continuidad_fotos:'mural',
 }
