@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Sun, Thermometer, Video, Clapperboard, ChevronRight } from 'lucide-react'
+import { Sun, Thermometer, Video, Clapperboard, ChevronRight, Presentation } from 'lucide-react'
 import SunARView from './SunARView'
 import ColorTempView from './ColorTempView'
 import DirectorViewfinderView from './DirectorViewfinderView'
 import ClaquetaView from './ClaquetaView'
+import PPMView from './PPMView'
 
 const TOOLS = [
+  { key: 'ppm', icon: Presentation, title: 'PPM', desc: 'Presentación Pre-Production Meeting' },
   { key: 'sun-ar', icon: Sun, title: 'Sun AR', desc: 'Trayectoria del sol en tiempo real' },
   { key: 'color-temp', icon: Thermometer, title: 'Color Temperature', desc: 'Temperatura de color en Kelvin' },
   { key: 'viewfinder', icon: Video, title: "Director's Viewfinder", desc: 'Previsualización por sensor + lente' },
@@ -16,6 +18,7 @@ export default function ToolsMenuView({ onBack, project, projectId }) {
   const [tool, setTool] = useState(null)
   const back = () => setTool(null)
 
+  if (tool === 'ppm')        return <PPMView project={project} projectId={projectId} onBack={back} />
   if (tool === 'sun-ar')     return <SunARView project={project} onBack={back} />
   if (tool === 'color-temp') return <ColorTempView project={project} onBack={back} />
   if (tool === 'viewfinder') return <DirectorViewfinderView project={project} projectId={projectId} onBack={back} />
