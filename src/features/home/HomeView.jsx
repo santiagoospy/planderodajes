@@ -109,6 +109,7 @@ export default function HomeView({
   const [online, setOnline]                   = useState(navigator.onLine)
   const [downloading, setDownloading]         = useState(false)
   const [dlProgress, setDlProgress]           = useState(null)
+  const [editingSections, setEditingSections] = useState(false)
   const [downloaded, setDownloaded]           = useState(() => isDownloaded(projectId))
 
   const allScenes = project.days.flatMap(d => d.scenes)
@@ -609,39 +610,77 @@ export default function HomeView({
           )}
 
           {/* Action grid */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
-            {[
-              { onClick:onOpenDropbox,    icon:'FolderOpen', label:'Dropbox',     sub:'Archivos del proyecto' },
-              { onClick:onOpenCitaciones, icon:'Clock',      label:'Citaciones',  sub:'Horarios de los deptos' },
-              { onClick:onOpenMessages,   icon:'Mail',       label:'Mensajes',    sub:'Comunicaciones' },
-              { onClick:onOpenScouting,   icon:'Map',        label:'Scouting',    sub:'Locaciones y fotos' },
-              { onClick:onOpenTools,      icon:'Wrench',     label:'Herramientas',sub:'Sun AR, Color Temp' },
-              { onClick:togglePin,        icon:pinned?'PinOff':'Pin', label:pinned?'Pineado':'Pinear', sub:pinned?'Quitar del inicio':'Acceso directo', active:pinned },
-            ].map(a => (
-              <button key={a.label} onClick={a.onClick} className="tap"
-                style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: a.active ? subGlass : glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
-                <Icon name={a.icon} size={22} color={textColor}/>
-                <div style={{ fontSize:12, fontWeight:600, color:textColor }}>{a.label}</div>
-                <div style={{ fontSize:10, color:subColor }}>{a.sub}</div>
-              </button>
-            ))}
-            {isAdmin && (
+          {(() => {
+            const hiddenSections = project.hiddenSections || []
+            const toggleSection = (key) => {
+              const curr = project.hiddenSections || []
+              const next = curr.includes(key) ? curr.filter(k => k !== key) : [...curr, key]
+              onUpdateProject({ ...project, hiddenSections: next })
+            }
+            const allSections = [
+              { key:'dropbox',     onClick:onOpenDropbox,    icon:'FolderOpen', label:'Dropbox',      sub:'Archivos del proyecto' },
+              { key:'citaciones',  onClick:onOpenCitaciones, icon:'Clock',      label:'Citaciones',   sub:'Horarios de los deptos' },
+              { key:'mensajes',    onClick:onOpenMessages,   icon:'Mail',       label:'Mensajes',     sub:'Comunicaciones' },
+              { key:'scouting',    onClick:onOpenScouting,   icon:'Map',        label:'Scouting',     sub:'Locaciones y fotos' },
+              { key:'herramientas',onClick:onOpenTools,      icon:'Wrench',     label:'Herramientas', sub:'Sun AR, Color Temp' },
+            ]
+            const visibleSections = editingSections ? allSections : allSections.filter(s => !hiddenSections.includes(s.key))
+            return (
               <>
-                <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
-                  <Icon name="FileText" size={22} color={textColor}/>
-                  <div style={{ fontSize:12, fontWeight:600, color:textColor }}>Exportar PDF</div>
-                  <div style={{ fontSize:10, color:subColor }}>Resumen completo</div>
-                </button>
-                {onNewProject && (
-                  <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
-                    <Icon name="PlusCircle" size={22} color={textColor}/>
-                    <div style={{ fontSize:12, fontWeight:600, color:textColor }}>Nuevo proyecto</div>
-                    <div style={{ fontSize:10, color:subColor }}>Crear rodaje</div>
-                  </button>
+                {isAdmin && (
+                  <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:6 }}>
+                    <button onClick={() => setEditingSections(e => !e)}
+                      style={{ background: editingSections ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)', border:'none', borderRadius:10, padding:'5px 12px', fontSize:11, fontWeight:700, color:textColor, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5 }}>
+                      <Icon name={editingSections ? 'Check' : 'Settings2'} size={12} color={textColor} />
+                      {editingSections ? 'Listo' : 'Secciones'}
+                    </button>
+                  </div>
                 )}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+                  {visibleSections.map(a => {
+                    const isHidden = hiddenSections.includes(a.key)
+                    return (
+                      <button key={a.key}
+                        onClick={editingSections ? () => toggleSection(a.key) : a.onClick}
+                        className="tap"
+                        style={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: isHidden && editingSections ? 'rgba(0,0,0,0.15)' : glass, borderRadius:14, padding:'18px 8px', border: editingSections ? `2px solid ${isHidden ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.35)'}` : 'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center', opacity: isHidden && editingSections ? 0.5 : 1 }}>
+                        <Icon name={a.icon} size={22} color={textColor}/>
+                        <div style={{ fontSize:12, fontWeight:600, color:textColor }}>{a.label}</div>
+                        <div style={{ fontSize:10, color:subColor }}>{a.sub}</div>
+                        {editingSections && (
+                          <div style={{ position:'absolute', top:6, right:6, width:18, height:18, borderRadius:'50%', background: isHidden ? 'rgba(255,255,255,0.15)' : 'rgba(80,200,120,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <Icon name={isHidden ? 'EyeOff' : 'Eye'} size={10} color="#fff" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                  <button onClick={togglePin} className="tap"
+                    style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background: pinned ? subGlass : glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
+                    <Icon name={pinned?'PinOff':'Pin'} size={22} color={textColor}/>
+                    <div style={{ fontSize:12, fontWeight:600, color:textColor }}>{pinned?'Pineado':'Pinear'}</div>
+                    <div style={{ fontSize:10, color:subColor }}>{pinned?'Quitar del inicio':'Acceso directo'}</div>
+                  </button>
+                  {isAdmin && (
+                    <>
+                      <button onClick={onExport} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
+                        <Icon name="FileText" size={22} color={textColor}/>
+                        <div style={{ fontSize:12, fontWeight:600, color:textColor }}>Exportar PDF</div>
+                        <div style={{ fontSize:10, color:subColor }}>Resumen completo</div>
+                      </button>
+                      {onNewProject && (
+                        <button onClick={onNewProject} className="tap" style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, background:glass, borderRadius:14, padding:'18px 8px', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'center' }}>
+                          <Icon name="PlusCircle" size={22} color={textColor}/>
+                          <div style={{ fontSize:12, fontWeight:600, color:textColor }}>Nuevo proyecto</div>
+                          <div style={{ fontSize:10, color:subColor }}>Crear rodaje</div>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </>
-            )}
-          </div>
+            )
+          })()}
 
         </div>
       </div>

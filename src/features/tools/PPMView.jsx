@@ -392,17 +392,20 @@ export default function PPMView({ project, projectId, onBack }) {
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-l">
 
       {/* Header */}
-      <div className="no-print" style={{ background:'var(--bg-secondary)', borderBottom:'1px solid var(--border-light)', padding:'calc(env(safe-area-inset-top,0px)+14px) 20px 14px', display:'flex', alignItems:'center', gap:12, position:'sticky', top:0, zIndex:10 }}>
-        <button onClick={onBack} className="tap" style={{ background:'var(--bg-card)', border:'1px solid var(--border-light)', color:'var(--text-primary)', width:36, height:36, borderRadius:8, fontSize:18, cursor:'pointer', fontFamily:'inherit' }}>←</button>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>PPM</div>
-          <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>Pre-Production Meeting</div>
+      <div className="no-print" style={{ background:'var(--bg-secondary)', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ height:'env(safe-area-inset-top, 0px)' }} />
+        <div style={{ padding:'12px 20px 12px', display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={onBack} className="tap" style={{ background:'var(--bg-card)', border:'1px solid var(--border-light)', color:'var(--text-primary)', width:40, height:40, borderRadius:10, fontSize:18, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>←</button>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>PPM</div>
+            <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>Pre-Production Meeting</div>
+          </div>
+          {saving && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>Guardando...</div>}
+          <button onClick={() => window.print()} className="tap"
+            style={{ background:'var(--color-primary)', color:'#fff', border:'none', borderRadius:10, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+            <Icon name="Printer" size={14} color="#fff" /> Generar PDF
+          </button>
         </div>
-        {saving && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>Guardando...</div>}
-        <button onClick={() => window.print()} className="tap"
-          style={{ background:'var(--color-primary)', color:'#fff', border:'none', borderRadius:10, padding:'9px 16px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
-          <Icon name="Printer" size={14} color="#fff" /> Generar PDF
-        </button>
       </div>
 
       {/* Hint */}
