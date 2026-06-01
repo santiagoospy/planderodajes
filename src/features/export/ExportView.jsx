@@ -8,7 +8,7 @@ export default function ExportView({ project, onBack, onDelete, accentColor }) {
   const accent = accentColor || '#0B7285'
 
   return (
-    <div style={{ background: 'var(--bg-secondary)', minHeight: '100dvh', padding: '32px 28px', fontFamily: 'inherit' }}>
+    <div style={{ background: 'var(--bg-secondary)', minHeight: '100dvh', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 28px 32px', fontFamily: 'inherit' }}>
       <div className="no-print" style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 24 }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
           ‹ Volver

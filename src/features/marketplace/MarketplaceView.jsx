@@ -344,7 +344,7 @@ export function MarketplaceView({ onBack }) {
   return (
     <div className="min-h-screen font-[Inter] flex flex-col" style={{ background: 'linear-gradient(165deg, #062F38 0%, #084C5A 60%, #0A6070 100%)' }}>
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#084C5A] via-[#0B7285] to-[#2EC4B6] px-5 pt-4 pb-5 sticky top-0 z-10 flex flex-col">
+      <div className="bg-gradient-to-br from-[#084C5A] via-[#0B7285] to-[#2EC4B6] px-5 pb-5 sticky top-0 z-10 flex flex-col" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
         <button
           onClick={onBack}
           className="bg-transparent border-0 text-white/70 cursor-pointer px-0 py-3 font-[Inter] text-left"
