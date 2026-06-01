@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { ProgressRing } from '../../components/ui/ProgressRing'
 import { PinModal } from '../../components/ui/PinModal'
@@ -8,6 +8,75 @@ import { api } from '../../services/api'
 import { getTheme } from '../../constants/themes'
 import WeatherWidget from '../weather/WeatherWidget'
 import IMessageChat from '../messaging/IMessageChat'
+
+function CoverPositionPicker({ src, initial, onSave, onCancel }) {
+  const parse = (s) => {
+    if (!s) return { x: 50, y: 50 }
+    const parts = s.split(' ')
+    return { x: parseFloat(parts[0]) || 50, y: parseFloat(parts[1]) || 50 }
+  }
+  const [pos, setPos]   = useState(() => parse(initial))
+  const dragging        = useRef(false)
+  const lastPt          = useRef({ x: 0, y: 0 })
+
+  const onDown = (e) => {
+    dragging.current = true
+    const p = e.touches ? e.touches[0] : e
+    lastPt.current = { x: p.clientX, y: p.clientY }
+  }
+  const onMove = (e) => {
+    if (!dragging.current) return
+    e.preventDefault()
+    const p = e.touches ? e.touches[0] : e
+    const dx = p.clientX - lastPt.current.x
+    const dy = p.clientY - lastPt.current.y
+    lastPt.current = { x: p.clientX, y: p.clientY }
+    setPos(prev => ({
+      x: Math.max(0, Math.min(100, prev.x - dx * 0.25)),
+      y: Math.max(0, Math.min(100, prev.y - dy * 0.25)),
+    }))
+  }
+  const onUp = () => { dragging.current = false }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.97)', display:'flex', flexDirection:'column' }}>
+      {/* Header */}
+      <div style={{ padding:'calc(env(safe-area-inset-top,0px) + 16px) 20px 16px', display:'flex', alignItems:'center' }}>
+        <button onClick={onCancel}
+          style={{ background:'none', border:'none', color:'rgba(255,255,255,0.55)', fontSize:13, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
+          Cancelar
+        </button>
+        <div style={{ flex:1, textAlign:'center', fontSize:14, fontWeight:700, color:'#fff', fontFamily:'inherit' }}>
+          Ajustar encuadre
+        </div>
+        <button onClick={() => onSave(`${Math.round(pos.x)}% ${Math.round(pos.y)}%`)}
+          style={{ background:'none', border:'none', color:'var(--color-primary)', fontSize:13, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
+          Guardar
+        </button>
+      </div>
+
+      {/* Preview con misma altura que la portada real */}
+      <div
+        style={{ position:'relative', width:'100%', height:200, overflow:'hidden', cursor:'grab', touchAction:'none', userSelect:'none' }}
+        onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
+      >
+        <img src={src} alt="" draggable={false}
+          style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:`${pos.x}% ${pos.y}%`, pointerEvents:'none' }} />
+        {/* Borde de encuadre */}
+        <div style={{ position:'absolute', inset:0, border:'2px solid rgba(255,255,255,0.5)', pointerEvents:'none' }} />
+        {/* Guías de tercios */}
+        <div style={{ position:'absolute', inset:0, pointerEvents:'none',
+          backgroundImage:'linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)',
+          backgroundSize:'33.33% 33.33%' }} />
+      </div>
+
+      <div style={{ padding:'20px 20px 8px', textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:12, fontFamily:'inherit' }}>
+        Arrastrá la imagen para elegir qué parte mostrar
+      </div>
+    </div>
+  )
+}
 
 export default function HomeView({
   project, isAdmin, save, depts, projectId,
@@ -34,7 +103,8 @@ export default function HomeView({
   const [editingDayId, setEditingDayId] = useState(null)
   const [editingDayLabel, setEditingDayLabel] = useState('')
   const [editingDayDate, setEditingDayDate]   = useState('')
-  const [showPinModal, setShowPinModal] = useState(false)
+  const [showPinModal, setShowPinModal]       = useState(false)
+  const [showCoverPicker, setShowCoverPicker] = useState(false)
 
   const allScenes = project.days.flatMap(d => d.scenes)
   const doneAll   = allScenes.filter(s => s.done).length
@@ -260,9 +330,14 @@ export default function HomeView({
           {/* Cover photo */}
           {project.logo ? (
             <div style={{ position:'relative', width:'100%', marginBottom:16, height:200, overflow:'hidden', borderRadius:14 }}>
-              <img src={project.logo} alt="Portada" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+              <img src={project.logo} alt="Portada"
+                style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition: project.logoPosition || 'center' }}/>
               {isAdmin && (
                 <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
+                  <button onClick={() => setShowCoverPicker(true)} className="tap"
+                    style={{ background:'rgba(0,0,0,0.6)', border:'none', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:11, color:'#fff', fontWeight:600, fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
+                    <Icon name="Crop" size={12} color="#fff"/> Ajustar
+                  </button>
                   <label className="tap" style={{ background:'rgba(0,0,0,0.6)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:11, color:'#fff', fontWeight:600, fontFamily:'inherit' }}>
                     <Icon name="Camera" size={12} color="#fff" style={{marginRight:4}}/> Cambiar
                     <input type="file" accept="image/*" style={{ display:'none' }} onChange={e => uploadCoverPhoto(e.target.files[0])}/>
@@ -514,6 +589,18 @@ export default function HomeView({
             onUnlock()
           }}
           onCancel={() => setShowPinModal(false)}
+        />
+      )}
+
+      {showCoverPicker && (
+        <CoverPositionPicker
+          src={project.logo}
+          initial={project.logoPosition}
+          onSave={(pos) => {
+            onUpdateProject({ ...project, logoPosition: pos })
+            setShowCoverPicker(false)
+          }}
+          onCancel={() => setShowCoverPicker(false)}
         />
       )}
     </div>
