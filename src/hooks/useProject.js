@@ -25,8 +25,9 @@ export function useProject(projectId) {
 
   const load = useCallback(async () => {
     if (!projectId) return
-    setLoading(true)
     setError(null)
+    // Only show blocking spinner when there's nothing cached to display
+    if (!storage.getProject(projectId)) setLoading(true)
     try {
       const data = await api.getProject(projectId)
       if (data !== null) {

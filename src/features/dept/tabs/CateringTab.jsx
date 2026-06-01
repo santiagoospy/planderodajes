@@ -155,7 +155,7 @@ export default function CateringTab({ color, projectId, project }) {
       })}
       {loaded && (
         !showExtraForm
-          ? <button onClick={() => setShowExtraForm(true)} style={{ width:'100%', fontFamily:'inherit', fontSize:13, fontWeight:700, color, background:'none', border:`1px dashed ${color}55`, borderRadius:14, padding:'12px', cursor:'pointer', marginTop:4 }}>+ Agregar invitado / externo</button>
+          ? <button onClick={() => setShowExtraForm(true)} style={{ width:'100%', fontFamily:'inherit', fontSize:13, fontWeight:700, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:14, padding:'12px', cursor:'pointer', marginTop:4 }}>+ Agregar invitado / externo</button>
           : <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30`, marginTop:4 }}>
               <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.06em', marginBottom:10, fontFamily:'inherit' }}>INVITADO / EXTERNO</div>
               <input value={extraForm.nombre} onChange={e => setExtraForm(f=>({...f,nombre:e.target.value}))} placeholder="Nombre (ej: Cliente, Chofer externo)"

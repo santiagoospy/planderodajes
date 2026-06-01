@@ -179,7 +179,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
 
         {isAdmin && !showAdd && (
           <button onClick={() => setShowAdd(true)} className="tap"
-            style={{ width:'100%', fontFamily:'inherit', fontSize:13, color, background:'none', border:`1px dashed ${color}55`, borderRadius:12, padding:'12px', cursor:'pointer', marginTop:4 }}>
+            style={{ width:'100%', fontFamily:'inherit', fontSize:13, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'12px', cursor:'pointer', marginTop:4 }}>
             + Agregar escena
           </button>
         )}

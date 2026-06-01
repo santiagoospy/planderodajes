@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { api } from '../../../services/api'
+import { storage } from '../../../services/storage'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { PinModal } from '../../../components/ui/PinModal'
@@ -22,6 +23,7 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
     const DEPTS = ['direccion','fotografia','sonido','arte','locaciones','casting','catering']
     Promise.all(DEPTS.map(d =>
       api.getDeptData(projectId, d, 'gastos')
+        .catch(() => storage.getDeptData(projectId, d, 'gastos'))
         .then(data => ({ dept: d, gastos: (data || []).map(g => ({ ...g, presupuestado: parseFloat(g.presupuestado) || 0 })) }))
         .catch(() => ({ dept: d, gastos: [] }))
     )).then(results => {

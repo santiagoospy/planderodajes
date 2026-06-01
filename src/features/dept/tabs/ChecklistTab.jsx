@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
-import { api } from '../../../services/api'
+import { useDeptData } from '../../../hooks/useDeptData'
 
 const fmtTs = (ts) => {
   if (!ts) return null
@@ -9,22 +9,12 @@ const fmtTs = (ts) => {
 }
 
 export default function ChecklistTab({ color, deptKey, projectId, project }) {
-  const [items, setItemsRaw] = useState([])
+  const { items, save: saveItems } = useDeptData(projectId, deptKey, 'checklist', [])
   const [texto, setTexto]    = useState('')
   const [escenas, setEscenas] = useState([])
   const [showAdd, setShowAdd] = useState(false)
   const [filterEstado, setFilterEstado] = useState('todos')
   const [filterEscena, setFilterEscena] = useState('todas')
-
-  useEffect(() => {
-    if (!projectId) return
-    api.getDeptData(projectId, deptKey, 'checklist').then(d => { if (Array.isArray(d)) setItemsRaw(d) }).catch(() => {})
-  }, [projectId, deptKey])
-
-  const saveItems = (v) => {
-    setItemsRaw(v)
-    api.saveDeptData(projectId, deptKey, 'checklist', v).catch(() => {})
-  }
 
   const todasEscenas = project
     ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id, label:`${s.num} — ${s.title.slice(0,30)}` })))

@@ -1,27 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
-import { api } from '../../../services/api'
+import { useDeptData } from '../../../hooks/useDeptData'
 
 const fmt = (ts) => new Date(ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})
 
 export default function DeptMuralTab({ color, deptKey, projectId }) {
-  const [mensajes, setMensajesRaw] = useState([])
+  const { items: mensajes, save: saveMensajes } = useDeptData(projectId, deptKey, 'mural', [])
   const [autor, setAutor]           = useState('')
   const [adjunto, setAdjunto]       = useState(null)
   const [uploading, setUploading]   = useState(false)
   const [showLinkForm, setShowLinkForm] = useState(false)
   const [linkUrl, setLinkUrl]       = useState('')
   const [linkName, setLinkName]     = useState('')
-
-  useEffect(() => {
-    if (!projectId) return
-    api.getDeptData(projectId, deptKey, 'mural').then(d => { if (Array.isArray(d)) setMensajesRaw(d) }).catch(() => {})
-  }, [projectId, deptKey])
-
-  const saveMensajes = (v) => {
-    setMensajesRaw(v)
-    api.saveDeptData(projectId, deptKey, 'mural', v).catch(() => {})
-  }
 
   const handleFile = async (e) => {
     const file = e.target.files[0]

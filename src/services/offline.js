@@ -14,7 +14,7 @@ const DL_KEY = 'offline-dl' // { [projectId]: timestamp }
 
 // All section keys that might exist per department
 const DEPT_SECTIONS = [
-  'info', 'checklist', 'integrantes', 'citaciones', 'pedidos', 'gastos', 'mural',
+  'info', 'checklist', 'integrantes', 'citas', 'pedidos', 'gastos', 'mural',
   'adcomentarios', 'crew_total', 'rental', 'elenco', 'menu',
   'tarjetas', 'checklist_equipo', 'locaciones',
   'continuidad_notas', 'continuidad_fotos',

@@ -119,7 +119,7 @@ function CastingPrincipales({ color, projectId, project }) {
         })}
       </div>
       {!showForm
-        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color, background:'none', border:`1px dashed ${color}55`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar actor principal</button>
+        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar actor principal</button>
         : <ActorForm color={color} project={project} form={form} set={set} editId={editId} onSave={save} onCancel={() => { setShowForm(false); setEditId(null) }} label="ACTOR PRINCIPAL" />
       }
     </div>
@@ -175,7 +175,7 @@ function CastingExtras({ color, projectId, project }) {
         ))}
       </div>
       {!showForm
-        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color, background:'none', border:`1px dashed ${color}55`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar extra</button>
+        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar extra</button>
         : <ActorForm color={color} project={project} form={form} set={set} editId={editId} onSave={save} onCancel={() => { setShowForm(false); setEditId(null) }} label="EXTRA" />
       }
     </div>

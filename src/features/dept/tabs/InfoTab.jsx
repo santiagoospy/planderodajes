@@ -1,24 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
-import { api } from '../../../services/api'
+import { db } from '../../../services/db'
 
 export default function InfoTab({ color, deptKey, projectId }) {
   const [info, setInfo] = useState({ responsable:'', contacto:'', notas:'' })
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!projectId) return
-    api.getDeptData(projectId, deptKey, 'info')
-      .then(d => { if (d) setInfo(Array.isArray(d) ? (d[0] || {}) : d) })
-      .catch(() => {})
+    return db.onDeptData(projectId, deptKey, 'info', (d) => {
+      if (d) setInfo(Array.isArray(d) ? (d[0] || {}) : d)
+    })
   }, [projectId, deptKey])
 
   const save = (updated) => {
     setInfo(updated)
-    setSaving(true)
-    api.saveDeptData(projectId, deptKey, 'info', updated)
-      .then(() => setSaving(false))
-      .catch(() => setSaving(false))
+    db.saveDeptData(projectId, deptKey, 'info', updated)
   }
 
   const set = (k, v) => save({ ...info, [k]: v })
@@ -44,8 +40,8 @@ export default function InfoTab({ color, deptKey, projectId }) {
           style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:12, padding:'14px 16px', color:'var(--text-primary)', outline:'none', resize:'vertical', lineHeight:1.6, minHeight:180 }}/>
       </div>
       <div style={{ fontSize:10, color:'var(--color-success)', fontFamily:'inherit', textAlign:'right', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:4 }}>
-        <Icon name={saving?'Loader':'Save'} size={10} color="var(--color-success)"/>
-        {saving ? 'Guardando...' : 'Se guarda automáticamente'}
+        <Icon name="Save" size={10} color="var(--color-success)"/>
+        Se guarda automáticamente
       </div>
     </div>
   )

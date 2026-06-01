@@ -1,26 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
-import { api } from '../../../services/api'
+import { useDeptData } from '../../../hooks/useDeptData'
 
 const toMin = (s) => { if (!s) return 0; const [h,m] = (s||'0:0').split(':'); return +h*60+(+m||0) }
 const DAY_COLORS = ['#FF006E','#FF1493','#E91E63','#EC4899','#F0388C','#FF3399','#FF5BA8','#FF7DBA','#FFA0CC']
 
 export default function CitacionesTab({ color, deptKey, projectId, project }) {
-  const [citas, setCitasRaw]   = useState([])
+  const { items: citas, save: saveCitas } = useDeptData(projectId, deptKey, 'citas', [])
   const [showAdd, setShowAdd]  = useState(false)
   const [editId, setEditId]    = useState(null)
   const [form, setForm]        = useState({ tipo:'', hora:'', lugar:'', dia:'', notas:'' })
   const [lugarCustom, setLugarCustom] = useState('')
-
-  useEffect(() => {
-    if (!projectId) return
-    api.getDeptData(projectId, deptKey, 'citas').then(d => { if (Array.isArray(d)) setCitasRaw(d) }).catch(() => {})
-  }, [projectId, deptKey])
-
-  const saveCitas = (v) => {
-    setCitasRaw(v)
-    api.saveDeptData(projectId, deptKey, 'citas', v).catch(() => {})
-  }
 
   const set = (k, v) => setForm(f => ({...f, [k]:v}))
 

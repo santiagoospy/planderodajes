@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
-import { api } from '../../../services/api'
+import { useDeptData } from '../../../hooks/useDeptData'
 
 const CONDICIONES = ['Sin restricciones','Vegano','Vegetariano','Celíaco','Sin gluten','Sin lactosa','Kosher','Halal','Diabético']
 
@@ -16,20 +16,10 @@ function iconoCond(c) {
 }
 
 export default function IntegrantesTab({ color, deptKey, projectId }) {
-  const [personas, setPersonasRaw] = useState([])
+  const { items: personas, save: savePersonas } = useDeptData(projectId, deptKey, 'integrantes', [])
   const [showAdd, setShowAdd]      = useState(false)
   const [editId, setEditId]        = useState(null)
   const [form, setForm] = useState({ nombre:'', apodo:'', cedula:'', rol:'', condicionAlimentaria:'' })
-
-  useEffect(() => {
-    if (!projectId) return
-    api.getDeptData(projectId, deptKey, 'integrantes').then(d => { if (Array.isArray(d)) setPersonasRaw(d) }).catch(() => {})
-  }, [projectId, deptKey])
-
-  const savePersonas = (v) => {
-    setPersonasRaw(v)
-    api.saveDeptData(projectId, deptKey, 'integrantes', v).catch(() => {})
-  }
 
   const set = (k, v) => setForm(f => ({...f, [k]:v}))
 

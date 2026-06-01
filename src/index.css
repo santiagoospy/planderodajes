@@ -10,6 +10,7 @@
   /* Light theme (default) */
   --bg-primary:          #f7f5f2;
   --bg-secondary:        #ffffff;
+  --bg-card:             #f0ede8;
   --bg-card-dark:        #f0ede8;
   --bg-card-dark-secondary: #e8e5e0;
   --bg-header:           rgba(247,245,242,0.95);
@@ -35,6 +36,7 @@
 .dark, [data-theme="dark"] {
   --bg-primary:          #0f0e0c;
   --bg-secondary:        #1a1816;
+  --bg-card:             #252220;
   --bg-card-dark:        #252220;
   --bg-card-dark-secondary: #2e2b28;
   --bg-header:           rgba(15,14,12,0.95);

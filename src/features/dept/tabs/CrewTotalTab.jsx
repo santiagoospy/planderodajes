@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/api'
+import { storage } from '../../../services/storage'
 import { Icon } from '../../../components/ui/Icon'
 
 export default function CrewTotalTab({ color, projectId, project }) {
@@ -11,9 +12,10 @@ export default function CrewTotalTab({ color, projectId, project }) {
     const deptKeys = Object.keys(project.depts)
     Promise.all(
       deptKeys.map(dk =>
-        api.getDeptData(projectId, dk, 'integrantes').then(d =>
-          (d||[]).map(p => ({ ...p, deptKey:dk, deptLabel:project.depts[dk]?.label||dk, deptColor:project.depts[dk]?.color||'#888', deptIcon:project.depts[dk]?.icon||'Clapperboard' }))
-        ).catch(() => [])
+        api.getDeptData(projectId, dk, 'integrantes')
+          .catch(() => storage.getDeptData(projectId, dk, 'integrantes'))
+          .then(d => (d||[]).map(p => ({ ...p, deptKey:dk, deptLabel:project.depts[dk]?.label||dk, deptColor:project.depts[dk]?.color||'#888', deptIcon:project.depts[dk]?.icon||'Clapperboard' })))
+          .catch(() => [])
       )
     ).then(results => { setAllCrew(results.flat()); setLoaded(true) })
   }, [projectId, project])

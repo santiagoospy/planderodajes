@@ -73,7 +73,7 @@ export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
       </div>
       {fotos.length === 0 && !showAdd && <div style={{ textAlign:'center', padding:'28px', color:'#ccc', fontFamily:'inherit', fontSize:13 }}>Sin fotos todavía</div>}
       {!showAdd
-        ? <button onClick={() => setShowAdd(true)} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color, background:'none', border:`1px dashed ${color}55`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar foto</button>
+        ? <button onClick={() => setShowAdd(true)} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar foto</button>
         : <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30` }}>
             <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:12, fontWeight:700, fontFamily:'inherit' }}>{editId ? '✎ EDITAR' : 'NUEVA FOTO'}</div>
             <input value={form.escena} onChange={e => set('escena', e.target.value)} placeholder="Número de escena *"

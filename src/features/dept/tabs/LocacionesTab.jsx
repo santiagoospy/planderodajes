@@ -154,7 +154,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
       })}
       {locs.length===0 && !showForm && <div style={{ textAlign:'center', padding:'28px', color:'#ccc', fontFamily:'inherit', fontSize:13 }}>Sin locaciones cargadas todavía</div>}
       {!showForm
-        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color, background:'none', border:`1px dashed ${color}55`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar locación</button>
+        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar locación</button>
         : <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30` }}>
             <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:12, fontFamily:'inherit' }}>{editId ? '✎ EDITAR LOCACIÓN' : 'NUEVA LOCACIÓN'}</div>
             <input value={form.nombre} onChange={e => set('nombre', e.target.value)} placeholder="Nombre del lugar *"
