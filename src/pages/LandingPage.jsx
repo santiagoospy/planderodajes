@@ -97,8 +97,12 @@ function AdminView({ onBack }) {
     }
   }
 
-  // Solo proyectos reales creados (excluye el demo / Proyecto Cero)
-  const realProjects = projects.filter(p => (p._blobKey || p.id) !== SEED_PROJECT.id && p.id !== SEED_PROJECT.id)
+  // Solo proyectos reales creados (excluye el demo / Proyecto Cero y datos de dept guardados como proyectos)
+  const realProjects = projects.filter(p =>
+    p.title &&
+    (p._blobKey || p.id) !== SEED_PROJECT.id &&
+    p.id !== SEED_PROJECT.id
+  )
 
   const countByProductora = {}
   realProjects.forEach(p => {
