@@ -547,8 +547,7 @@ export default function HomeView({
           )}
 
           {/* Days */}
-          {project.days.length > 0 && (
-            <div style={{ marginBottom:20 }}>
+          <div style={{ marginBottom:20 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
                 <div style={{ fontSize:10, color:subColor, letterSpacing:'0.12em', fontFamily:'inherit', fontWeight:600 }}>DÍAS DE RODAJE</div>
                 {isAdmin && (
@@ -558,6 +557,17 @@ export default function HomeView({
                   </button>
                 )}
               </div>
+              {project.days.length === 0 && (
+                <div style={{ textAlign:'center', padding:'28px 20px', background:glass, borderRadius:14, border:`1px dashed ${dimBorder}` }}>
+                  <div style={{ fontSize:13, color:subColor, fontFamily:'inherit', marginBottom:12 }}>No hay días de rodaje aún</div>
+                  {isAdmin && (
+                    <button onClick={addDay} className="tap"
+                      style={{ fontFamily:'inherit', fontSize:13, fontWeight:700, background:'rgba(255,255,255,0.2)', color:textColor, border:'none', borderRadius:10, padding:'10px 20px', cursor:'pointer' }}>
+                      + Crear primer día
+                    </button>
+                  )}
+                </div>
+              )}
               <div style={{ display:'flex', flexDirection:'column' }}>
                 {project.days.map((day, i) => {
                   const d = day.scenes.filter(s=>s.done).length
@@ -607,7 +617,6 @@ export default function HomeView({
                 })}
               </div>
             </div>
-          )}
 
           {/* Action grid */}
           {(() => {
