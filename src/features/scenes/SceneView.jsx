@@ -118,6 +118,11 @@ function PlanoCard({ plano, depts, color, themeLight, onToggle, onEdit, onDelete
               )}
             </div>
           )}
+          {plano.foto && (
+            <div style={{ marginBottom:8, borderRadius:10, overflow:'hidden', border:`1px solid ${color}22` }}>
+              <img src={plano.foto} alt="referencia" style={{ width:'100%', maxHeight:140, objectFit:'cover', display:'block' }}/>
+            </div>
+          )}
           {plano.descripcion && (
             <div style={{ fontSize:13, color:'var(--text-primary)', fontFamily:'inherit', lineHeight:1.5, marginBottom:8 }}>{plano.descripcion}</div>
           )}
@@ -191,9 +196,23 @@ function PlanoForm({ plano, color, depts, themeLight, onSave, onCancel }) {
     noche: plano?.noche || false,
     depts: plano?.depts || [],
     deptsOk: plano?.deptsOk || {},
+    foto: plano?.foto || null,
     ...plano,
   })
   const s = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const [uploadingFoto, setUploadingFoto] = useState(false)
+
+  const handleFoto = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingFoto(true)
+    try {
+      const data = await window.compressImage(file, 1200, 0.80)
+      s('foto', data)
+    } finally {
+      setUploadingFoto(false)
+    }
+  }
   const toggleDept = (dk) => setForm(f => {
     const curr = f.depts || []
     return { ...f, depts: curr.includes(dk) ? curr.filter(k => k !== dk) : [...curr, dk] }
@@ -221,6 +240,24 @@ function PlanoForm({ plano, color, depts, themeLight, onSave, onCancel }) {
       </select>
       <textarea value={form.descripcion} onChange={e => s('descripcion', e.target.value)} placeholder="Descripción, movimiento de cámara, acción..." rows={2}
         style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', resize:'none', marginBottom:10 }}/>
+
+      {/* Foto de referencia */}
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit', fontWeight:700 }}>FOTO / STORYBOARD</div>
+        {form.foto ? (
+          <div style={{ position:'relative', display:'inline-block' }}>
+            <img src={form.foto} alt="referencia" style={{ width:'100%', maxHeight:180, objectFit:'cover', borderRadius:10, display:'block', border:`1px solid ${color}33` }}/>
+            <button onClick={() => s('foto', null)}
+              style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.55)', border:'none', borderRadius:20, width:26, height:26, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:14, lineHeight:1 }}>✕</button>
+          </div>
+        ) : (
+          <label style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background:'var(--bg-card)', border:`1.5px dashed ${color}55`, borderRadius:10, cursor:'pointer', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:13 }}>
+            <Icon name={uploadingFoto ? 'Loader' : 'ImagePlus'} size={18} color={accent}/>
+            <span>{uploadingFoto ? 'Subiendo…' : 'Agregar foto de referencia'}</span>
+            <input type="file" accept="image/*" onChange={handleFoto} style={{ display:'none' }} disabled={uploadingFoto}/>
+          </label>
+        )}
+      </div>
 
       <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit', fontWeight:700 }}>LENTE</div>
       <div style={{ display:'flex', gap:8, marginBottom:8 }}>
