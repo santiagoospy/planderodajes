@@ -6,7 +6,7 @@ import { DAY_COLORS } from '../../constants/depts'
 import { distanciaEnKm, extraerCoordsDeGoogleMaps, calcularTrasladoMinutos } from '../../utils/geo'
 
 const ICON_MOMENTO  = { mañana:'Sunrise', tarde:'Cloud', noche:'Moon', 'sin definir':'Clapperboard' }
-const COLOR_MOMENTO = { mañana:'#f5a623', tarde:'#2f7ed8', noche:'#4a3fbf', 'sin definir':'#888' }
+const COLOR_MOMENTO = { mañana:'#FBBF24', tarde:'#38BDF8', noche:'#818CF8', 'sin definir':'#94A3B8' }
 const MOMENTOS      = ['mañana','tarde','noche','sin definir']
 
 function SceneCard({ scene, momento, sceneIndex, dayScenes, depts, color, isAdmin, dayId, onSelectScene, onToggleScene, onDeleteScene, onEditSceneName, editingSceneId, setEditingSceneId, editingSceneName, setEditingSceneName }) {
@@ -93,7 +93,7 @@ function SceneCard({ scene, momento, sceneIndex, dayScenes, depts, color, isAdmi
       )}
       <div onClick={() => onToggleScene(scene.id)} className="tap"
         style={{ width:50, alignSelf:'stretch', display:'flex', alignItems:'center', justifyContent:'center', background:scene.done?'#f5f3f0':'rgba(255,255,255,0.5)', borderLeft:'1px solid #f0ede8', cursor:'pointer', flexShrink:0 }}>
-        <Icon name={scene.done ? 'CheckCircle' : 'Circle'} size={20} color={scene.done?'#0fa87e':'#ddd'}/>
+        <Icon name={scene.done ? 'CheckCircle' : 'Circle'} size={20} color={scene.done?'#4ADE80':'rgba(255,255,255,0.35)'}/>
       </div>
     </div>
   )
@@ -150,7 +150,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
         </div>
         <div style={{ marginTop:12 }}>
           <ProgressBar pct={pct*100} color={color} height={5}/>
-          <div style={{ fontSize:10, color:'#aaa', marginTop:4, fontFamily:'inherit' }}>{done} de {day.scenes.length} escenas completadas</div>
+          <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:4, fontFamily:'inherit' }}>{done} de {day.scenes.length} escenas completadas</div>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
                 <Icon name={ICON_MOMENTO[momento]} size={18} color={COLOR_MOMENTO[momento]}/>
                 <span style={{ fontSize:11, fontWeight:700, color:COLOR_MOMENTO[momento], letterSpacing:'0.1em', fontFamily:'inherit' }}>{momento.toUpperCase()}</span>
-                <span style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>— {sc.length} escena{sc.length!==1?'s':''}</span>
+                <span style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit' }}>— {sc.length} escena{sc.length!==1?'s':''}</span>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {sc.map(scene => (

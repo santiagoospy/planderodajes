@@ -1,23 +1,26 @@
 import { useState } from 'react'
-import { Sun, Thermometer, Video, Clapperboard, ChevronRight, Presentation } from 'lucide-react'
+import { Sun, Thermometer, Video, Clapperboard, ChevronRight, Presentation, FileSpreadsheet } from 'lucide-react'
 import SunARView from './SunARView'
 import ColorTempView from './ColorTempView'
 import DirectorViewfinderView from './DirectorViewfinderView'
 import ClaquetaView from './ClaquetaView'
 import PPMView from './PPMView'
+import TechnicalBreakdownView from './TechnicalBreakdownView'
 
 const TOOLS = [
+  { key: 'breakdown', icon: FileSpreadsheet, title: 'Desglose Técnico', desc: 'Guion técnico por día y escena — PDF' },
+  { key: 'ppm', icon: Presentation, title: 'PPM', desc: 'Presentación Pre-Production Meeting' },
   { key: 'sun-ar', icon: Sun, title: 'Sun AR', desc: 'Trayectoria del sol en tiempo real' },
   { key: 'color-temp', icon: Thermometer, title: 'Color Temperature', desc: 'Temperatura de color en Kelvin' },
   { key: 'viewfinder', icon: Video, title: "Director's Viewfinder", desc: 'Previsualización por sensor + lente' },
   { key: 'claqueta', icon: Clapperboard, title: 'Claqueta', desc: 'Sincronización con sonido' },
-  { key: 'ppm', icon: Presentation, title: 'PPM', desc: 'Presentación Pre-Production Meeting' },
 ]
 
-export default function ToolsMenuView({ onBack, project, projectId }) {
+export default function ToolsMenuView({ onBack, project, projectId, depts, accentColor }) {
   const [tool, setTool] = useState(null)
   const back = () => setTool(null)
 
+  if (tool === 'breakdown')  return <TechnicalBreakdownView project={project} projectId={projectId} depts={depts} accentColor={accentColor} onBack={back} />
   if (tool === 'ppm')        return <PPMView project={project} projectId={projectId} onBack={back} />
   if (tool === 'sun-ar')     return <SunARView project={project} onBack={back} />
   if (tool === 'color-temp') return <ColorTempView project={project} onBack={back} />

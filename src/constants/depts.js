@@ -3,19 +3,19 @@
  */
 export const DEPT_DEFAULTS = {
   produccion:  { label: 'Producción',  icon: 'ClipboardList', color: '#F97316' },
-  direccion:   { label: 'Dirección',   icon: 'Clapperboard',  color: 'var(--color-primary)' },
-  locaciones:  { label: 'Locaciones',  icon: 'MapPin',        color: '#2f7ed8' },
-  arte:        { label: 'Arte',        icon: 'Palette',       color: '#7c3fbf' },
-  fotografia:  { label: 'DF',          icon: 'Aperture',      color: '#d48c0e' },
-  camara:      { label: 'Cámara',      icon: 'Video',         color: '#2f7ed8' },
-  drone:       { label: 'Drone',       icon: 'Navigation',    color: 'var(--color-success)' },
-  sonido:      { label: 'Sonido',      icon: 'Mic',           color: 'var(--color-success)' },
-  fotofija:    { label: 'Foto fija',   icon: 'Camera',        color: '#d48c0e' },
-  tecnica:     { label: 'Técnica',     icon: 'Wrench',        color: '#2f7ed8' },
-  casting:     { label: 'Casting',     icon: 'Users',         color: '#7c3fbf' },
-  catering:    { label: 'Catering',    icon: 'Utensils',      color: '#d48c0e' },
-  continuidad: { label: 'Continuidad', icon: 'Film',          color: '#e91e63' },
-  cliente:     { label: 'Cliente',     icon: 'Briefcase',     color: '#555555' },
+  direccion:   { label: 'Dirección',   icon: 'Clapperboard',  color: '#EF4444' },
+  locaciones:  { label: 'Locaciones',  icon: 'MapPin',        color: '#38BDF8' },
+  arte:        { label: 'Arte',        icon: 'Palette',       color: '#C084FC' },
+  fotografia:  { label: 'DF',          icon: 'Aperture',      color: '#FBBF24' },
+  camara:      { label: 'Cámara',      icon: 'Video',         color: '#818CF8' },
+  drone:       { label: 'Drone',       icon: 'Navigation',    color: '#4ADE80' },
+  sonido:      { label: 'Sonido',      icon: 'Mic',           color: '#F472B6' },
+  fotofija:    { label: 'Foto fija',   icon: 'Camera',        color: '#FCD34D' },
+  tecnica:     { label: 'Técnica',     icon: 'Wrench',        color: '#FB923C' },
+  casting:     { label: 'Casting',     icon: 'Users',         color: '#E879F9' },
+  catering:    { label: 'Catering',    icon: 'Utensils',      color: '#34D399' },
+  continuidad: { label: 'Continuidad', icon: 'Film',          color: '#F43F5E' },
+  cliente:     { label: 'Cliente',     icon: 'Briefcase',     color: '#94A3B8' },
 }
 
 /** Full icon picker palette for AddDeptModal */
@@ -36,7 +36,7 @@ export const DEPT_COLORS = [
   '#d48c0e', '#e91e8c', '#00bcd4',
 ]
 
-export const DAY_COLORS = ['#2f7ed8', '#d48c0e', '#0fa87e', '#d94f2b', '#7c3fbf']
+export const DAY_COLORS = ['#38BDF8', '#FBBF24', '#4ADE80', '#F97316', '#C084FC']
 
 /** Sections available when creating a custom department */
 export const DEPT_SECTION_OPTIONS = [
