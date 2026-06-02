@@ -10,6 +10,19 @@ function ActorForm({ color, project, form, set, editId, onSave, onCancel, label 
     const curr = form.escenas || []
     set('escenas', curr.includes(scId) ? curr.filter(x=>x!==scId) : [...curr, scId])
   }
+  // Días en que participa el actor: los días que contienen alguna de sus escenas.
+  // Si todavía no eligió escenas, ofrecemos todos los días del proyecto.
+  const sel = form.escenas || []
+  const diasParticipa = project
+    ? (sel.length === 0
+        ? project.days
+        : project.days.filter(d => d.scenes.some(s => sel.includes(s.id)))
+      ).map(d => ({ label:d.label, date:d.date }))
+    : []
+  const setCitacionDia = (dia, field, val) => {
+    const curr = form.citaciones || {}
+    set('citaciones', { ...curr, [dia]: { ...(curr[dia]||{}), [field]: val } })
+  }
   const handleFoto = async (e) => {
     const file = e.target.files[0]; if (!file) return
     try { set('foto', await window.compressImage(file, 800, 0.70)) }
@@ -34,10 +47,31 @@ function ActorForm({ color, project, form, set, editId, onSave, onCancel, label 
         <input key={k} value={form[k]||''} onChange={e => set(k, e.target.value)} placeholder={k === 'nombre' ? 'Nombre y apellido *' : k.charAt(0).toUpperCase() + k.slice(1)}
           style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:'1px solid #e5e2dd', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }} />
       ))}
-      <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>CITACIÓN (CALL TIME)</div>
-        <input value={form.citacion||''} onChange={e => set('citacion', e.target.value)} placeholder="Ej: 08:30hs - Locación principal"
-          style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>CITACIÓN POR DÍA (CALL TIME)</div>
+        {diasParticipa.length === 0 ? (
+          <input value={form.citacion||''} onChange={e => set('citacion', e.target.value)} placeholder="Ej: 08:30hs - Locación principal"
+            style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {diasParticipa.map(d => {
+              const cit = form.citaciones?.[d.label] || {}
+              return (
+                <div key={d.label} style={{ background:'var(--bg-card-dark)', border:`1px solid ${color}33`, borderRadius:10, padding:'8px 10px' }}>
+                  <div style={{ fontSize:11, fontWeight:700, color, fontFamily:'inherit', marginBottom:6, display:'flex', alignItems:'center', gap:5 }}>
+                    <Icon name="Calendar" size={11} color={color} /> {d.date || d.label}
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <input value={cit.hora||''} onChange={e => setCitacionDia(d.label, 'hora', e.target.value)} placeholder="Hora (08:30)"
+                      style={{ width:90, fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:8, padding:'8px 10px', color:'var(--text-primary)', outline:'none' }} />
+                    <input value={cit.lugar||''} onChange={e => setCitacionDia(d.label, 'lugar', e.target.value)} placeholder="Lugar / punto de encuentro"
+                      style={{ flex:1, fontFamily:'inherit', fontSize:13, background:'var(--bg-secondary)', border:'1px solid var(--border-light)', borderRadius:8, padding:'8px 10px', color:'var(--text-primary)', outline:'none' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
       {todasEscenas.length > 0 && (
         <div style={{ marginBottom:12 }}>
@@ -73,13 +107,12 @@ function CastingPrincipales({ color, projectId, project }) {
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId]     = useState(null)
   const [lightboxIdx, setLightboxIdx] = useState(-1)
-  const emptyForm = { nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'' }
+  const emptyForm = { nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'', citaciones:{} }
   const [form, setFormState] = useState(emptyForm)
   const set = (k, v) => setFormState(f => ({ ...f, [k]: v }))
-  const todasEscenas = project ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id }))) : []
 
   const openAdd  = () => { setEditId(null); setFormState(emptyForm); setShowForm(true) }
-  const openEdit = (a) => { setEditId(a.id); setFormState({ nombre:a.nombre||'', personaje:a.personaje||'', altura:a.altura||'', talla:a.talla||'', telefono:a.telefono||'', correo:a.correo||'', notas:a.notas||'', foto:a.foto||'', escenas:a.escenas||[], citacion:a.citacion||'' }); setShowForm(true) }
+  const openEdit = (a) => { setEditId(a.id); setFormState({ nombre:a.nombre||'', personaje:a.personaje||'', altura:a.altura||'', talla:a.talla||'', telefono:a.telefono||'', correo:a.correo||'', notas:a.notas||'', foto:a.foto||'', escenas:a.escenas||[], citacion:a.citacion||'', citaciones:a.citaciones||{} }); setShowForm(true) }
   const save = () => {
     if (!form.nombre) return
     if (editId) setActores(actores.map(a => a.id===editId ? { ...a, ...form } : a))
@@ -110,7 +143,13 @@ function CastingPrincipales({ color, projectId, project }) {
                 {a.altura    && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>{a.altura}</div>}
                 {a.talla     && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>{a.talla}</div>}
                 {a.telefono  && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>{a.telefono}</div>}
-                {a.citacion  && <div style={{ fontSize:11, color, fontFamily:'inherit', marginTop:4 }}>{a.citacion}</div>}
+                {Object.entries(a.citaciones||{}).filter(([,v]) => v && (v.hora||v.lugar)).map(([dia,v]) => (
+                  <div key={dia} style={{ fontSize:10, color, fontFamily:'inherit', marginTop:3, display:'flex', alignItems:'center', gap:3 }}>
+                    <Icon name="Clock" size={9} color={color} />
+                    <span style={{ fontWeight:700 }}>{dia}:</span> {[v.hora, v.lugar].filter(Boolean).join(' · ')}
+                  </div>
+                ))}
+                {a.citacion && Object.keys(a.citaciones||{}).length===0 && <div style={{ fontSize:11, color, fontFamily:'inherit', marginTop:4 }}>{a.citacion}</div>}
                 {escenaLabels.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:4 }}>
                     {escenaLabels.map((lb,i) => <span key={i} style={{ fontSize:9, padding:'2px 6px', borderRadius:8, background:color+'15', color, fontFamily:'inherit' }}>{lb}</span>)}
@@ -141,12 +180,12 @@ function CastingExtras({ color, projectId, project }) {
   const [showForm, setShowForm] = useState(false)
   const [lightboxIdx, setLightboxIdx] = useState(-1)
   const [editId, setEditId]     = useState(null)
-  const emptyForm = { nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'' }
+  const emptyForm = { nombre:'', personaje:'', altura:'', talla:'', telefono:'', correo:'', notas:'', foto:'', escenas:[], citacion:'', citaciones:{} }
   const [form, setFormState] = useState(emptyForm)
   const set = (k, v) => setFormState(f => ({ ...f, [k]: v }))
 
   const openAdd  = () => { setEditId(null); setFormState(emptyForm); setShowForm(true) }
-  const openEdit = (e) => { setEditId(e.id); setFormState({ nombre:e.nombre||'', personaje:e.personaje||'', altura:e.altura||'', talla:e.talla||'', telefono:e.telefono||'', correo:e.correo||'', notas:e.notas||'', foto:e.foto||'', escenas:e.escenas||[], citacion:e.citacion||'' }); setShowForm(true) }
+  const openEdit = (e) => { setEditId(e.id); setFormState({ nombre:e.nombre||'', personaje:e.personaje||'', altura:e.altura||'', talla:e.talla||'', telefono:e.telefono||'', correo:e.correo||'', notas:e.notas||'', foto:e.foto||'', escenas:e.escenas||[], citacion:e.citacion||'', citaciones:e.citaciones||{} }); setShowForm(true) }
   const save = () => {
     if (!form.nombre) return
     if (editId) setExtras(extras.map(e => e.id===editId ? { ...e, ...form } : e))
@@ -154,7 +193,6 @@ function CastingExtras({ color, projectId, project }) {
     setShowForm(false); setEditId(null)
   }
   const del = (id) => setExtras(extras.filter(e => e.id !== id))
-  const todasEscenas = project ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id }))) : []
 
   const extrasConFoto = extras.filter(e => e.foto)
   const lightboxImages = extrasConFoto.map(e => ({ src: e.foto, alt: e.nombre }))
@@ -179,7 +217,10 @@ function CastingExtras({ color, projectId, project }) {
             <div style={{ padding:8 }}>
               <div style={{ fontSize:11, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{e.nombre}</div>
               {e.notas    && <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>{e.notas}</div>}
-              {e.citacion && <div style={{ fontSize:10, color, fontFamily:'inherit', marginTop:2 }}>{e.citacion}</div>}
+              {Object.entries(e.citaciones||{}).filter(([,v]) => v && (v.hora||v.lugar)).map(([dia,v]) => (
+                <div key={dia} style={{ fontSize:9, color, fontFamily:'inherit', marginTop:2 }}><span style={{ fontWeight:700 }}>{dia}:</span> {[v.hora, v.lugar].filter(Boolean).join(' · ')}</div>
+              ))}
+              {e.citacion && Object.keys(e.citaciones||{}).length===0 && <div style={{ fontSize:10, color, fontFamily:'inherit', marginTop:2 }}>{e.citacion}</div>}
             </div>
             <div style={{ position:'absolute', top:4, right:4, display:'flex', gap:3 }}>
               <button onClick={() => openEdit(e)} style={{ width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.4)', border:'none', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✎</button>

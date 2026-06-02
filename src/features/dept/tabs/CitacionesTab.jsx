@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
+import { contrastText } from '../../../utils/color'
 
 const toMin = (s) => { if (!s) return 0; const [h,m] = (s||'0:0').split(':'); return +h*60+(+m||0) }
 const DAY_COLORS = ['#FF006E','#FF1493','#E91E63','#EC4899','#F0388C','#FF3399','#FF5BA8','#FF7DBA','#FFA0CC']
@@ -61,7 +62,7 @@ export default function CitacionesTab({ color, deptKey, projectId, project }) {
         return (
           <div key={dia} style={{ marginBottom:28 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
-              <div style={{ background:diaColor, color:'#fff', borderRadius:8, padding:'5px 12px', fontSize:13, fontWeight:700, fontFamily:'inherit' }}>
+              <div style={{ background:diaColor, color:contrastText(diaColor), borderRadius:8, padding:'5px 12px', fontSize:13, fontWeight:700, fontFamily:'inherit' }}>
                 {(date||dia).toUpperCase()}
               </div>
               {date && dia!==date && <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit' }}>{dia}</div>}

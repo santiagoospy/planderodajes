@@ -1,11 +1,47 @@
 import { useState, useEffect } from 'react'
 import { useDeptData } from '../../hooks/useDeptData'
 import { api } from '../../services/api'
+import { storage } from '../../services/storage'
 import { Icon } from '../../components/ui/Icon'
+import { readableText, contrastText } from '../../utils/color'
+
+// Read a dept section preferring the server, but falling back to the local
+// offline cache (so citaciones show up on set even without connectivity / functions).
+const readDept = async (projectId, deptKey, section) => {
+  try {
+    const fresh = await api.getDeptData(projectId, deptKey, section)
+    if (fresh !== null && fresh !== undefined) return fresh
+  } catch { /* offline — fall back to cache */ }
+  return storage.getDeptData(projectId, deptKey, section)
+}
+
+// Expande las citaciones por día de los actores de casting en eventos de citación.
+const expandActores = (actores, deptColor) => {
+  const out = []
+  ;(actores || []).forEach(a => {
+    const cits = a.citaciones || {}
+    Object.entries(cits).forEach(([dia, v]) => {
+      if (!v || (!v.hora && !v.lugar)) return
+      out.push({
+        id: `casting_${a.id}_${dia}`,
+        tipo: a.personaje ? `${a.nombre} — ${a.personaje}` : a.nombre,
+        hora: v.hora || '',
+        lugar: v.lugar || '',
+        dia,
+        notas: '',
+        _deptKey: 'casting',
+        _deptLabel: 'Casting',
+        _deptColor: deptColor,
+      })
+    })
+  })
+  return out
+}
 
 export default function CitacionesGlobalesView({ onBack, project, projectId, color = '#0052CC' }) {
   const { items: citas, save: setCitas } = useDeptData(projectId, '_global', 'citas', [])
   const [deptCitas, setDeptCitas] = useState([])
+  const [castingCitas, setCastingCitas] = useState([])
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState(null)
   const [form, setForm] = useState({ tipo: '', hora: '', lugar: '', dia: '', notas: '' })
@@ -19,7 +55,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
     const deptKeys = Object.keys(project.depts || {})
     Promise.all(
       deptKeys.map(dk =>
-        api.getDeptData(projectId, dk, 'citas')
+        readDept(projectId, dk, 'citas')
           .then(d => Array.isArray(d)
             ? d.map(c => ({ ...c, _deptKey: dk, _deptLabel: project.depts[dk]?.label || dk, _deptColor: project.depts[dk]?.color || '#888' }))
             : []
@@ -29,11 +65,27 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
     ).then(results => setDeptCitas(results.flat()))
   }, [projectId, project])
 
-  // Merge global citas + dept citas for display
-  const todasCitas = [...citas, ...deptCitas]
+  // Load casting actors (principales + extras) and expand their per-day call times
+  useEffect(() => {
+    if (!project || !projectId) return
+    const castingColor = project.depts?.casting?.color || '#888'
+    Promise.all([
+      readDept(projectId, 'casting', 'principales').catch(() => []),
+      readDept(projectId, 'casting', 'extras').catch(() => []),
+    ]).then(([principales, extras]) => {
+      setCastingCitas([
+        ...expandActores(Array.isArray(principales) ? principales : [], castingColor),
+        ...expandActores(Array.isArray(extras) ? extras : [], castingColor),
+      ])
+    })
+  }, [projectId, project])
+
+  // Merge global citas + dept citas + casting actor citations for display
+  const todasCitas = [...citas, ...deptCitas, ...castingCitas]
 
   const diasExistentes = project?.days?.map(d => d.label) || []
   const lugaresDeHistorial = [...new Set(todasCitas.map(c => c.lugar).filter(Boolean))]
+  const lugaresDeLocaciones = []
   const todosLugares = lugaresDeHistorial
   const diasUnicos = [...new Set(todasCitas.map(c => c.dia).filter(Boolean))]
   const todosDias = [...diasUnicos, ...diasExistentes].filter((v, i, a) => a.indexOf(v) === i)
@@ -138,7 +190,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
           return (
             <div key={dia} style={{ marginBottom: 28 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ background: diaColor, color: '#fff', borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', letterSpacing: '0.04em' }}>
+                <div style={{ background: diaColor, color: contrastText(diaColor), borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', letterSpacing: '0.04em' }}>
                   {(date || dia).toUpperCase()}
                 </div>
                 {date && dia !== date && <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit' }}>{dia}</div>}
@@ -167,7 +219,7 @@ export default function CitacionesGlobalesView({ onBack, project, projectId, col
                                 <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'inherit', marginBottom: 1, display: 'flex', gap: 6, alignItems: 'center' }}>
                                   {c.hora}
                                   {c._deptLabel && (
-                                    <span style={{ fontSize: 9, fontWeight: 700, color: c._deptColor || color, background: `${c._deptColor || color}18`, borderRadius: 4, padding: '1px 5px', letterSpacing: '0.04em' }}>
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: readableText(c._deptColor || color), background: `${c._deptColor || color}22`, borderRadius: 4, padding: '1px 5px', letterSpacing: '0.04em' }}>
                                       {c._deptLabel.toUpperCase()}
                                     </span>
                                   )}
