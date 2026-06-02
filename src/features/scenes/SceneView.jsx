@@ -52,28 +52,21 @@ function DeptChecklistCard({ deptKey, meta, checklist, onUpdateChecklist, onRemo
   const deptInk = ink(meta.color)
 
   return (
-    <div style={{ background:'var(--bg-secondary)', borderRadius:14, border:`1px solid ${deptInk}40`, marginBottom:10, overflow:'hidden' }}>
+    <div style={{ background:'var(--bg-secondary)', borderRadius:12, border:`1px solid ${deptInk}3a`, marginBottom:8, overflow:'hidden' }}>
       <div onClick={() => setOpen(!open)}
-        style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', cursor:'pointer', background:deptInk+'14' }}>
-        <div style={{ width:36, height:36, borderRadius:10, background:deptInk+'2e', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <Icon name={meta.icon || 'Clapperboard'} size={18} color={deptInk}/>
-        </div>
+        style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', cursor:'pointer', background:deptInk+'14' }}>
+        <Icon name={meta.icon || 'Clapperboard'} size={18} color={deptInk}/>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{meta.label}</div>
-          <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', marginTop:1 }}>
-            {total === 0 ? 'Sin tareas' : `${done}/${total} completadas`}
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{meta.label}</div>
+          <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit' }}>
+            {done}/{total} ✓
           </div>
         </div>
-        {total > 0 && (
-          <div style={{ fontSize:11, fontWeight:700, color: done === total ? '#0fa87e' : deptInk, fontFamily:'inherit' }}>
-            {Math.round(done / total * 100)}%
-          </div>
-        )}
         {isAdmin && (
           <button onClick={e => { e.stopPropagation(); onRemove() }}
-            style={{ background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:13, cursor:'pointer', padding:'5px 8px', lineHeight:1 }}>✕</button>
+            style={{ background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:11, cursor:'pointer', padding:'4px 7px' }}>✕</button>
         )}
-        <Icon name={open ? 'ChevronDown' : 'ChevronRight'} size={18} color="var(--text-muted)"/>
+        <span style={{ fontSize:14, color:'#ccc' }}>{open ? '▾' : '▸'}</span>
       </div>
       {open && (
         <div style={{ padding:'14px', borderTop:`1px solid ${deptInk}22`, background:'var(--bg-card-dark)' }}>
