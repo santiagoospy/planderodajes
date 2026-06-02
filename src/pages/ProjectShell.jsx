@@ -218,6 +218,8 @@ function ProjectViews({ project, projectId, save }) {
             scene={activeScene}
             onBack={() => setView('day')}
             onUpdateScene={onUpdateScene}
+            onLock={() => setIsAdmin(false)}
+            onUnlock={() => setIsAdmin(true)}
           />
         )}
         {view === 'dept' && activeDeptKey && (

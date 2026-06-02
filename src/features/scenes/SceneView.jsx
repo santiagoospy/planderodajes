@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { DeptAvatar } from '../../components/ui/DeptAvatar'
+import { PinModal } from '../../components/ui/PinModal'
 import { api } from '../../services/api'
 import { onSurface } from '../../utils/color'
 
@@ -240,23 +241,6 @@ function PlanoForm({ plano, color, depts, themeLight, onSave, onCancel }) {
         ))}
       </div>
 
-      {deptEntries.length > 0 && (
-        <>
-          <div style={{ fontSize:11, color:'var(--text-muted)', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit', fontWeight:700 }}>DEPARTAMENTOS</div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
-            {deptEntries.map(([dk, meta]) => {
-              const sel = (form.depts || []).includes(dk)
-              const di = ink(meta.color)
-              return (
-                <button key={dk} onClick={() => toggleDept(dk)}
-                  style={{ fontFamily:'inherit', fontSize:12, padding:'5px 12px', borderRadius:20, border:`1px solid ${sel ? di+'99' : 'var(--border-light)'}`, background: sel ? `${di}22` : 'transparent', color: sel ? di : 'var(--text-secondary)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}>
-                  <Icon name={meta.icon || 'Clapperboard'} size={12} color={sel ? di : 'currentColor'}/> {meta.label}
-                </button>
-              )
-            })}
-          </div>
-        </>
-      )}
       <div style={{ display:'flex', gap:8 }}>
         <button onClick={onCancel}
           style={{ flex:1, fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', color:'var(--text-tertiary)', border:'none', borderRadius:10, padding:'11px', cursor:'pointer' }}>Cancelar</button>
@@ -270,13 +254,14 @@ function PlanoForm({ plano, color, depts, themeLight, onSave, onCancel }) {
 }
 
 // ── Main SceneView ────────────────────────────────────────────
-export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene, projectId, accentColor, themeLight }) {
+export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene, projectId, accentColor, themeLight, project, onLock, onUnlock }) {
   const [planos, setPlanos]           = useState([])
   const [deptChecklists, setDeptChecklists] = useState({})
   const [showForm, setShowForm]       = useState(false)
   const [editPlano, setEditPlano]     = useState(null)
   const [editingNum, setEditing]      = useState(false)
   const [numDraft, setNumDraft]       = useState('')
+  const [showPinModal, setShowPinModal] = useState(false)
 
   useEffect(() => {
     if (!projectId) return
@@ -344,12 +329,18 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
   return (
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
       {/* Header */}
-      <div className="theme-surface" style={{ padding:'14px 20px 12px', borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
-        <div style={{ display:'flex', alignItems:'center', marginBottom:8 }}>
+      <div className="theme-surface" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 14px)', paddingBottom:12, paddingLeft:20, paddingRight:20, borderBottom:'1px solid var(--border-light)', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
           <button onClick={onBack} className="tap"
             style={{ background:'none', border:'none', fontSize:14, color:'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', padding:0, display:'flex', alignItems:'center', gap:4 }}>
             <Icon name="ChevronLeft" size={16} color="currentColor"/> Volver
           </button>
+          {(onLock || onUnlock) && (
+            <button onClick={() => isAdmin ? onLock?.() : setShowPinModal(true)} className="tap"
+              style={{ background:'none', border:'none', cursor:'pointer', padding:'4px 8px', display:'flex', alignItems:'center', gap:5, color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
+              <Icon name={isAdmin ? 'LockOpen' : 'Lock'} size={16} color={isAdmin ? accent : 'var(--text-muted)'}/>
+            </button>
+          )}
         </div>
         <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
           <div style={{ flex:1 }}>
@@ -480,9 +471,9 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
                   const di = ink(m.color)
                   return (
                     <button key={dk} onClick={() => toggleDept(dk)} className="tap"
-                      style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 8px', border:`1px dashed ${di}55`, cursor:'pointer', fontFamily:'inherit' }}>
-                      <div style={{ width:36, height:36, borderRadius:10, background:di+'2e', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <Icon name={m.icon || 'Clapperboard'} size={18} color={di}/>
+                      style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 8px', border:`1px dashed ${m.color}66`, cursor:'pointer', fontFamily:'inherit' }}>
+                      <div style={{ width:36, height:36, borderRadius:10, background:m.color, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <Icon name={m.icon || 'Clapperboard'} size={18} color='#fff'/>
                       </div>
                       <span style={{ fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textAlign:'center', lineHeight:1.2 }}>{m.label}</span>
                     </button>
@@ -509,6 +500,16 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
           </span>
         </div>
       </div>
+
+      {showPinModal && (
+        <PinModal
+          title="Desbloquear edición"
+          subtitle="PIN del proyecto"
+          correctPin={project?.pin || '1234'}
+          onSuccess={() => { onUnlock?.(); setShowPinModal(false) }}
+          onCancel={() => setShowPinModal(false)}
+        />
+      )}
     </div>
   )
 }
