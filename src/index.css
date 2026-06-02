@@ -84,6 +84,18 @@
 /* ─── Base styles ───────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Native <select> popups are painted by the OS. On the saturated
+   productora themes the closed control uses light text (--text-primary
+   = white), which the OS also applies to the option list — leaving white
+   text on the white popup ("todo en blanco"). Force a light popup with
+   dark option text so the list is always legible. */
+select { color-scheme: light; }
+select option,
+select optgroup {
+  color: #1a1714;
+  background-color: #ffffff;
+}
+
 html, body {
   margin: 0;
   padding: 0;

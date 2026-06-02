@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
+import { onSurface } from '../../../utils/color'
 
 const fmtTs = (ts) => {
   if (!ts) return null
@@ -8,7 +9,8 @@ const fmtTs = (ts) => {
   return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})
 }
 
-export default function ChecklistTab({ color, deptKey, projectId }) {
+export default function ChecklistTab({ color, deptKey, projectId, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items, save: saveItems } = useDeptData(projectId, deptKey, 'checklist', [])
   const [texto, setTexto]    = useState('')
   const [showAdd, setShowAdd] = useState(false)
@@ -35,10 +37,10 @@ export default function ChecklistTab({ color, deptKey, projectId }) {
       <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'14px 16px', border:'1px solid var(--border-light)', marginBottom:14 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div style={{ fontSize:13, color:'var(--text-primary)', fontWeight:700, fontFamily:'inherit' }}>{done} / {items.length} completados</div>
-          <div style={{ fontSize:16, fontWeight:700, color, fontFamily:'inherit' }}>{Math.round(pct*100)}%</div>
+          <div style={{ fontSize:16, fontWeight:700, color:accent, fontFamily:'inherit' }}>{Math.round(pct*100)}%</div>
         </div>
         <div style={{ height:6, background:'var(--bg-card)', borderRadius:3, overflow:'hidden' }}>
-          <div style={{ width:`${pct*100}%`, height:'100%', background:color, borderRadius:3, transition:'width 0.4s' }}/>
+          <div style={{ width:`${pct*100}%`, height:'100%', background:accent, borderRadius:3, transition:'width 0.4s' }}/>
         </div>
       </div>
 
@@ -59,9 +61,9 @@ export default function ChecklistTab({ color, deptKey, projectId }) {
       )}
 
       {visible.map(item => (
-        <div key={item.id} style={{ display:'flex', alignItems:'flex-start', gap:12, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:item.done?'1px solid var(--border-light)':`1px solid ${color}25`, opacity:item.done?0.55:1 }}>
+        <div key={item.id} style={{ display:'flex', alignItems:'flex-start', gap:12, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:item.done?'1px solid var(--border-light)':`1px solid ${accent}33`, opacity:item.done?0.55:1 }}>
           <div onClick={() => toggle(item.id)}
-            style={{ width:24, height:24, borderRadius:7, flexShrink:0, cursor:'pointer', marginTop:1, background:item.done?color:'var(--bg-card)', border:item.done?'none':`2px solid ${color}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ width:24, height:24, borderRadius:7, flexShrink:0, cursor:'pointer', marginTop:1, background:item.done?color:'var(--bg-card)', border:item.done?'none':`2px solid ${accent}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
             {item.done && <Icon name="Check" size={13} color="#fff" strokeWidth={3}/>}
           </div>
           <div style={{ flex:1 }}>

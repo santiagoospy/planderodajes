@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
+import { onSurface } from '../../../utils/color'
 
 const fmt = (ts) => new Date(ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})
 
-export default function DeptMuralTab({ color, deptKey, projectId }) {
+export default function DeptMuralTab({ color, deptKey, projectId, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items: mensajes, save: saveMensajes } = useDeptData(projectId, deptKey, 'mural', [])
   const [lightboxSrc, setLightboxSrc] = useState(null)
   const [autor, setAutor]           = useState('')
@@ -82,9 +84,9 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
             )}
             {adjunto.tipo==='link' && (
               <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 4px' }}>
-                <Icon name={adjunto.linkIcon||'Link'} size={22} color={color}/>
+                <Icon name={adjunto.linkIcon||'Link'} size={22} color={accent}/>
                 <div>
-                  <div style={{ fontSize:12, fontWeight:700, color, fontFamily:'inherit' }}>{adjunto.nombre}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:accent, fontFamily:'inherit' }}>{adjunto.nombre}</div>
                   <div style={{ fontSize:10, color:'#aaa' }}>{adjunto.url}</div>
                 </div>
               </div>
@@ -119,7 +121,7 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
           </label>
           <button onClick={() => setShowLinkForm(!showLinkForm)}
             style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, background:'var(--bg-card)', border:`1px dashed ${color}66`, borderRadius:10, padding:12, cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', fontWeight:600 }}>
-            <Icon name="Link" size={13} color={color}/> Link
+            <Icon name="Link" size={13} color={accent}/> Link
           </button>
           {adjunto && (
             <button onClick={publish}
@@ -137,7 +139,7 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
       {[...mensajes].reverse().map(m => (
         <div key={m.id} style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'10px 12px', marginBottom:8, border:'1px solid var(--border-light)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-            <div style={{ fontSize:11, fontWeight:700, color, fontFamily:'inherit' }}>{m.autor}</div>
+            <div style={{ fontSize:11, fontWeight:700, color:accent, fontFamily:'inherit' }}>{m.autor}</div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ fontSize:10, color:'#ccc', fontFamily:'inherit' }}>{fmt(m.ts)}</div>
               <button onClick={() => del(m.id)} style={{ background:'none', border:'none', color:'var(--border-light)', cursor:'pointer', padding:0 }}>✕</button>
@@ -150,15 +152,15 @@ export default function DeptMuralTab({ color, deptKey, projectId }) {
               style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card-dark)', borderRadius:8, padding:'10px 12px', textDecoration:'none', color:'var(--text-secondary)', fontFamily:'inherit', fontSize:12 }}>
               <Icon name={m.adjunto.tipo==='pdf'?'FileText':'Paperclip'} size={20} color="var(--text-secondary)"/>
               <span style={{ flex:1 }}>{m.adjunto.nombre}</span>
-              <span style={{ color, fontWeight:700 }}>↓ Descargar</span>
+              <span style={{ color:accent, fontWeight:700 }}>↓ Descargar</span>
             </a>
           )}
           {m.adjunto?.tipo==='link' && (
             <a href={m.adjunto.url} target="_blank" rel="noopener noreferrer"
               style={{ display:'flex', alignItems:'center', gap:10, background:'var(--bg-card-dark)', borderRadius:8, padding:'10px 12px', textDecoration:'none', border:`1px solid ${color}22` }}>
-              <Icon name={m.adjunto.linkIcon||'Link'} size={22} color={color} style={{ flexShrink:0 }}/>
+              <Icon name={m.adjunto.linkIcon||'Link'} size={22} color={accent} style={{ flexShrink:0 }}/>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12, fontWeight:700, color, fontFamily:'inherit', marginBottom:2 }}>{m.adjunto.nombre}</div>
+                <div style={{ fontSize:12, fontWeight:700, color:accent, fontFamily:'inherit', marginBottom:2 }}>{m.adjunto.nombre}</div>
                 <div style={{ fontSize:10, color:'#aaa', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.adjunto.url}</div>
               </div>
             </a>

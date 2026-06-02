@@ -34,6 +34,31 @@ export const darken = (hex, amount = 0.35) => {
   return toHex({ r: c.r * (1 - amount), g: c.g * (1 - amount), b: c.b * (1 - amount) })
 }
 
+/** Mix a color toward white by `amount` (0..1). */
+export const lighten = (hex, amount = 0.4) => {
+  const c = parseHex(hex)
+  if (!c) return hex
+  return toHex({ r: c.r + (255 - c.r) * amount, g: c.g + (255 - c.g) * amount, b: c.b + (255 - c.b) * amount })
+}
+
+/**
+ * Return a hue-preserving version of `hex` that reads as text/icon on the
+ * current themed surface.
+ *  - On a LIGHT surface: darken light colors so they don't wash out.
+ *  - On a DARK / saturated surface (productora gradients): brighten dark
+ *    colors so the dept accent still pops against the gradient.
+ * Keeps the brand hue instead of falling back to flat white/black.
+ */
+export const onSurface = (hex, lightSurface) => {
+  if (lightSurface) return readableText(hex)
+  const lum = luminance(hex)
+  if (lum >= 170) return hex
+  if (lum < 80)  return lighten(hex, 0.62)
+  if (lum < 120) return lighten(hex, 0.5)
+  if (lum < 150) return lighten(hex, 0.36)
+  return lighten(hex, 0.22)
+}
+
 /** Pick white or a dark ink for text placed ON TOP of a solid `hex` background. */
 export const contrastText = (hex) => (luminance(hex) > 165 ? '#1a1a1a' : '#ffffff')
 

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
-import { contrastText } from '../../../utils/color'
+import { contrastText, onSurface } from '../../../utils/color'
 
 const toMin = (s) => { if (!s) return 0; const [h,m] = (s||'0:0').split(':'); return +h*60+(+m||0) }
 const DAY_COLORS = ['#FF006E','#FF1493','#E91E63','#EC4899','#F0388C','#FF3399','#FF5BA8','#FF7DBA','#FFA0CC']
 
-export default function CitacionesTab({ color, deptKey, projectId, project }) {
+export default function CitacionesTab({ color, deptKey, projectId, project, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items: citas, save: saveCitas } = useDeptData(projectId, deptKey, 'citas', [])
   const [showAdd, setShowAdd]  = useState(false)
   const [editId, setEditId]    = useState(null)
@@ -81,7 +82,7 @@ export default function CitacionesTab({ color, deptKey, projectId, project }) {
                     </div>
                     <div style={{ flex:1, padding:hasEvents?'2px 0 10px 12px':'0 0 0 12px' }}>
                       {events.map(c => (
-                        <div key={c.id} style={{ background:'var(--bg-secondary)', borderRadius:'0 10px 10px 0', borderLeft:`3px solid ${color}`, padding:'8px 10px', marginBottom:4 }}>
+                        <div key={c.id} style={{ background:'var(--bg-secondary)', borderRadius:'0 10px 10px 0', borderLeft:`3px solid ${accent}`, padding:'8px 10px', marginBottom:4 }}>
                           <div style={{ display:'flex', alignItems:'flex-start', gap:8 }}>
                             <div style={{ flex:1 }}>
                               <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginBottom:1 }}>{c.hora}</div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { api } from '../../../services/api'
 import { Icon } from '../../../components/ui/Icon'
+import { onSurface } from '../../../utils/color'
 
 const CONDICIONES_PRESET = ['Sin restricciones','Vegetariano','Vegano','Celíaco','Sin gluten','Sin lactosa','Sin mariscos','Kosher','Halal','Diabético']
 
@@ -16,7 +17,9 @@ const iconoCondicion = (c) => {
   return 'UtensilsCrossed'
 }
 
-function CateringCondiciones({ color, projectId, project }) {
+function CateringCondiciones({ color, projectId, project, themeLight }) {
+  const accent = onSurface(color, themeLight)
+  const ink = (c) => onSurface(c, themeLight)
   const { items: condicionesRaw, save: setCondicionesRaw } = useDeptData(projectId, 'catering', 'condiciones', [])
   const { items: extras, save: setExtrasRaw } = useDeptData(projectId, 'catering', 'personas', [])
   const [allCrew, setAllCrew] = useState([])
@@ -100,7 +103,7 @@ function CateringCondiciones({ color, projectId, project }) {
       {loaded && todos.length===0 && <div style={{ textAlign:'center', padding:'40px 20px', color:'#ccc', fontFamily:'inherit' }}>Ningún departamento cargó integrantes todavía.</div>}
       {loaded && Object.entries(byDept).map(([dk, personas]) => {
         const isExtra = dk==='_extra'
-        const dmColor = isExtra?'#888':(project?.depts?.[dk]?.color||'#888')
+        const dmColor = ink(isExtra?'#888':(project?.depts?.[dk]?.color||'#888'))
         const dmIcon  = isExtra?'Plus':(project?.depts?.[dk]?.icon||'Clapperboard')
         const dmLabel = isExtra?'INVITADOS / EXTRAS':(project?.depts?.[dk]?.label||dk).toUpperCase()
         return (
@@ -115,15 +118,15 @@ function CateringCondiciones({ color, projectId, project }) {
               const override = overrideMap[p.id] !== undefined
               const isOpen = openId===p.id
               return (
-                <div key={p.id} style={{ background:'var(--bg-secondary)', borderRadius:12, marginBottom:6, border:`1px solid ${cond?color+'30':'var(--border-light)'}`, overflow:'hidden' }}>
+                <div key={p.id} style={{ background:'var(--bg-secondary)', borderRadius:12, marginBottom:6, border:`1px solid ${cond?accent+'3a':'var(--border-light)'}`, overflow:'hidden' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px' }}>
-                    <div style={{ width:32, height:32, borderRadius:8, background:(cond?color:dmColor)+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <Icon name={cond?iconoCondicion(cond):'User'} size={15} color={cond?color:dmColor} />
+                    <div style={{ width:32, height:32, borderRadius:8, background:(cond?accent:dmColor)+'26', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <Icon name={cond?iconoCondicion(cond):'User'} size={15} color={cond?accent:dmColor} />
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{p.apodo||p.nombre}</div>
                       {cond
-                        ? <div style={{ fontSize:11, color:cond==='Sin restricciones'?'#0fa87e':color, fontFamily:'inherit', marginTop:2 }}>
+                        ? <div style={{ fontSize:11, color:cond==='Sin restricciones'?'#0fa87e':accent, fontFamily:'inherit', marginTop:2 }}>
                             {cond}{override&&!isExtra&&p.condicionOriginal&&<span style={{ fontSize:9, color:'#aaa', marginLeft:6, fontStyle:'italic' }}>(editado)</span>}
                           </div>
                         : <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'inherit', fontStyle:'italic', marginTop:2 }}>Sin cargar</div>
@@ -176,7 +179,8 @@ function CateringCondiciones({ color, projectId, project }) {
   )
 }
 
-function CateringVotacion({ color, projectId }) {
+function CateringVotacion({ color, projectId, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items: votaciones, save: saveVotaciones } = useDeptData(projectId, 'catering', 'votaciones', [])
   const [voterName, setVoterName] = useState(() => { try { return localStorage.getItem('pdr:voter-name') || '' } catch { return '' } })
   const [showForm, setShowForm] = useState(false)
@@ -212,7 +216,7 @@ function CateringVotacion({ color, projectId }) {
       <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:'12px 14px', border:'1px solid var(--border-light)', marginBottom:16 }}>
         <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:8, fontFamily:'inherit' }}>TU NOMBRE (PARA VOTAR)</div>
         <input value={voterName} onChange={e => saveVoterName(e.target.value)} placeholder="Ej: Santiago"
-          style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${voterName.trim()?color+'44':'var(--border-light)'}`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
+          style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${voterName.trim()?accent+'66':'var(--border-light)'}`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
       </div>
 
       {votaciones.length===0 && !showForm && (
@@ -228,17 +232,17 @@ function CateringVotacion({ color, projectId }) {
         const miVoto = v.votos?.[voterName.trim()]
         const maxVotos = Math.max(0, ...Object.values(tally))
         return (
-          <div key={v.id} style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}25`, marginBottom:12 }}>
+          <div key={v.id} style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${accent}33`, marginBottom:12 }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:12 }}>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
-                  <Icon name="UtensilsCrossed" size={15} color={color} /> {v.titulo}
+                  <Icon name="UtensilsCrossed" size={15} color={accent} /> {v.titulo}
                 </div>
                 <div style={{ fontSize:10, color:'var(--text-muted)', fontFamily:'inherit', marginTop:2 }}>
                   {total} voto{total!==1?'s':''} · {v.abierta ? 'Votación abierta' : 'Cerrada'}
                 </div>
               </div>
-              <button onClick={() => toggleAbierta(v.id)} style={{ fontFamily:'inherit', fontSize:10, fontWeight:700, background:v.abierta?color+'18':'var(--bg-card-dark)', color:v.abierta?color:'#888', border:'none', borderRadius:8, padding:'5px 9px', cursor:'pointer' }}>{v.abierta?'Cerrar':'Reabrir'}</button>
+              <button onClick={() => toggleAbierta(v.id)} style={{ fontFamily:'inherit', fontSize:10, fontWeight:700, background:v.abierta?accent+'26':'var(--bg-card-dark)', color:v.abierta?accent:'#888', border:'none', borderRadius:8, padding:'5px 9px', cursor:'pointer' }}>{v.abierta?'Cerrar':'Reabrir'}</button>
               <button onClick={() => delVotacion(v.id)} style={{ background:'none', border:'none', color:'var(--border-light)', fontSize:15, cursor:'pointer', padding:0 }}>✕</button>
             </div>
             {v.opciones.map(o => {
@@ -248,15 +252,15 @@ function CateringVotacion({ color, projectId }) {
               const ganadora = cant>0 && cant===maxVotos
               return (
                 <button key={o.id} onClick={() => votar(v.id, o.id)} disabled={!v.abierta || !voterName.trim()}
-                  style={{ display:'block', width:'100%', textAlign:'left', position:'relative', overflow:'hidden', background:'var(--bg-card-dark)', border:`1.5px solid ${elegida?color:'var(--border-light)'}`, borderRadius:10, padding:'10px 12px', marginBottom:6, cursor:(v.abierta&&voterName.trim())?'pointer':'default', fontFamily:'inherit' }}>
-                  <div style={{ position:'absolute', inset:0, width:`${pct*100}%`, background:`${color}1a`, transition:'width 0.4s' }} />
+                  style={{ display:'block', width:'100%', textAlign:'left', position:'relative', overflow:'hidden', background:'var(--bg-card-dark)', border:`1.5px solid ${elegida?accent:'var(--border-light)'}`, borderRadius:10, padding:'10px 12px', marginBottom:6, cursor:(v.abierta&&voterName.trim())?'pointer':'default', fontFamily:'inherit' }}>
+                  <div style={{ position:'absolute', inset:0, width:`${pct*100}%`, background:`${accent}26`, transition:'width 0.4s' }} />
                   <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
                     <span style={{ fontSize:13, fontWeight:elegida?700:500, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:6 }}>
-                      {elegida && <Icon name="Check" size={13} color={color} strokeWidth={3} />}
-                      {ganadora && !elegida && <Icon name="Crown" size={12} color={color} />}
+                      {elegida && <Icon name="Check" size={13} color={accent} strokeWidth={3} />}
+                      {ganadora && !elegida && <Icon name="Crown" size={12} color={accent} />}
                       {o.texto}
                     </span>
-                    <span style={{ fontSize:12, fontWeight:700, color:cant>0?color:'var(--text-muted)' }}>{cant} · {Math.round(pct*100)}%</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:cant>0?accent:'var(--text-muted)' }}>{cant} · {Math.round(pct*100)}%</span>
                   </div>
                 </button>
               )
@@ -283,7 +287,7 @@ function CateringVotacion({ color, projectId }) {
               {opciones.length>2 && <button onClick={() => setOpciones(opciones.filter((_,j)=>j!==i))} style={{ background:'none', border:'none', color:'var(--border-light)', fontSize:15, cursor:'pointer' }}>✕</button>}
             </div>
           ))}
-          <button onClick={() => setOpciones([...opciones, ''])} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, background:`${color}14`, color, border:'none', borderRadius:8, padding:'7px 12px', cursor:'pointer', marginBottom:12 }}>+ Agregar opción</button>
+          <button onClick={() => setOpciones([...opciones, ''])} style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, background:`${accent}1f`, color:accent, border:'none', borderRadius:8, padding:'7px 12px', cursor:'pointer', marginBottom:12 }}>+ Agregar opción</button>
           <div style={{ display:'flex', gap:8 }}>
             <button onClick={() => { setShowForm(false); setTitulo(''); setOpciones(['','']) }} style={{ flex:1, fontFamily:'inherit', fontSize:12, background:'var(--bg-card-dark-secondary)', color:'var(--text-tertiary)', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Cancelar</button>
             <button onClick={crear} style={{ flex:2, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Crear votación</button>
@@ -294,7 +298,7 @@ function CateringVotacion({ color, projectId }) {
   )
 }
 
-export default function CateringTab({ color, projectId, project }) {
+export default function CateringTab({ color, projectId, project, themeLight }) {
   const [subTab, setSubTab] = useState('condiciones')
   return (
     <div>
@@ -303,8 +307,8 @@ export default function CateringTab({ color, projectId, project }) {
           <button key={k} onClick={() => setSubTab(k)} style={{ flex:1, fontFamily:'inherit', fontSize:13, fontWeight:700, padding:'12px 8px', borderRadius:14, cursor:'pointer', border:'none', background:subTab===k?color:'var(--bg-card-dark)', color:subTab===k?'#fff':'#888' }}>{l}</button>
         ))}
       </div>
-      {subTab==='condiciones' && <CateringCondiciones color={color} projectId={projectId} project={project} />}
-      {subTab==='votacion'    && <CateringVotacion    color={color} projectId={projectId} />}
+      {subTab==='condiciones' && <CateringCondiciones color={color} projectId={projectId} project={project} themeLight={themeLight} />}
+      {subTab==='votacion'    && <CateringVotacion    color={color} projectId={projectId} themeLight={themeLight} />}
     </div>
   )
 }

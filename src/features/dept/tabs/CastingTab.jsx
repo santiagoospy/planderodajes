@@ -3,8 +3,10 @@ import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
+import { onSurface } from '../../../utils/color'
 
-function ActorForm({ color, project, form, set, editId, onSave, onCancel, label }) {
+function ActorForm({ color, accent, project, form, set, editId, onSave, onCancel, label }) {
+  accent = accent || color
   const todasEscenas = project ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id, label:`${s.num} — ${s.title.slice(0,25)}`, day:d.label }))) : []
   const toggleEscena = (scId) => {
     const curr = form.escenas || []
@@ -51,15 +53,15 @@ function ActorForm({ color, project, form, set, editId, onSave, onCancel, label 
         <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>CITACIÓN POR DÍA (CALL TIME)</div>
         {diasParticipa.length === 0 ? (
           <input value={form.citacion||''} onChange={e => set('citacion', e.target.value)} placeholder="Ej: 08:30hs - Locación principal"
-            style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${color}44`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
+            style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card-dark)', border:`1px solid ${accent}55`, borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }} />
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {diasParticipa.map(d => {
               const cit = form.citaciones?.[d.label] || {}
               return (
-                <div key={d.label} style={{ background:'var(--bg-card-dark)', border:`1px solid ${color}33`, borderRadius:10, padding:'8px 10px' }}>
-                  <div style={{ fontSize:11, fontWeight:700, color, fontFamily:'inherit', marginBottom:6, display:'flex', alignItems:'center', gap:5 }}>
-                    <Icon name="Calendar" size={11} color={color} /> {d.date || d.label}
+                <div key={d.label} style={{ background:'var(--bg-card-dark)', border:`1px solid ${accent}44`, borderRadius:10, padding:'8px 10px' }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:accent, fontFamily:'inherit', marginBottom:6, display:'flex', alignItems:'center', gap:5 }}>
+                    <Icon name="Calendar" size={11} color={accent} /> {d.date || d.label}
                   </div>
                   <div style={{ display:'flex', gap:6 }}>
                     <input value={cit.hora||''} onChange={e => setCitacionDia(d.label, 'hora', e.target.value)} placeholder="Hora (08:30)"
@@ -80,8 +82,8 @@ function ActorForm({ color, project, form, set, editId, onSave, onCancel, label 
             {todasEscenas.map(sc => {
               const sel = (form.escenas||[]).includes(sc.id)
               return (
-                <div key={sc.id} onClick={() => toggleEscena(sc.id)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, cursor:'pointer', background:sel?color+'12':'var(--bg-card-dark)', border:`1px solid ${sel?color+'44':'var(--border-light)'}` }}>
-                  <div style={{ width:16, height:16, borderRadius:4, background:sel?color:'transparent', border:sel?'none':`2px solid ${color}66`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <div key={sc.id} onClick={() => toggleEscena(sc.id)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, cursor:'pointer', background:sel?accent+'1f':'var(--bg-card-dark)', border:`1px solid ${sel?accent+'66':'var(--border-light)'}` }}>
+                  <div style={{ width:16, height:16, borderRadius:4, background:sel?color:'transparent', border:sel?'none':`2px solid ${accent}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     {sel && <span style={{ color:'#fff', fontSize:10, fontWeight:700 }}>✓</span>}
                   </div>
                   <div style={{ flex:1 }}>
@@ -102,7 +104,8 @@ function ActorForm({ color, project, form, set, editId, onSave, onCancel, label 
   )
 }
 
-function CastingPrincipales({ color, projectId, project }) {
+function CastingPrincipales({ color, projectId, project, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items: actores, save: setActores } = useDeptData(projectId, 'casting', 'principales', [])
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId]     = useState(null)
@@ -139,20 +142,20 @@ function CastingPrincipales({ color, projectId, project }) {
               </div>
               <div style={{ padding:'10px 10px 12px' }}>
                 <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:2 }}>{a.nombre}</div>
-                {a.personaje && <div style={{ fontSize:11, color, fontFamily:'inherit', marginBottom:4, fontStyle:'italic' }}>"{a.personaje}"</div>}
+                {a.personaje && <div style={{ fontSize:11, color:accent, fontFamily:'inherit', marginBottom:4, fontStyle:'italic' }}>"{a.personaje}"</div>}
                 {a.altura    && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>{a.altura}</div>}
                 {a.talla     && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>{a.talla}</div>}
                 {a.telefono  && <div style={{ fontSize:11, color:'var(--text-tertiary)', fontFamily:'inherit' }}>{a.telefono}</div>}
                 {Object.entries(a.citaciones||{}).filter(([,v]) => v && (v.hora||v.lugar)).map(([dia,v]) => (
-                  <div key={dia} style={{ fontSize:10, color, fontFamily:'inherit', marginTop:3, display:'flex', alignItems:'center', gap:3 }}>
-                    <Icon name="Clock" size={9} color={color} />
+                  <div key={dia} style={{ fontSize:10, color:accent, fontFamily:'inherit', marginTop:3, display:'flex', alignItems:'center', gap:3 }}>
+                    <Icon name="Clock" size={9} color={accent} />
                     <span style={{ fontWeight:700 }}>{dia}:</span> {[v.hora, v.lugar].filter(Boolean).join(' · ')}
                   </div>
                 ))}
-                {a.citacion && Object.keys(a.citaciones||{}).length===0 && <div style={{ fontSize:11, color, fontFamily:'inherit', marginTop:4 }}>{a.citacion}</div>}
+                {a.citacion && Object.keys(a.citaciones||{}).length===0 && <div style={{ fontSize:11, color:accent, fontFamily:'inherit', marginTop:4 }}>{a.citacion}</div>}
                 {escenaLabels.length > 0 && (
                   <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginTop:4 }}>
-                    {escenaLabels.map((lb,i) => <span key={i} style={{ fontSize:9, padding:'2px 6px', borderRadius:8, background:color+'15', color, fontFamily:'inherit' }}>{lb}</span>)}
+                    {escenaLabels.map((lb,i) => <span key={i} style={{ fontSize:9, padding:'2px 6px', borderRadius:8, background:accent+'22', color:accent, fontFamily:'inherit' }}>{lb}</span>)}
                   </div>
                 )}
               </div>
@@ -165,14 +168,15 @@ function CastingPrincipales({ color, projectId, project }) {
         })}
       </div>
       {!showForm
-        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar actor principal</button>
-        : <ActorForm color={color} project={project} form={form} set={set} editId={editId} onSave={save} onCancel={() => { setShowForm(false); setEditId(null) }} label="ACTOR PRINCIPAL" />
+        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${accent}1f`, border:`1px dashed ${accent}88`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar actor principal</button>
+        : <ActorForm color={color} accent={accent} project={project} form={form} set={set} editId={editId} onSave={save} onCancel={() => { setShowForm(false); setEditId(null) }} label="ACTOR PRINCIPAL" />
       }
     </div>
   )
 }
 
-function CastingExtras({ color, projectId, project }) {
+function CastingExtras({ color, projectId, project, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items: extras, save: setExtras } = useDeptData(projectId, 'casting', 'extras', [])
   const { items: infoRaw, save: saveInfoArr } = useDeptData(projectId, 'casting', 'extras_info', [])
   const infoTexto = infoRaw && infoRaw[0] ? infoRaw[0].texto || '' : ''
@@ -218,9 +222,9 @@ function CastingExtras({ color, projectId, project }) {
               <div style={{ fontSize:11, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{e.nombre}</div>
               {e.notas    && <div style={{ fontSize:10, color:'#aaa', fontFamily:'inherit', marginTop:2 }}>{e.notas}</div>}
               {Object.entries(e.citaciones||{}).filter(([,v]) => v && (v.hora||v.lugar)).map(([dia,v]) => (
-                <div key={dia} style={{ fontSize:9, color, fontFamily:'inherit', marginTop:2 }}><span style={{ fontWeight:700 }}>{dia}:</span> {[v.hora, v.lugar].filter(Boolean).join(' · ')}</div>
+                <div key={dia} style={{ fontSize:9, color:accent, fontFamily:'inherit', marginTop:2 }}><span style={{ fontWeight:700 }}>{dia}:</span> {[v.hora, v.lugar].filter(Boolean).join(' · ')}</div>
               ))}
-              {e.citacion && Object.keys(e.citaciones||{}).length===0 && <div style={{ fontSize:10, color, fontFamily:'inherit', marginTop:2 }}>{e.citacion}</div>}
+              {e.citacion && Object.keys(e.citaciones||{}).length===0 && <div style={{ fontSize:10, color:accent, fontFamily:'inherit', marginTop:2 }}>{e.citacion}</div>}
             </div>
             <div style={{ position:'absolute', top:4, right:4, display:'flex', gap:3 }}>
               <button onClick={() => openEdit(e)} style={{ width:20, height:20, borderRadius:'50%', background:'rgba(0,0,0,0.4)', border:'none', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✎</button>
@@ -231,14 +235,14 @@ function CastingExtras({ color, projectId, project }) {
         })}
       </div>
       {!showForm
-        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${color}14`, border:`1px dashed ${color}66`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar extra</button>
-        : <ActorForm color={color} project={project} form={form} set={set} editId={editId} onSave={save} onCancel={() => { setShowForm(false); setEditId(null) }} label="EXTRA" />
+        ? <button onClick={openAdd} style={{ width:'100%', fontFamily:'inherit', fontSize:12, color:'var(--text-primary)', background:`${accent}1f`, border:`1px dashed ${accent}88`, borderRadius:12, padding:'11px', cursor:'pointer', marginTop:4 }}>+ Agregar extra</button>
+        : <ActorForm color={color} accent={accent} project={project} form={form} set={set} editId={editId} onSave={save} onCancel={() => { setShowForm(false); setEditId(null) }} label="EXTRA" />
       }
     </div>
   )
 }
 
-export default function CastingTab({ color, projectId, project }) {
+export default function CastingTab({ color, projectId, project, themeLight }) {
   const [subTab, setSubTab] = useState('principales')
   return (
     <div>
@@ -247,8 +251,8 @@ export default function CastingTab({ color, projectId, project }) {
           <button key={k} onClick={() => setSubTab(k)} style={{ flex:1, fontFamily:'inherit', fontSize:13, fontWeight:700, padding:'12px 8px', borderRadius:14, cursor:'pointer', border:'none', background:subTab===k?color:'var(--bg-card-dark)', color:subTab===k?'#fff':'#888' }}>{l}</button>
         ))}
       </div>
-      {subTab==='principales' && <CastingPrincipales color={color} projectId={projectId} project={project} />}
-      {subTab==='extras'      && <CastingExtras      color={color} projectId={projectId} project={project} />}
+      {subTab==='principales' && <CastingPrincipales color={color} projectId={projectId} project={project} themeLight={themeLight} />}
+      {subTab==='extras'      && <CastingExtras      color={color} projectId={projectId} project={project} themeLight={themeLight} />}
     </div>
   )
 }

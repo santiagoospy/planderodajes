@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { TabBar } from '../../components/ui/TabBar'
 import { DeptAvatar } from '../../components/ui/DeptAvatar'
+import { onSurface } from '../../utils/color'
 import { DAY_COLORS, DEPT_SECTION_OPTIONS, TABS_BY_DEPT, DEFAULT_TABS } from '../../constants/depts'
 
 // Sub-tab imports
@@ -37,9 +38,10 @@ const TAB_TO_SECTION = {
 export default function DeptDetailView({
   deptKey, deptMeta, isAdmin, onBack,
   projectId, project, save,
-  onSelectSceneFromDept,
+  onSelectSceneFromDept, themeLight,
 }) {
   const color = deptMeta.color || '#888'
+  const accent = onSurface(color, themeLight)
   const onUpdateProject = save
 
   // Determine tabs for this dept
@@ -71,7 +73,7 @@ export default function DeptDetailView({
     onUpdateProject({ ...project, depts: { ...project.depts, [deptKey]: { ...deptMeta, ...updates } } })
   }
 
-  const tabProps = { color, deptKey, deptMeta, projectId, project, isAdmin, onUpdateProject }
+  const tabProps = { color, deptKey, deptMeta, projectId, project, isAdmin, onUpdateProject, themeLight }
 
   return (
     <div style={{ minHeight:'100dvh', background:'transparent', display:'flex', flexDirection:'column' }} className="slide-r">
@@ -104,7 +106,7 @@ export default function DeptDetailView({
                 style={{ fontSize:10, color:'#aaa', background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:20, padding:'3px 10px', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
                 <Icon name="Settings2" size={11} color="#aaa"/> Secciones
               </button>
-              <div style={{ fontSize:11, color, fontFamily:'inherit', background:`${color}15`, borderRadius:20, padding:'4px 10px', border:`1px solid ${color}33` }}>
+              <div style={{ fontSize:11, color:accent, fontFamily:'inherit', background:`${accent}1f`, borderRadius:20, padding:'4px 10px', border:`1px solid ${accent}44` }}>
                 ADMIN
               </div>
             </div>
@@ -225,8 +227,8 @@ export default function DeptDetailView({
           <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em' }}>INICIO</span>
         </button>
         <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color, fontFamily:'inherit', minWidth:72 }}>
-          <Icon name={deptMeta.icon||'Clapperboard'} size={20} color={color}/>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', color:accent, fontFamily:'inherit', minWidth:72 }}>
+          <Icon name={deptMeta.icon||'Clapperboard'} size={20} color={accent}/>
           <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {deptMeta.label?.toUpperCase()?.slice(0,10)}
           </span>

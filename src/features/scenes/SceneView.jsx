@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { DeptAvatar } from '../../components/ui/DeptAvatar'
 import { api } from '../../services/api'
+import { onSurface } from '../../utils/color'
 
 // ── MiniChecklist ─────────────────────────────────────────────
-function MiniChecklist({ items, setItems, color }) {
+function MiniChecklist({ items, setItems, color, ink }) {
+  const accent = ink ? ink(color) : color
   const [nuevo, setNuevo] = useState('')
   const toggle  = (id) => setItems(items.map(i => i.id === id ? { ...i, done: !i.done } : i))
   const eliminar = (id) => setItems(items.filter(i => i.id !== id))
@@ -22,7 +24,7 @@ function MiniChecklist({ items, setItems, color }) {
       {items.map(it => (
         <div key={it.id} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5, background:'var(--bg-card)', borderRadius:8, padding:'8px 10px' }}>
           <button onClick={() => toggle(it.id)}
-            style={{ width:20, height:20, borderRadius:6, background: it.done ? color : 'transparent', border: it.done ? 'none' : `2px solid ${color}66`, cursor:'pointer', flexShrink:0, padding:0, color:'#fff', fontSize:12 }}>
+            style={{ width:20, height:20, borderRadius:6, background: it.done ? color : 'transparent', border: it.done ? 'none' : `2px solid ${accent}`, cursor:'pointer', flexShrink:0, padding:0, color:'#fff', fontSize:12 }}>
             {it.done ? '✓' : ''}
           </button>
           <span style={{ flex:1, fontSize:13, color: it.done ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily:'inherit', textDecoration: it.done ? 'line-through' : 'none' }}>{it.text}</span>
@@ -42,17 +44,19 @@ function MiniChecklist({ items, setItems, color }) {
 }
 
 // ── DeptChecklistCard ─────────────────────────────────────────
-function DeptChecklistCard({ deptKey, meta, checklist, onUpdateChecklist, onRemove, isAdmin }) {
+function DeptChecklistCard({ deptKey, meta, checklist, onUpdateChecklist, onRemove, isAdmin, themeLight }) {
   const [open, setOpen] = useState(false)
   const done = (checklist || []).filter(i => i.done).length
   const total = (checklist || []).length
+  const ink = (c) => onSurface(c, themeLight)
+  const deptInk = ink(meta.color)
 
   return (
-    <div style={{ background:'var(--bg-secondary)', borderRadius:14, border:`1px solid ${meta.color}33`, marginBottom:10, overflow:'hidden' }}>
+    <div style={{ background:'var(--bg-secondary)', borderRadius:14, border:`1px solid ${deptInk}40`, marginBottom:10, overflow:'hidden' }}>
       <div onClick={() => setOpen(!open)}
-        style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', cursor:'pointer', background:meta.color+'08' }}>
-        <div style={{ width:36, height:36, borderRadius:10, background:meta.color+'20', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <Icon name={meta.icon || 'Clapperboard'} size={18} color={meta.color}/>
+        style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', cursor:'pointer', background:deptInk+'14' }}>
+        <div style={{ width:36, height:36, borderRadius:10, background:deptInk+'2e', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <Icon name={meta.icon || 'Clapperboard'} size={18} color={deptInk}/>
         </div>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:14, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>{meta.label}</div>
@@ -61,7 +65,7 @@ function DeptChecklistCard({ deptKey, meta, checklist, onUpdateChecklist, onRemo
           </div>
         </div>
         {total > 0 && (
-          <div style={{ fontSize:11, fontWeight:700, color: done === total ? '#0fa87e' : meta.color, fontFamily:'inherit' }}>
+          <div style={{ fontSize:11, fontWeight:700, color: done === total ? '#0fa87e' : deptInk, fontFamily:'inherit' }}>
             {Math.round(done / total * 100)}%
           </div>
         )}
@@ -72,11 +76,12 @@ function DeptChecklistCard({ deptKey, meta, checklist, onUpdateChecklist, onRemo
         <Icon name={open ? 'ChevronDown' : 'ChevronRight'} size={18} color="var(--text-muted)"/>
       </div>
       {open && (
-        <div style={{ padding:'14px', borderTop:`1px solid ${meta.color}22`, background:'var(--bg-card-dark)' }}>
+        <div style={{ padding:'14px', borderTop:`1px solid ${deptInk}22`, background:'var(--bg-card-dark)' }}>
           <MiniChecklist
             items={checklist || []}
             setItems={onUpdateChecklist}
-            color={meta.color}/>
+            color={meta.color}
+            ink={ink}/>
         </div>
       )}
     </div>
@@ -84,9 +89,11 @@ function DeptChecklistCard({ deptKey, meta, checklist, onUpdateChecklist, onRemo
 }
 
 // ── PlanoCard ────────────────────────────────────────────────
-function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onToggleEstrella, onSaveComentario, onToggleDeptOk }) {
+function PlanoCard({ plano, depts, color, themeLight, onToggle, onEdit, onDelete, onToggleEstrella, onSaveComentario, onToggleDeptOk }) {
   const [showComment, setShowComment] = useState(false)
   const [draft, setDraft] = useState(plano.comentario || '')
+  const ink = (c) => onSurface(c, themeLight)
+  const accent = ink(color)
 
   const assignedDepts = (plano.depts || []).map(dk => ({ dk, meta: depts?.[dk] })).filter(x => x.meta)
 
@@ -96,7 +103,7 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onToggleEs
         <div style={{ width:4, background:plano.done ? '#0fa87e' : (plano.estrella ? '#d48c0e' : color) }}/>
         <div style={{ flex:1, padding:'12px 14px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-            <span style={{ fontSize:13, fontWeight:800, color:color, fontFamily:'inherit' }}>{plano.numero}</span>
+            <span style={{ fontSize:13, fontWeight:800, color:accent, fontFamily:'inherit' }}>{plano.numero}</span>
             {plano.estrella && <Icon name="Star" size={14} color="#d48c0e" style={{ fill:'#d48c0e' }}/>}
             {plano.duracion && (
               <span style={{ fontSize:12, fontWeight:700, color:'#d48c0e', fontFamily:'inherit', marginLeft:'auto', display:'flex', alignItems:'center', gap:4 }}>
@@ -107,7 +114,7 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onToggleEs
           {(plano.tipo || plano.lente) && (
             <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:6, alignItems:'center' }}>
               {plano.tipo && (
-                <span style={{ fontSize:12, fontWeight:600, color:color, fontFamily:'inherit' }}>{plano.tipo}</span>
+                <span style={{ fontSize:12, fontWeight:600, color:accent, fontFamily:'inherit' }}>{plano.tipo}</span>
               )}
               {plano.tipo && plano.lente && <span style={{ fontSize:12, color:'var(--text-muted)' }}>·</span>}
               {plano.lente && (
@@ -124,12 +131,13 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onToggleEs
             <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:8, marginTop:4 }}>
               {assignedDepts.map(({ dk, meta }) => {
                 const ok = plano.deptsOk?.[dk]
+                const di = ink(meta.color)
                 return (
                   <button key={dk} onClick={() => onToggleDeptOk(dk)} className="tap"
-                    style={{ display:'flex', alignItems:'center', gap:8, background: ok ? `${meta.color}18` : 'var(--bg-card)', border:`1px solid ${ok ? meta.color+'55' : 'var(--border-light)'}`, borderRadius:8, padding:'7px 10px', cursor:'pointer', textAlign:'left' }}>
-                    <Icon name={ok ? 'CheckSquare' : 'Square'} size={15} color={ok ? meta.color : 'var(--text-muted)'}/>
-                    <Icon name={meta.icon || 'Clapperboard'} size={14} color={ok ? meta.color : 'var(--text-muted)'}/>
-                    <span style={{ fontSize:12, fontWeight:600, color: ok ? meta.color : 'var(--text-secondary)', fontFamily:'inherit' }}>{meta.label}</span>
+                    style={{ display:'flex', alignItems:'center', gap:8, background: ok ? `${di}22` : 'var(--bg-card)', border:`1px solid ${ok ? di+'66' : 'var(--border-light)'}`, borderRadius:8, padding:'7px 10px', cursor:'pointer', textAlign:'left' }}>
+                    <Icon name={ok ? 'CheckSquare' : 'Square'} size={15} color={ok ? di : 'var(--text-secondary)'}/>
+                    <Icon name={meta.icon || 'Clapperboard'} size={14} color={ok ? di : 'var(--text-secondary)'}/>
+                    <span style={{ fontSize:12, fontWeight:600, color: ok ? di : 'var(--text-secondary)', fontFamily:'inherit' }}>{meta.label}</span>
                   </button>
                 )
               })}
@@ -177,7 +185,9 @@ function PlanoCard({ plano, depts, color, onToggle, onEdit, onDelete, onToggleEs
 }
 
 // ── PlanoForm ────────────────────────────────────────────────
-function PlanoForm({ plano, color, depts, onSave, onCancel }) {
+function PlanoForm({ plano, color, depts, themeLight, onSave, onCancel }) {
+  const ink = (c) => onSurface(c, themeLight)
+  const accent = ink(color)
   const [form, setForm] = useState({
     numero: plano?.numero || '',
     descripcion: plano?.descripcion || '',
@@ -206,7 +216,7 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
       </div>
       <div style={{ display:'flex', gap:8, marginBottom:10 }}>
         <input value={form.numero} onChange={e => s('numero', e.target.value)} placeholder="Plano 1A"
-          style={{ width:'38%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:`1.5px solid ${color}55`, borderRadius:10, padding:'10px', color:'var(--text-primary)', outline:'none' }}/>
+          style={{ width:'38%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:`1.5px solid ${accent}77`, borderRadius:10, padding:'10px', color:'var(--text-primary)', outline:'none' }}/>
         <input value={form.duracion} onChange={e => s('duracion', e.target.value)} placeholder="Duración (ej: 2min)"
           style={{ flex:1, fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
       </div>
@@ -231,7 +241,7 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
       <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:12 }}>
         {LENTES.map(l => (
           <button key={l} onClick={() => s('lente', l)}
-            style={{ fontFamily:'inherit', fontSize:11, padding:'4px 9px', borderRadius:16, border:`1px solid ${form.lente === l ? color : 'var(--border-light)'}`, background:form.lente === l ? `${color}15` : 'transparent', color:form.lente === l ? color : 'var(--text-muted)', cursor:'pointer' }}>
+            style={{ fontFamily:'inherit', fontSize:11, padding:'4px 9px', borderRadius:16, border:`1px solid ${form.lente === l ? accent : 'var(--border-light)'}`, background:form.lente === l ? `${accent}22` : 'transparent', color:form.lente === l ? accent : 'var(--text-secondary)', cursor:'pointer' }}>
             {l}
           </button>
         ))}
@@ -243,10 +253,11 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
           <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
             {deptEntries.map(([dk, meta]) => {
               const sel = (form.depts || []).includes(dk)
+              const di = ink(meta.color)
               return (
                 <button key={dk} onClick={() => toggleDept(dk)}
-                  style={{ fontFamily:'inherit', fontSize:12, padding:'5px 12px', borderRadius:20, border:`1px solid ${sel ? meta.color+'88' : 'var(--border-light)'}`, background: sel ? `${meta.color}18` : 'transparent', color: sel ? meta.color : 'var(--text-muted)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}>
-                  <Icon name={meta.icon || 'Clapperboard'} size={12} color={sel ? meta.color : 'currentColor'}/> {meta.label}
+                  style={{ fontFamily:'inherit', fontSize:12, padding:'5px 12px', borderRadius:20, border:`1px solid ${sel ? di+'99' : 'var(--border-light)'}`, background: sel ? `${di}22` : 'transparent', color: sel ? di : 'var(--text-secondary)', cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}>
+                  <Icon name={meta.icon || 'Clapperboard'} size={12} color={sel ? di : 'currentColor'}/> {meta.label}
                 </button>
               )
             })}
@@ -266,7 +277,7 @@ function PlanoForm({ plano, color, depts, onSave, onCancel }) {
 }
 
 // ── Main SceneView ────────────────────────────────────────────
-export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene, projectId, accentColor }) {
+export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene, projectId, accentColor, themeLight }) {
   const [planos, setPlanos]           = useState([])
   const [deptChecklists, setDeptChecklists] = useState({})
   const [showForm, setShowForm]       = useState(false)
@@ -334,6 +345,8 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
   const assignedDepts = (scene.depts || []).filter(k => depts[k])
   const otherDepts    = Object.keys(depts).filter(k => !(scene.depts || []).includes(k))
   const color = accentColor || '#0B7285'
+  const ink = (c) => onSurface(c, themeLight)
+  const accent = ink(color)
 
   return (
     <div style={{ minHeight:'100dvh', background:'var(--bg-primary)', display:'flex', flexDirection:'column' }} className="slide-r">
@@ -406,7 +419,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
         </div>
 
         {showForm && (
-          <PlanoForm plano={editPlano} color={color} depts={depts}
+          <PlanoForm plano={editPlano} color={color} depts={depts} themeLight={themeLight}
             onSave={savePlano} onCancel={() => { setShowForm(false); setEditPlano(null) }}/>
         )}
 
@@ -418,7 +431,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
         )}
 
         {planos.map(p => (
-          <PlanoCard key={p.id} plano={p} depts={depts} color={color}
+          <PlanoCard key={p.id} plano={p} depts={depts} color={color} themeLight={themeLight}
             onToggle={() => togglePlano(p.id)}
             onEdit={() => { setEditPlano(p); setShowForm(true) }}
             onDelete={() => deletePlano(p.id)}
@@ -459,6 +472,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
               onUpdateChecklist={(items) => updateDeptChecklist(dk, items)}
               onRemove={() => toggleDept(dk)}
               isAdmin={isAdmin}
+              themeLight={themeLight}
             />
           ))}
 
@@ -470,11 +484,12 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                 {otherDepts.map(dk => {
                   const m = depts[dk]
+                  const di = ink(m.color)
                   return (
                     <button key={dk} onClick={() => toggleDept(dk)} className="tap"
-                      style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 8px', border:'1px dashed var(--border-light)', cursor:'pointer', fontFamily:'inherit' }}>
-                      <div style={{ width:36, height:36, borderRadius:10, background:m.color+'18', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <Icon name={m.icon || 'Clapperboard'} size={18} color={m.color}/>
+                      style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 8px', border:`1px dashed ${di}55`, cursor:'pointer', fontFamily:'inherit' }}>
+                      <div style={{ width:36, height:36, borderRadius:10, background:di+'2e', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <Icon name={m.icon || 'Clapperboard'} size={18} color={di}/>
                       </div>
                       <span style={{ fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit', textAlign:'center', lineHeight:1.2 }}>{m.label}</span>
                     </button>
@@ -495,8 +510,8 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
         </button>
         <div style={{ width:1, height:36, background:'var(--border-light)' }}/>
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 20px', fontFamily:'inherit', minWidth:72 }}>
-          <Icon name="Clapperboard" size={20} color={color}/>
-          <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color }}>
+          <Icon name="Clapperboard" size={20} color={accent}/>
+          <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.04em', maxWidth:80, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:accent }}>
             {scene.num}
           </span>
         </div>

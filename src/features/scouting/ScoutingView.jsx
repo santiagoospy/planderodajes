@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, MapPin, Camera, Paperclip, Map, Link, FileText, ClipboardList, Clapperboard, Palette, Wrench, Mic, Lightbulb, Car, Utensils, Laptop, Plug, Navigation, Scissors, Music } from 'lucide-react';
 import { ImageLightbox } from '../../components/ui/ImageLightbox';
+import { onSurface } from '../../utils/color';
 
 const SCOUT_DEPT_PRESETS = [
   { key: 'tecnica', label: 'Técnica', color: '#2f7ed8', icon: 'Wrench', seed: ['Energía eléctrica', 'Lugar para estacionar el camión', 'Acceso para equipos pesados', 'Generador disponible'] },
@@ -97,16 +98,17 @@ const FilesUploader = ({ files, setFiles, color, label = 'Archivos' }) => {
   );
 };
 
-const ScoutDeptCard = ({ dept, onUpdate, onDelete }) => {
+const ScoutDeptCard = ({ dept, onUpdate, onDelete, themeLight }) => {
   const [open, setOpen] = useState(false);
   const checklist = dept.checklist || [];
   const files = dept.files || [];
+  const accent = onSurface(dept.color || '#888', themeLight);
   const iconMap = { ClipboardList, Clapperboard, Camera, Mic, Lightbulb, Car, Utensils, Laptop, Plug, Navigation, Scissors, Music, Wrench, Palette };
   const IconComponent = iconMap[dept.icon] || ClipboardList;
   return (
-    <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, border: `1px solid ${dept.color}33`, marginBottom: 8, overflow: 'hidden' }}>
-      <div onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer', background: dept.color + '08' }}>
-        <IconComponent size={18} color={dept.color || 'var(--text-secondary)'} />
+    <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, border: `1px solid ${accent}3a`, marginBottom: 8, overflow: 'hidden' }}>
+      <div onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer', background: accent + '14' }}>
+        <IconComponent size={18} color={accent} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'inherit' }}>{dept.label}</div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'inherit' }}>{checklist.filter(i => i.done).length}/{checklist.length} ✓ · {files.length} archivos</div>
@@ -114,7 +116,7 @@ const ScoutDeptCard = ({ dept, onUpdate, onDelete }) => {
         <button onClick={(e) => { e.stopPropagation(); if (confirm(`¿Eliminar ${dept.label}?`)) onDelete(); }} style={{ background: 'var(--bg-error)', border: 'none', borderRadius: 6, color: 'var(--color-primary)', fontSize: 11, cursor: 'pointer', padding: '4px 7px' }}>✕</button>
         <span style={{ fontSize: 14, color: '#ccc' }}>{open ? '▾' : '▸'}</span>
       </div>
-      {open && (<div style={{ padding: '12px', borderTop: `1px solid ${dept.color}22`, background: 'var(--bg-card-dark)' }}><MiniChecklist items={checklist} setItems={items => onUpdate({ ...dept, checklist: items })} color={dept.color} /><div style={{ marginTop: 14 }}><FilesUploader files={files} setFiles={f => onUpdate({ ...dept, files: f })} color={dept.color} label={`Archivos ${dept.label}`} /></div></div>)}
+      {open && (<div style={{ padding: '12px', borderTop: `1px solid ${accent}22`, background: 'var(--bg-card-dark)' }}><MiniChecklist items={checklist} setItems={items => onUpdate({ ...dept, checklist: items })} color={accent} /><div style={{ marginTop: 14 }}><FilesUploader files={files} setFiles={f => onUpdate({ ...dept, files: f })} color={accent} label={`Archivos ${dept.label}`} /></div></div>)}
     </div>
   );
 };
@@ -153,7 +155,7 @@ const AddScoutDeptModal = ({ onAdd, onClose }) => {
   );
 };
 
-const LocacionScoutCard = ({ loc, idx, onUpdate, onDelete, color }) => {
+const LocacionScoutCard = ({ loc, idx, onUpdate, onDelete, color, themeLight }) => {
   const [showAddDept, setShowAddDept] = useState(false);
   const [editName, setEditName] = useState(false);
   const [draftName, setDraftName] = useState(loc.name);
@@ -184,7 +186,7 @@ const LocacionScoutCard = ({ loc, idx, onUpdate, onDelete, color }) => {
         <button onClick={() => setCollapsed(!collapsed)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 18, cursor: 'pointer', padding: '2px 4px' }}>{collapsed ? '▸' : '▾'}</button>
         <button onClick={() => { if (confirm(`¿Eliminar ${loc.name}?`)) onDelete(); }} style={{ background: 'var(--bg-error)', border: 'none', borderRadius: 6, color: 'var(--color-primary)', fontSize: 12, cursor: 'pointer', padding: '4px 7px' }}>✕</button>
       </div>
-      {!collapsed && (<div style={{ padding: '14px' }}><div style={{ marginBottom: 18 }}><MultiPhotoUploader fotos={fotos} setFotos={f => updateField('fotos', f)} color={color} label="Fotos del lugar" /></div><div style={{ marginBottom: 18 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>UBICACIÓN GOOGLE MAPS</div><div style={{ display: 'flex', gap: 6 }}><input value={loc.mapUrl || ''} onChange={e => updateField('mapUrl', e.target.value)} placeholder="Pegá el link de Google Maps acá" style={{ flex: 1, fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-card-dark)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none' }} /><button onClick={abrirMaps} disabled={!loc.mapUrl} style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: loc.mapUrl ? '#2f7ed8' : 'var(--border-light)', color: loc.mapUrl ? '#fff' : '#bbb', border: 'none', borderRadius: 10, padding: '0 14px', cursor: loc.mapUrl ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}><Map size={12} style={{ display: 'inline', marginRight: 4 }} /> Abrir</button></div>{loc.mapUrl && (<div style={{ fontSize: 10, color: 'var(--color-success)', fontFamily: 'inherit', marginTop: 4 }}>✓ Ubicación guardada</div>)}</div><div style={{ marginBottom: 14 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>DEPARTAMENTOS EN ESTA LOCACIÓN</div>{depts.length === 0 && (<div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit', textAlign: 'center', padding: '10px', fontStyle: 'italic' }}>Sin departamentos. Empezá agregando Técnica y Arte.</div>)}{depts.map(d => (<ScoutDeptCard key={d.key} dept={d} onUpdate={nd => updateDept(d.key, nd)} onDelete={() => deleteDept(d.key)} />))}{presetsDisponibles.length > 0 && (<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, marginBottom: 6 }}>{presetsDisponibles.map(p => (<button key={p.key} onClick={() => addDept({ ...p, checklist: p.seed.map((t, i) => ({ id: Date.now() + i, text: t, done: false })), files: [] })} style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, background: p.color + '22', color: 'var(--text-primary)', border: `1px dashed ${p.color}88`, borderRadius: 10, padding: '8px 12px', cursor: 'pointer' }}>+ {p.label}</button>))}</div>)}<button onClick={() => setShowAddDept(true)} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: '1px dashed #ccc', borderRadius: 10, padding: '10px', cursor: 'pointer', marginTop: 4 }}>+ Crear otro departamento</button></div><div style={{ background: 'var(--bg-card-dark)', borderRadius: 12, padding: '14px', border: '1px solid var(--border-light)' }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>⭐ PUNTUACIÓN DE LA LOCACIÓN</div><div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}><StarRating value={loc.rating || 0} onChange={n => updateField('rating', n)} /><span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'inherit' }}>{loc.rating ? `${loc.rating}/5` : 'Sin puntuar'}</span></div><textarea value={loc.comment || ''} onChange={e => updateField('comment', e.target.value)} placeholder="Comentarios sobre esta locación (review)…" rows={3} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-secondary)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} /></div></div>)}
+      {!collapsed && (<div style={{ padding: '14px' }}><div style={{ marginBottom: 18 }}><MultiPhotoUploader fotos={fotos} setFotos={f => updateField('fotos', f)} color={color} label="Fotos del lugar" /></div><div style={{ marginBottom: 18 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>UBICACIÓN GOOGLE MAPS</div><div style={{ display: 'flex', gap: 6 }}><input value={loc.mapUrl || ''} onChange={e => updateField('mapUrl', e.target.value)} placeholder="Pegá el link de Google Maps acá" style={{ flex: 1, fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-card-dark)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none' }} /><button onClick={abrirMaps} disabled={!loc.mapUrl} style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: loc.mapUrl ? '#2f7ed8' : 'var(--border-light)', color: loc.mapUrl ? '#fff' : '#bbb', border: 'none', borderRadius: 10, padding: '0 14px', cursor: loc.mapUrl ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}><Map size={12} style={{ display: 'inline', marginRight: 4 }} /> Abrir</button></div>{loc.mapUrl && (<div style={{ fontSize: 10, color: 'var(--color-success)', fontFamily: 'inherit', marginTop: 4 }}>✓ Ubicación guardada</div>)}</div><div style={{ marginBottom: 14 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>DEPARTAMENTOS EN ESTA LOCACIÓN</div>{depts.length === 0 && (<div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit', textAlign: 'center', padding: '10px', fontStyle: 'italic' }}>Sin departamentos. Empezá agregando Técnica y Arte.</div>)}{depts.map(d => (<ScoutDeptCard key={d.key} dept={d} onUpdate={nd => updateDept(d.key, nd)} onDelete={() => deleteDept(d.key)} themeLight={themeLight} />))}{presetsDisponibles.length > 0 && (<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, marginBottom: 6 }}>{presetsDisponibles.map(p => (<button key={p.key} onClick={() => addDept({ ...p, checklist: p.seed.map((t, i) => ({ id: Date.now() + i, text: t, done: false })), files: [] })} style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, background: p.color + '22', color: 'var(--text-primary)', border: `1px dashed ${p.color}88`, borderRadius: 10, padding: '8px 12px', cursor: 'pointer' }}>+ {p.label}</button>))}</div>)}<button onClick={() => setShowAddDept(true)} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: '1px dashed #ccc', borderRadius: 10, padding: '10px', cursor: 'pointer', marginTop: 4 }}>+ Crear otro departamento</button></div><div style={{ background: 'var(--bg-card-dark)', borderRadius: 12, padding: '14px', border: '1px solid var(--border-light)' }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>⭐ PUNTUACIÓN DE LA LOCACIÓN</div><div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}><StarRating value={loc.rating || 0} onChange={n => updateField('rating', n)} /><span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'inherit' }}>{loc.rating ? `${loc.rating}/5` : 'Sin puntuar'}</span></div><textarea value={loc.comment || ''} onChange={e => updateField('comment', e.target.value)} placeholder="Comentarios sobre esta locación (review)…" rows={3} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-secondary)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} /></div></div>)}
       {showAddDept && <AddScoutDeptModal onAdd={addDept} onClose={() => setShowAddDept(false)} />}
     </div>
   );
@@ -201,7 +203,7 @@ const SceneRow = ({ scene, color, onOpen, onRename, onDelete }) => {
   );
 };
 
-export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta }) => {
+export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta, themeLight }) => {
   const projectId = project.id;
   const sceneId = scene.id;
   const color = '#0fa87e';
@@ -248,7 +250,7 @@ export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta }) => {
       </div>
       <div className="has-bottom-bar" style={{ flex: 1, padding: '20px 16px 40px' }}>
         {!ready && <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 13 }}>Cargando…</div>}
-        {ready && tab === 'locaciones' && (<>{locations.length === 0 && (<div style={{ textAlign: 'center', padding: '30px 14px', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 13, fontStyle: 'italic' }}>Empezá agregando la primera locación de esta escena</div>)}{locations.map((l, i) => (<LocacionScoutCard key={l.id} loc={l} idx={i} onUpdate={nl => updateLocacion(l.id, nl)} onDelete={() => deleteLocacion(l.id)} color={color} />))}<button onClick={addLocacion} style={{ width: '100%', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: color, border: 'none', borderRadius: 14, padding: '14px', cursor: 'pointer', marginTop: 8 }}>+ Agregar nueva locación</button></>)}
+        {ready && tab === 'locaciones' && (<>{locations.length === 0 && (<div style={{ textAlign: 'center', padding: '30px 14px', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 13, fontStyle: 'italic' }}>Empezá agregando la primera locación de esta escena</div>)}{locations.map((l, i) => (<LocacionScoutCard key={l.id} loc={l} idx={i} onUpdate={nl => updateLocacion(l.id, nl)} onDelete={() => deleteLocacion(l.id)} color={color} themeLight={themeLight} />))}<button onClick={addLocacion} style={{ width: '100%', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: color, border: 'none', borderRadius: 14, padding: '14px', cursor: 'pointer', marginTop: 8 }}>+ Agregar nueva locación</button></>)}
         {ready && tab === 'archivos' && (<FilesUploader files={sceneFiles} setFiles={setSceneFiles} color={color} label="Archivos de la escena" />)}
       </div>
       <div className="pwa-bottom-bar-wrap no-print">
@@ -262,7 +264,7 @@ export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta }) => {
   );
 };
 
-export const ScoutingView = ({ project, onBack }) => {
+export const ScoutingView = ({ project, onBack, themeLight }) => {
   const projectId = project.id;
   const color = '#0fa87e';
   const [meta, setMeta] = useState(null);
@@ -305,7 +307,7 @@ export const ScoutingView = ({ project, onBack }) => {
   if (activeSceneId) {
     const scene = scenes.find(s => s.id === activeSceneId);
     if (scene) {
-      return <ScoutingSceneView project={project} scene={scene} onBack={() => setActiveSceneId(null)} onUpdateMeta={newScene => updateScene(scene.id, newScene)} />;
+      return <ScoutingSceneView project={project} scene={scene} onBack={() => setActiveSceneId(null)} onUpdateMeta={newScene => updateScene(scene.id, newScene)} themeLight={themeLight} />;
     }
   }
   return (

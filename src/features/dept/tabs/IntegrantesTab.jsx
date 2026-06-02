@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
+import { onSurface } from '../../../utils/color'
 
 const CONDICIONES = ['Sin restricciones','Vegano','Vegetariano','Celíaco','Sin gluten','Sin lactosa','Kosher','Halal','Diabético']
 
@@ -15,7 +16,8 @@ function iconoCond(c) {
   return 'UtensilsCrossed'
 }
 
-export default function IntegrantesTab({ color, deptKey, projectId }) {
+export default function IntegrantesTab({ color, deptKey, projectId, themeLight }) {
+  const accent = onSurface(color, themeLight)
   const { items: personas, save: savePersonas } = useDeptData(projectId, deptKey, 'integrantes', [])
   const [showAdd, setShowAdd]      = useState(false)
   const [editId, setEditId]        = useState(null)
@@ -47,8 +49,8 @@ export default function IntegrantesTab({ color, deptKey, projectId }) {
 
       {personas.map(p => (
         <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, background:'var(--bg-secondary)', borderRadius:12, padding:'12px 14px', marginBottom:8, border:'1px solid var(--border-light)' }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:`${color}18`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <Icon name="User" size={18} color={color}/>
+          <div style={{ width:38, height:38, borderRadius:10, background:`${accent}26`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <Icon name="User" size={18} color={accent}/>
           </div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>
@@ -56,7 +58,7 @@ export default function IntegrantesTab({ color, deptKey, projectId }) {
               {p.apodo && <span style={{ fontSize:11, color:'#aaa', fontWeight:400, fontStyle:'italic', marginLeft:6 }}>"{p.apodo}"</span>}
             </div>
             <div style={{ display:'flex', gap:8, marginTop:2, flexWrap:'wrap' }}>
-              {p.rol && <span style={{ fontSize:11, color, fontFamily:'inherit' }}>{p.rol}</span>}
+              {p.rol && <span style={{ fontSize:11, color:accent, fontFamily:'inherit' }}>{p.rol}</span>}
               {p.cedula && <span style={{ fontSize:11, color:'#aaa', fontFamily:'inherit' }}>CI: {p.cedula}</span>}
               {p.condicionAlimentaria && (
                 <span style={{ fontSize:10, color:p.condicionAlimentaria==='Sin restricciones'?'#0fa87e':'#d48c0e', fontFamily:'inherit', background:p.condicionAlimentaria==='Sin restricciones'?'#e8f8f0':'#fff8ec', borderRadius:10, padding:'1px 8px', border:`1px solid ${p.condicionAlimentaria==='Sin restricciones'?'#0fa87e33':'#d48c0e33'}`, display:'inline-flex', alignItems:'center', gap:4 }}>
