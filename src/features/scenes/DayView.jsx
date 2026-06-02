@@ -144,7 +144,7 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
             <ProgressRing pct={pct*100} size={52} stroke={4} color={color}/>
             <div style={{ position:'absolute', textAlign:'center' }}>
               <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', lineHeight:1 }}>{done}</div>
-              <div style={{ fontSize:8, color:'#aaa' }}>/{day.scenes.length}</div>
+              <div style={{ fontSize:8, color:'var(--text-secondary)' }}>/{day.scenes.length}</div>
             </div>
           </div>
         </div>
@@ -185,19 +185,19 @@ export default function DayView({ day, dayIndex, depts, isAdmin, onBack, onSelec
         )}
         {isAdmin && showAdd && (
           <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30`, marginTop:4 }}>
-            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:10, fontFamily:'inherit' }}>NUEVA ESCENA</div>
+            <div style={{ fontSize:10, color:'var(--text-secondary)', letterSpacing:'0.08em', marginBottom:10, fontFamily:'inherit' }}>NUEVA ESCENA</div>
             <div style={{ display:'flex', gap:8, marginBottom:8 }}>
               <input value={addNum} onChange={e => setAddNum(e.target.value)} placeholder="ESC 01"
                 style={{ width:'38%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:`1.5px solid ${color}55`, borderRadius:10, padding:'10px', color:'var(--text-primary)', outline:'none' }}/>
               <input value={addTitle} onChange={e => setAddTitle(e.target.value)} placeholder="Descripción de la escena..." autoFocus
                 style={{ flex:1, fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none' }}/>
             </div>
-            <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>MOMENTO DEL DÍA</div>
+            <div style={{ fontSize:10, color:'var(--text-secondary)', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit' }}>MOMENTO DEL DÍA</div>
             <div style={{ display:'flex', gap:6, marginBottom:12 }}>
               {[['mañana','Sunrise'],['tarde','Cloud'],['noche','Moon']].map(([m,ic]) => (
                 <button key={m} onClick={() => setAddMomento(m)}
-                  style={{ flex:1, fontFamily:'inherit', fontSize:12, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:addMomento===m?color:'var(--bg-card-dark)', color:addMomento===m?'#fff':'#888', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                  <Icon name={ic} size={12} color={addMomento===m?'#fff':'#888'}/> {m}
+                  style={{ flex:1, fontFamily:'inherit', fontSize:12, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', background:addMomento===m?color:'var(--bg-card-dark)', color:addMomento===m?'#fff':'var(--text-secondary)', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                  <Icon name={ic} size={12} color={addMomento===m?'#fff':'var(--text-secondary)'}/> {m}
                 </button>
               ))}
             </div>

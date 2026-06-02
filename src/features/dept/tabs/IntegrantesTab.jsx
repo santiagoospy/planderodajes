@@ -43,7 +43,7 @@ export default function IntegrantesTab({ color, deptKey, projectId, themeLight }
 
   return (
     <div>
-      <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.08em', marginBottom:10, fontFamily:'inherit' }}>
+      <div style={{ fontSize:10, color:'var(--text-secondary)', letterSpacing:'0.08em', marginBottom:10, fontFamily:'inherit' }}>
         INTEGRANTES DEL DEPARTAMENTO ({personas.length})
       </div>
 
@@ -55,11 +55,11 @@ export default function IntegrantesTab({ color, deptKey, projectId, themeLight }
           <div style={{ flex:1 }}>
             <div style={{ fontSize:13, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit' }}>
               {p.nombre}
-              {p.apodo && <span style={{ fontSize:11, color:'#aaa', fontWeight:400, fontStyle:'italic', marginLeft:6 }}>"{p.apodo}"</span>}
+              {p.apodo && <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:400, fontStyle:'italic', marginLeft:6 }}>"{p.apodo}"</span>}
             </div>
             <div style={{ display:'flex', gap:8, marginTop:2, flexWrap:'wrap' }}>
               {p.rol && <span style={{ fontSize:11, color:accent, fontFamily:'inherit' }}>{p.rol}</span>}
-              {p.cedula && <span style={{ fontSize:11, color:'#aaa', fontFamily:'inherit' }}>CI: {p.cedula}</span>}
+              {p.cedula && <span style={{ fontSize:11, color:'var(--text-secondary)', fontFamily:'inherit' }}>CI: {p.cedula}</span>}
               {p.condicionAlimentaria && (
                 <span style={{ fontSize:10, color:p.condicionAlimentaria==='Sin restricciones'?'#0fa87e':'#d48c0e', fontFamily:'inherit', background:p.condicionAlimentaria==='Sin restricciones'?'#e8f8f0':'#fff8ec', borderRadius:10, padding:'1px 8px', border:`1px solid ${p.condicionAlimentaria==='Sin restricciones'?'#0fa87e33':'#d48c0e33'}`, display:'inline-flex', alignItems:'center', gap:4 }}>
                   <Icon name={iconoCond(p.condicionAlimentaria)} size={10} color={p.condicionAlimentaria==='Sin restricciones'?'#0fa87e':'#d48c0e'}/>
@@ -74,7 +74,7 @@ export default function IntegrantesTab({ color, deptKey, projectId, themeLight }
       ))}
 
       {personas.length === 0 && !showAdd && (
-        <div style={{ textAlign:'center', padding:'24px', color:'#ccc', fontFamily:'inherit', fontSize:13 }}>Sin integrantes cargados todavía</div>
+        <div style={{ textAlign:'center', padding:'24px', color:'var(--text-muted)', fontFamily:'inherit', fontSize:13 }}>Sin integrantes cargados todavía</div>
       )}
 
       {!showAdd ? (
@@ -84,7 +84,7 @@ export default function IntegrantesTab({ color, deptKey, projectId, themeLight }
         </button>
       ) : (
         <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30`, marginTop:8 }}>
-          <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.06em', marginBottom:10, fontFamily:'inherit' }}>
+          <div style={{ fontSize:11, color:'var(--text-secondary)', letterSpacing:'0.06em', marginBottom:10, fontFamily:'inherit' }}>
             {editId ? 'EDITAR' : 'NUEVO INTEGRANTE'}
           </div>
           {[
@@ -96,13 +96,13 @@ export default function IntegrantesTab({ color, deptKey, projectId, themeLight }
             <input key={f.key} value={form[f.key]} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder}
               style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
           ))}
-          <div style={{ fontSize:10, color:'#aaa', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
-            <Icon name="Utensils" size={10} color="#aaa"/> CONDICIÓN ALIMENTARIA
+          <div style={{ fontSize:10, color:'var(--text-secondary)', letterSpacing:'0.06em', marginBottom:6, fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
+            <Icon name="Utensils" size={10} color="var(--text-secondary)"/> CONDICIÓN ALIMENTARIA
           </div>
           <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:10 }}>
             {CONDICIONES.map(c => (
               <button key={c} onClick={() => set('condicionAlimentaria', form.condicionAlimentaria===c ? '' : c)}
-                style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:form.condicionAlimentaria===c?color:'var(--bg-card-dark)', color:form.condicionAlimentaria===c?'#fff':'#888' }}>
+                style={{ fontFamily:'inherit', fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:20, cursor:'pointer', border:'none', background:form.condicionAlimentaria===c?color:'var(--bg-card-dark)', color:form.condicionAlimentaria===c?'#fff':'var(--text-secondary)' }}>
                 {c}
               </button>
             ))}

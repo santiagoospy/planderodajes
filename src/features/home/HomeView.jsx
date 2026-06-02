@@ -578,7 +578,7 @@ export default function HomeView({
 
                   if (isEditing && isAdmin) return (
                     <div key={day.id} style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:'2px solid rgba(255,255,255,0.3)', marginBottom:8 }}>
-                      <div style={{ fontSize:11, color:'#aaa', letterSpacing:'0.08em', marginBottom:12, fontWeight:700 }}>EDITAR DÍA</div>
+                      <div style={{ fontSize:11, color:'var(--text-secondary)', letterSpacing:'0.08em', marginBottom:12, fontWeight:700 }}>EDITAR DÍA</div>
                       <input value={editingDayLabel} onChange={e => setEditingDayLabel(e.target.value)} placeholder="Nombre del día"
                         style={{ width:'100%', fontFamily:'inherit', fontSize:13, background:'var(--bg-card)', border:'1px solid var(--border-light)', borderRadius:10, padding:'10px 12px', color:'var(--text-primary)', outline:'none', marginBottom:8 }}/>
                       <input type="date" value={editingDayDate} onChange={e => setEditingDayDate(e.target.value)}
