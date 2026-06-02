@@ -51,7 +51,7 @@ export const DEPT_SECTION_OPTIONS = [
 
 /** Tab layouts per department type */
 export const TABS_BY_DEPT = {
-  locaciones:  [['locaciones','LOCACIONES'],['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
+  locaciones:  [['locaciones','LOCACIONES'],['checklist','CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
   direccion:   [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['adcomentarios','AD'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],
   produccion:  [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['crew_total','CREW TOTAL'],['pedidos','PEDIDOS'],['rental','RENTAL'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['mural','ARCHIVOS']],
   tecnica:     [['info','GENERAL'],['checklist','CHECKLIST'],['integrantes','CREW'],['gastos','GASTOS'],['citaciones','CITACIÓN'],['pedidos','PEDIDOS'],['mural','ARCHIVOS']],

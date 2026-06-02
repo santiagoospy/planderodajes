@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Camera, Paperclip, Map, Link, FileText, ClipboardList, Clapperboard, Palette, Wrench, Mic, Lightbulb, Car, Utensils, Laptop, Plug, Navigation, Scissors, Music } from 'lucide-react';
+import { Search, MapPin, Camera, Paperclip, Map, Link, FileText, ClipboardList, Clapperboard, Palette, Wrench, Mic, Lightbulb, Car, Utensils, Laptop, Plug, Navigation, Scissors, Music, Pencil, ArrowRightCircle } from 'lucide-react';
 import { ImageLightbox } from '../../components/ui/ImageLightbox';
+import { PhotoAnnotator } from '../../components/ui/PhotoAnnotator';
 import { onSurface } from '../../utils/color';
 
 const SCOUT_DEPT_PRESETS = [
@@ -42,6 +43,7 @@ const MultiPhotoUploader = ({ fotos, setFotos, color, label = 'Fotos', max = 24 
   const [uploading, setUploading] = useState(false);
   const [progreso, setProgreso] = useState({ done: 0, total: 0 });
   const [lightboxIdx, setLightboxIdx] = useState(-1);
+  const [annotating, setAnnotating] = useState(null); // { fotoId, src }
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -64,12 +66,17 @@ const MultiPhotoUploader = ({ fotos, setFotos, color, label = 'Fotos', max = 24 
     e.target.value = '';
   };
   const eliminar = (id) => setFotos(fotos.filter(f => f.id !== id));
+  const saveAnnotation = (newDataUrl) => {
+    setFotos(fotos.map(f => f.id === annotating.fotoId ? { ...f, data: newDataUrl } : f));
+    setAnnotating(null);
+  };
   const lightboxImages = fotos.map(f => ({ src: f.data || f.url, alt: f.nombre || '' }));
   return (
     <div>
+      {annotating && <PhotoAnnotator src={annotating.src} onSave={saveAnnotation} onClose={() => setAnnotating(null)} />}
       {lightboxIdx >= 0 && <ImageLightbox images={lightboxImages} index={lightboxIdx} onClose={() => setLightboxIdx(-1)} />}
       <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}><Camera size={10} style={{ display: 'inline', marginRight: 4 }} /> {label.toUpperCase()} ({fotos.length}/{max})</div>
-      {fotos.length > 0 && (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginBottom: 8 }}>{fotos.map((f, i) => (<div key={f.id} style={{ position: 'relative', paddingTop: '75%', background: 'var(--bg-card-dark-secondary)', borderRadius: 8, overflow: 'hidden' }}><img src={f.data || f.url} alt={f.nombre || ''} onClick={() => setLightboxIdx(i)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }} /><button onClick={() => eliminar(f.id)} style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>✕</button></div>))}</div>)}
+      {fotos.length > 0 && (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginBottom: 8 }}>{fotos.map((f, i) => (<div key={f.id} style={{ position: 'relative', paddingTop: '75%', background: 'var(--bg-card-dark-secondary)', borderRadius: 8, overflow: 'hidden' }}><img src={f.data || f.url} alt={f.nombre || ''} onClick={() => setLightboxIdx(i)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }} /><button onClick={() => eliminar(f.id)} style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>✕</button><button onClick={(e) => { e.stopPropagation(); setAnnotating({ fotoId: f.id, src: f.data || f.url }); }} style={{ position: 'absolute', bottom: 3, left: 3, width: 22, height: 22, borderRadius: 6, background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title="Anotar foto"><Pencil size={12} /></button></div>))}</div>)}
       <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--bg-card-dark)', border: `1px dashed ${color}55`, borderRadius: 10, padding: '12px', cursor: uploading ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 12, color: uploading ? '#aaa' : color, fontWeight: 700 }}>{uploading ? `⏳ Comprimiendo ${progreso.done}/${progreso.total}…` : `Subir fotos (se pueden seleccionar varias)`}<input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple onChange={handleFiles} disabled={uploading} style={{ display: 'none' }} /></label>
     </div>
   );
@@ -155,7 +162,7 @@ const AddScoutDeptModal = ({ onAdd, onClose }) => {
   );
 };
 
-const LocacionScoutCard = ({ loc, idx, onUpdate, onDelete, color, themeLight }) => {
+const LocacionScoutCard = ({ loc, idx, onUpdate, onDelete, color, themeLight, onPassToLocaciones }) => {
   const [showAddDept, setShowAddDept] = useState(false);
   const [editName, setEditName] = useState(false);
   const [draftName, setDraftName] = useState(loc.name);
@@ -186,7 +193,7 @@ const LocacionScoutCard = ({ loc, idx, onUpdate, onDelete, color, themeLight }) 
         <button onClick={() => setCollapsed(!collapsed)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 18, cursor: 'pointer', padding: '2px 4px' }}>{collapsed ? '▸' : '▾'}</button>
         <button onClick={() => { if (confirm(`¿Eliminar ${loc.name}?`)) onDelete(); }} style={{ background: 'var(--bg-error)', border: 'none', borderRadius: 6, color: 'var(--color-primary)', fontSize: 12, cursor: 'pointer', padding: '4px 7px' }}>✕</button>
       </div>
-      {!collapsed && (<div style={{ padding: '14px' }}><div style={{ marginBottom: 18 }}><MultiPhotoUploader fotos={fotos} setFotos={f => updateField('fotos', f)} color={color} label="Fotos del lugar" /></div><div style={{ marginBottom: 18 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>UBICACIÓN GOOGLE MAPS</div><div style={{ display: 'flex', gap: 6 }}><input value={loc.mapUrl || ''} onChange={e => updateField('mapUrl', e.target.value)} placeholder="Pegá el link de Google Maps acá" style={{ flex: 1, fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-card-dark)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none' }} /><button onClick={abrirMaps} disabled={!loc.mapUrl} style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: loc.mapUrl ? '#2f7ed8' : 'var(--border-light)', color: loc.mapUrl ? '#fff' : '#bbb', border: 'none', borderRadius: 10, padding: '0 14px', cursor: loc.mapUrl ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}><Map size={12} style={{ display: 'inline', marginRight: 4 }} /> Abrir</button></div>{loc.mapUrl && (<div style={{ fontSize: 10, color: 'var(--color-success)', fontFamily: 'inherit', marginTop: 4 }}>✓ Ubicación guardada</div>)}</div><div style={{ marginBottom: 14 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>DEPARTAMENTOS EN ESTA LOCACIÓN</div>{depts.length === 0 && (<div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit', textAlign: 'center', padding: '10px', fontStyle: 'italic' }}>Sin departamentos. Empezá agregando Técnica y Arte.</div>)}{depts.map(d => (<ScoutDeptCard key={d.key} dept={d} onUpdate={nd => updateDept(d.key, nd)} onDelete={() => deleteDept(d.key)} themeLight={themeLight} />))}{presetsDisponibles.length > 0 && (<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, marginBottom: 6 }}>{presetsDisponibles.map(p => (<button key={p.key} onClick={() => addDept({ ...p, checklist: p.seed.map((t, i) => ({ id: Date.now() + i, text: t, done: false })), files: [] })} style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, background: p.color + '22', color: 'var(--text-primary)', border: `1px dashed ${p.color}88`, borderRadius: 10, padding: '8px 12px', cursor: 'pointer' }}>+ {p.label}</button>))}</div>)}<button onClick={() => setShowAddDept(true)} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: '1px dashed #ccc', borderRadius: 10, padding: '10px', cursor: 'pointer', marginTop: 4 }}>+ Crear otro departamento</button></div><div style={{ background: 'var(--bg-card-dark)', borderRadius: 12, padding: '14px', border: '1px solid var(--border-light)' }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>⭐ PUNTUACIÓN DE LA LOCACIÓN</div><div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}><StarRating value={loc.rating || 0} onChange={n => updateField('rating', n)} /><span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'inherit' }}>{loc.rating ? `${loc.rating}/5` : 'Sin puntuar'}</span></div><textarea value={loc.comment || ''} onChange={e => updateField('comment', e.target.value)} placeholder="Comentarios sobre esta locación (review)…" rows={3} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-secondary)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} /></div></div>)}
+      {!collapsed && (<div style={{ padding: '14px' }}><div style={{ marginBottom: 18 }}><MultiPhotoUploader fotos={fotos} setFotos={f => updateField('fotos', f)} color={color} label="Fotos del lugar" /></div><div style={{ marginBottom: 18 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>UBICACIÓN GOOGLE MAPS</div><div style={{ display: 'flex', gap: 6 }}><input value={loc.mapUrl || ''} onChange={e => updateField('mapUrl', e.target.value)} placeholder="Pegá el link de Google Maps acá" style={{ flex: 1, fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-card-dark)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none' }} /><button onClick={abrirMaps} disabled={!loc.mapUrl} style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: loc.mapUrl ? '#2f7ed8' : 'var(--border-light)', color: loc.mapUrl ? '#fff' : '#bbb', border: 'none', borderRadius: 10, padding: '0 14px', cursor: loc.mapUrl ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}><Map size={12} style={{ display: 'inline', marginRight: 4 }} /> Abrir</button></div>{loc.mapUrl && (<div style={{ fontSize: 10, color: 'var(--color-success)', fontFamily: 'inherit', marginTop: 4 }}>✓ Ubicación guardada</div>)}</div><div style={{ marginBottom: 14 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>DEPARTAMENTOS EN ESTA LOCACIÓN</div>{depts.length === 0 && (<div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit', textAlign: 'center', padding: '10px', fontStyle: 'italic' }}>Sin departamentos. Empezá agregando Técnica y Arte.</div>)}{depts.map(d => (<ScoutDeptCard key={d.key} dept={d} onUpdate={nd => updateDept(d.key, nd)} onDelete={() => deleteDept(d.key)} themeLight={themeLight} />))}{presetsDisponibles.length > 0 && (<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, marginBottom: 6 }}>{presetsDisponibles.map(p => (<button key={p.key} onClick={() => addDept({ ...p, checklist: p.seed.map((t, i) => ({ id: Date.now() + i, text: t, done: false })), files: [] })} style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 700, background: p.color + '22', color: 'var(--text-primary)', border: `1px dashed ${p.color}88`, borderRadius: 10, padding: '8px 12px', cursor: 'pointer' }}>+ {p.label}</button>))}</div>)}<button onClick={() => setShowAddDept(true)} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: '1px dashed #ccc', borderRadius: 10, padding: '10px', cursor: 'pointer', marginTop: 4 }}>+ Crear otro departamento</button></div><div style={{ background: 'var(--bg-card-dark)', borderRadius: 12, padding: '14px', border: '1px solid var(--border-light)', marginBottom: 14 }}><div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 8, fontFamily: 'inherit' }}>⭐ PUNTUACIÓN DE LA LOCACIÓN</div><div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}><StarRating value={loc.rating || 0} onChange={n => updateField('rating', n)} /><span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'inherit' }}>{loc.rating ? `${loc.rating}/5` : 'Sin puntuar'}</span></div><textarea value={loc.comment || ''} onChange={e => updateField('comment', e.target.value)} placeholder="Comentarios sobre esta locación (review)…" rows={3} style={{ width: '100%', fontFamily: 'inherit', fontSize: 12, background: 'var(--bg-secondary)', border: '1px solid #e5e2dd', borderRadius: 10, padding: '10px 12px', color: 'var(--text-primary)', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} /></div>{onPassToLocaciones && (<button onClick={() => onPassToLocaciones(loc)} style={{ width: '100%', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, background: '#38BDF814', color: '#38BDF8', border: '1px solid #38BDF844', borderRadius: 12, padding: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><ArrowRightCircle size={16} /> Pasar a locaciones</button>)}</div>)}
       {showAddDept && <AddScoutDeptModal onAdd={addDept} onClose={() => setShowAddDept(false)} />}
     </div>
   );
@@ -203,7 +210,7 @@ const SceneRow = ({ scene, color, onOpen, onRename, onDelete }) => {
   );
 };
 
-export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta, themeLight }) => {
+export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta, themeLight, onGoToLocaciones }) => {
   const projectId = project.id;
   const sceneId = scene.id;
   const color = '#0fa87e';
@@ -233,6 +240,29 @@ export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta, themeL
   const deleteLocacion = (id) => {
     save({ ...data, locations: locations.filter(l => l.id !== id) });
   };
+
+  const passToLocaciones = (loc) => {
+    if (!window._fb) return;
+    let currentLocs = [];
+    const unsub = window._fb.onDeptData(projectId, 'locaciones', 'locs', (d) => {
+      if (Array.isArray(d)) currentLocs = d;
+    });
+    unsub();
+    const newLoc = {
+      id: Date.now(),
+      nombre: loc.name,
+      url: loc.mapUrl || '',
+      notas: loc.comment || '',
+      fotos: loc.fotos || [],
+      rating: loc.rating || 0,
+      comentarioReview: loc.comment || '',
+      estado: 'pendiente',
+      escenas: [],
+    };
+    window._fb.saveDeptData(projectId, 'locaciones', 'locs', [...currentLocs, newLoc]);
+    if (onGoToLocaciones) onGoToLocaciones();
+  };
+
   const sceneFiles = scene.files || [];
   const setSceneFiles = (files) => onUpdateMeta({ ...scene, files });
   return (
@@ -250,7 +280,7 @@ export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta, themeL
       </div>
       <div className="has-bottom-bar" style={{ flex: 1, padding: '20px 16px 40px' }}>
         {!ready && <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 13 }}>Cargando…</div>}
-        {ready && tab === 'locaciones' && (<>{locations.length === 0 && (<div style={{ textAlign: 'center', padding: '30px 14px', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 13, fontStyle: 'italic' }}>Empezá agregando la primera locación de esta escena</div>)}{locations.map((l, i) => (<LocacionScoutCard key={l.id} loc={l} idx={i} onUpdate={nl => updateLocacion(l.id, nl)} onDelete={() => deleteLocacion(l.id)} color={color} themeLight={themeLight} />))}<button onClick={addLocacion} style={{ width: '100%', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: color, border: 'none', borderRadius: 14, padding: '14px', cursor: 'pointer', marginTop: 8 }}>+ Agregar nueva locación</button></>)}
+        {ready && tab === 'locaciones' && (<>{locations.length === 0 && (<div style={{ textAlign: 'center', padding: '30px 14px', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 13, fontStyle: 'italic' }}>Empezá agregando la primera locación de esta escena</div>)}{locations.map((l, i) => (<LocacionScoutCard key={l.id} loc={l} idx={i} onUpdate={nl => updateLocacion(l.id, nl)} onDelete={() => deleteLocacion(l.id)} color={color} themeLight={themeLight} onPassToLocaciones={onGoToLocaciones ? passToLocaciones : null} />))}<button onClick={addLocacion} style={{ width: '100%', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: color, border: 'none', borderRadius: 14, padding: '14px', cursor: 'pointer', marginTop: 8 }}>+ Agregar nueva locación</button></>)}
         {ready && tab === 'archivos' && (<FilesUploader files={sceneFiles} setFiles={setSceneFiles} color={color} label="Archivos de la escena" />)}
       </div>
       <div className="pwa-bottom-bar-wrap no-print">
@@ -264,7 +294,7 @@ export const ScoutingSceneView = ({ project, scene, onBack, onUpdateMeta, themeL
   );
 };
 
-export const ScoutingView = ({ project, onBack, themeLight }) => {
+export const ScoutingView = ({ project, onBack, themeLight, onGoToLocaciones }) => {
   const projectId = project.id;
   const color = '#0fa87e';
   const [meta, setMeta] = useState(null);
@@ -307,7 +337,7 @@ export const ScoutingView = ({ project, onBack, themeLight }) => {
   if (activeSceneId) {
     const scene = scenes.find(s => s.id === activeSceneId);
     if (scene) {
-      return <ScoutingSceneView project={project} scene={scene} onBack={() => setActiveSceneId(null)} onUpdateMeta={newScene => updateScene(scene.id, newScene)} themeLight={themeLight} />;
+      return <ScoutingSceneView project={project} scene={scene} onBack={() => setActiveSceneId(null)} onUpdateMeta={newScene => updateScene(scene.id, newScene)} themeLight={themeLight} onGoToLocaciones={onGoToLocaciones} />;
     }
   }
   return (

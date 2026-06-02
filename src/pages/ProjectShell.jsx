@@ -235,7 +235,7 @@ function ProjectViews({ project, projectId, save }) {
           />
         )}
         {view === 'export'     && <ExportView    {...common} onBack={nav.goHome} />}
-        {view === 'scouting'   && <ScoutingView  {...common} onBack={nav.goHome} />}
+        {view === 'scouting'   && <ScoutingView  {...common} onBack={nav.goHome} onGoToLocaciones={() => nav.goDept('locaciones')} />}
         {view === 'tools'      && <ToolsMenuView {...common} onBack={nav.goHome} />}
         {view === 'citaciones' && <CitacionesView {...common} color={accentColor} onBack={nav.goHome} />}
         {view === 'messages'   && <MessagesView  {...common} onBack={nav.goHome} />}

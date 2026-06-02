@@ -3,6 +3,8 @@ import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
+import { PhotoAnnotator } from '../../../components/ui/PhotoAnnotator'
+import { Pencil } from 'lucide-react'
 
 function StarRating({ value, onChange }) {
   return (
@@ -69,6 +71,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId]     = useState(null)
   const [lightbox, setLightbox] = useState({ images: [], idx: -1 })
+  const [annotating, setAnnotating] = useState(null) // { locId, fotoId, src }
   const [form, setForm] = useState({ nombre:'', url:'', escenas:[], notas:'', fotos:[], rating:0, comentarioReview:'' })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -107,8 +110,18 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
     return arr
   }
 
+  const saveAnnotation = (newDataUrl) => {
+    const { locId, fotoId } = annotating
+    setLocs(locs.map(l => l.id !== locId ? l : {
+      ...l,
+      fotos: (l.fotos || []).map(f => f.id !== fotoId ? f : { ...f, data: newDataUrl })
+    }))
+    setAnnotating(null)
+  }
+
   return (
     <div>
+      {annotating && <PhotoAnnotator src={annotating.src} onSave={saveAnnotation} onClose={() => setAnnotating(null)} />}
       {lightbox.idx >= 0 && <ImageLightbox images={lightbox.images} index={lightbox.idx} onClose={() => setLightbox({ images: [], idx: -1 })} />}
       <SectionLabel>LOCACIONES — {locs.length} cargadas</SectionLabel>
       {locs.map(l => {
@@ -152,6 +165,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
                       return (
                         <div key={f.id} style={{ position:'relative', paddingTop:'75%', background:'var(--bg-card-dark-secondary)', borderRadius:8, overflow:'hidden' }}>
                           <img src={f.data||f.url} alt={f.nombre||''} onClick={() => setLightbox({ images: imgs, idx: fi })} style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', cursor:'zoom-in' }} />
+                          <button onClick={(e) => { e.stopPropagation(); setAnnotating({ locId: l.id, fotoId: f.id, src: f.data||f.url }) }} style={{ position:'absolute', bottom:3, left:3, width:22, height:22, borderRadius:6, background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }} title="Anotar foto"><Pencil size={12} /></button>
                         </div>
                       )
                     })}
