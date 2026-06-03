@@ -145,7 +145,7 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
                     </div>
                   )}
                   {l.url && <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize:11, color, fontFamily:'inherit', display:'block', marginTop:4 }}>Ver en Maps</a>}
-                  {l.notas && <div style={{ fontSize:12, color:'var(--text-tertiary)', fontFamily:'inherit', marginTop:4 }}>{l.notas}</div>}
+                  {l.notas && <div style={{ fontSize:14, color:'var(--text-primary)', fontFamily:'inherit', marginTop:4, lineHeight:1.4 }}>{l.notas}</div>}
                   {l.comentarioReview && <div style={{ fontSize:11, color:'#666', fontFamily:'inherit', marginTop:6, background:'var(--bg-card-dark)', borderRadius:8, padding:'7px 10px', border:'1px solid var(--border-light)', lineHeight:1.4, fontStyle:'italic' }}>"{l.comentarioReview}"</div>}
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end', flexShrink:0 }}>

@@ -50,11 +50,11 @@ export default function GastosTab({ color, deptKey, projectId, project, isAdmin 
 
   const saveDineroEntregado = (val) => {
     setDineroEntregadoRaw(val)
-    db.saveDeptData(projectId, deptKey, 'dinero_entregado', [{ valor: val }])
+    api.saveDeptData(projectId, deptKey, 'dinero_entregado', [{ valor: val }]).catch(() => storage.saveDeptData(projectId, deptKey, 'dinero_entregado', [{ valor: val }]))
   }
   const savePresupGeneral = (val) => {
     setPresupGeneralRaw(val)
-    db.saveDeptData(projectId, deptKey, 'presup_general', [{ valor: val }])
+    api.saveDeptData(projectId, deptKey, 'presup_general', [{ valor: val }]).catch(() => storage.saveDeptData(projectId, deptKey, 'presup_general', [{ valor: val }]))
   }
 
   const totalPresup  = expenses.reduce((a, e) => a + (parseFloat(e.presupuestado) || 0), 0)
