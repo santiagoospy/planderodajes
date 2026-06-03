@@ -22,6 +22,8 @@ export function MarketplaceView({ onBack }) {
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [selected, setSelected] = useState(null)
+  const [photoIdx, setPhotoIdx] = useState(0)
 
   const sf = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -149,6 +151,17 @@ export function MarketplaceView({ onBack }) {
     await persist(items.filter(i => i.id !== editId))
     setEditId(null)
     setMode(null)
+  }
+
+  const openWhatsApp = (contacto) => {
+    const num = (contacto || '').replace(/\D/g, '')
+    if (!num) return
+    window.open('https://wa.me/' + num, '_blank')
+  }
+
+  const openDetail = (item) => {
+    setSelected(item)
+    setPhotoIdx(0)
   }
 
   const closeModal = () => {
@@ -341,6 +354,97 @@ export function MarketplaceView({ onBack }) {
     </div>
   )
 
+  const renderDetail = () => {
+    const item = selected
+    if (!item) return null
+    const fotos = item.fotos || []
+    return (
+      <div className="fixed inset-0 bg-black/80 z-50 flex flex-col" onClick={() => setSelected(null)}>
+        <div
+          className="bg-white w-full flex flex-col overflow-y-auto"
+          style={{ marginTop: 'env(safe-area-inset-top, 0px)', maxHeight: '100dvh', borderRadius: '0 0 0 0' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#ede9e3]">
+            <button onClick={() => setSelected(null)} className="bg-transparent border-0 text-[#0B7285] font-bold text-sm cursor-pointer font-[Inter]">‹ Volver</button>
+            <div className="text-[10px] bg-[#0B728515] text-[#0B7285] rounded px-2 py-0.5">{item.categoria}</div>
+          </div>
+
+          {/* Fotos */}
+          {fotos.length > 0 && (
+            <div className="relative bg-[#f0ede8]">
+              <img src={fotos[photoIdx]} alt={item.titulo} className="w-full object-contain" style={{ maxHeight: 280 }} />
+              {fotos.length > 1 && (
+                <>
+                  <button onClick={() => setPhotoIdx(i => (i - 1 + fotos.length) % fotos.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 border-0 text-white text-lg cursor-pointer flex items-center justify-center">‹</button>
+                  <button onClick={() => setPhotoIdx(i => (i + 1) % fotos.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 border-0 text-white text-lg cursor-pointer flex items-center justify-center">›</button>
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                    {fotos.map((_, i) => (
+                      <div key={i} onClick={() => setPhotoIdx(i)} className="w-1.5 h-1.5 rounded-full cursor-pointer" style={{ background: i === photoIdx ? '#0B7285' : 'rgba(255,255,255,0.5)' }} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {fotos.length === 0 && (
+            <div className="w-full flex items-center justify-center bg-[#f0ede8]" style={{ height: 160 }}>
+              <Icon name="Package" size={52} color="#ccc" />
+            </div>
+          )}
+
+          {/* Contenido */}
+          <div className="p-4 flex flex-col gap-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+            <div>
+              <div className="text-base font-black text-[#1a1714] mb-1">{item.titulo}</div>
+              {item.precio && <div className="text-lg font-black text-[#0B7285]">{item.precio}</div>}
+            </div>
+
+            {item.descripcion && (
+              <div className="bg-[#f7f5f2] rounded-[12px] p-3">
+                <div className="text-[10px] text-[#aaa] mb-1 uppercase tracking-wider">Descripción</div>
+                <div className="text-sm text-[#333] leading-relaxed">{item.descripcion}</div>
+              </div>
+            )}
+
+            <div className="bg-[#f7f5f2] rounded-[12px] p-3">
+              <div className="text-[10px] text-[#aaa] mb-1 uppercase tracking-wider">Contacto</div>
+              <div className="text-sm font-bold text-[#1a1714]">{item.nombre || '—'}</div>
+              <div className="text-sm text-[#555]">{item.contacto}</div>
+            </div>
+
+            {item.createdAt && (
+              <div className="text-[10px] text-[#bbb] text-right">Publicado el {item.createdAt}</div>
+            )}
+
+            <button
+              onClick={() => openWhatsApp(item.contacto)}
+              className="w-full text-center text-white rounded-[14px] py-3.5 text-sm font-bold border-0 cursor-pointer font-[Inter] flex items-center justify-center gap-2"
+              style={{ background: '#25D366' }}
+            >
+              <Icon name="MessageCircle" size={16} color="#fff" />
+              Contactar por WhatsApp
+            </button>
+
+            <div className="flex gap-2">
+              <button onClick={() => { setSelected(null); startEdit(item) }}
+                className="flex-1 bg-[#f0f7ff] border border-[#cce4f7] rounded-[10px] text-[11px] text-[#0B7285] font-semibold py-2.5 cursor-pointer font-[Inter]">
+                ✏️ Editar
+              </button>
+              <button onClick={() => { setSelected(null); startDel(item) }}
+                className="flex-1 bg-[#fff5f5] border border-[#fecaca] rounded-[10px] text-[11px] text-[#e53e3e] font-semibold py-2.5 cursor-pointer font-[Inter] flex items-center justify-center gap-1">
+                <Icon name="Trash2" size={12} color="#e53e3e" /> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen font-[Inter] flex flex-col" style={{ background: 'linear-gradient(165deg, #062F38 0%, #084C5A 60%, #0A6070 100%)' }}>
       {/* Header */}
@@ -378,6 +482,7 @@ export function MarketplaceView({ onBack }) {
       </div>
 
       {/* Modales */}
+      {selected && renderDetail()}
       {mode === 'new' && renderForm(false)}
       {mode === 'edit' && renderForm(true)}
       {mode === 'pin-edit' && renderPinModal('edit')}
@@ -403,7 +508,8 @@ export function MarketplaceView({ onBack }) {
             {filtered.map(item => (
               <div
                 key={item.id}
-                className="bg-white rounded-[14px] overflow-hidden border border-[#ede9e3] shadow-sm"
+                className="bg-white rounded-[14px] overflow-hidden border border-[#ede9e3] shadow-sm cursor-pointer"
+                onClick={() => openDetail(item)}
               >
                 {(item.fotos || []).length > 0 ? (
                   <img
@@ -435,24 +541,22 @@ export function MarketplaceView({ onBack }) {
                     <Icon name="Phone" size={10} color="#aaa" />
                     {item.contacto}{item.nombre ? ' · ' + item.nombre : ''}
                   </div>
-                  <a
-                    href={`https://wa.me/${item.contacto.replace(/\D/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-center bg-[#25D366] text-white rounded-lg px-3 py-2 text-[11px] font-bold no-underline font-[Inter] mb-2"
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openWhatsApp(item.contacto) }}
+                    className="w-full text-center bg-[#25D366] text-white rounded-lg px-3 py-2 text-[11px] font-bold border-0 cursor-pointer font-[Inter] mb-2 flex items-center justify-center gap-1"
                   >
-                    <Icon name="MessageCircle" size={12} color="#fff" style={{ marginRight: 4, display: 'inline-block' }} />
+                    <Icon name="MessageCircle" size={12} color="#fff" />
                     WhatsApp
-                  </a>
+                  </button>
                   <div className="flex gap-1">
                     <button
-                      onClick={() => startEdit(item)}
+                      onClick={(e) => { e.stopPropagation(); startEdit(item) }}
                       className="flex-1 bg-[#f0f7ff] border border-[#cce4f7] rounded text-[10px] text-[#0B7285] font-semibold py-1.5 cursor-pointer font-[Inter]"
                     >
                       ✏️ Editar
                     </button>
                     <button
-                      onClick={() => startDel(item)}
+                      onClick={(e) => { e.stopPropagation(); startDel(item) }}
                       className="flex-1 bg-[#fff5f5] border border-[#fecaca] rounded text-[10px] text-[#e53e3e] font-semibold py-1.5 cursor-pointer font-[Inter] flex items-center justify-center gap-1"
                     >
                       <Icon name="Trash2" size={12} color="#e53e3e" />
