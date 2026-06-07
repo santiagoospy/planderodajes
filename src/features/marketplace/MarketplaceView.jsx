@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { api } from '../../services/api'
+import { compressAndUploadToR2 } from '../../utils/uploadR2'
 
 const CATEGORIAS = ['Equipos','Cámaras','Lentes','Iluminación','Sonido','Props & Arte','Transporte','Vestuario','Servicios','Otros']
 const EMPTY_FORM = { titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[], pin:'' }
@@ -63,25 +64,20 @@ export function MarketplaceView({ onBack }) {
 
   // ── FOTOS ───────────────────────────────────────────────────
   const handleFotos = async (e) => {
-    const list = Array.from(e.target.files || []).slice(0, 5)
+    const list = Array.from(e.target.files || []).slice(0, 5 - (form.fotos || []).length)
     if (!list.length) return
     setUploading(true)
     const nuevas = []
     for (const f of list) {
       try {
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          nuevas.push(ev.target.result)
-          if (nuevas.length === list.length) {
-            sf('fotos', [...(form.fotos || []), ...nuevas].slice(0, 5))
-            setUploading(false)
-          }
-        }
-        reader.readAsDataURL(f)
+        const { url } = await compressAndUploadToR2(f, 1200, 0.75)
+        nuevas.push(url)
       } catch (err) {
         console.error('Foto error:', err)
       }
     }
+    sf('fotos', [...(form.fotos || []), ...nuevas].slice(0, 5))
+    setUploading(false)
     e.target.value = ''
   }
 

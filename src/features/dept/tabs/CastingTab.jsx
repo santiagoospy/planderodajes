@@ -4,9 +4,11 @@ import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 import { onSurface } from '../../../utils/color'
+import { compressAndUploadToR2 } from '../../../utils/uploadR2'
 
 function ActorForm({ color, accent, project, form, set, editId, onSave, onCancel, label }) {
   accent = accent || color
+  const [uploadingFoto, setUploadingFoto] = useState(false)
   const todasEscenas = project ? project.days.flatMap(d => d.scenes.map(s => ({ id:s.id, label:`${s.num} — ${s.title.slice(0,25)}`, day:d.label }))) : []
   const toggleEscena = (scId) => {
     const curr = form.escenas || []
@@ -27,8 +29,12 @@ function ActorForm({ color, accent, project, form, set, editId, onSave, onCancel
   }
   const handleFoto = async (e) => {
     const file = e.target.files[0]; if (!file) return
-    try { set('foto', await window.compressImage(file, 800, 0.70)) }
-    catch { const r = new FileReader(); r.onload = ev => set('foto', ev.target.result); r.readAsDataURL(file) }
+    setUploadingFoto(true)
+    try {
+      const { url } = await compressAndUploadToR2(file, 800, 0.70)
+      set('foto', url)
+    } catch { /* silent */ }
+    setUploadingFoto(false)
   }
   return (
     <div style={{ background:'var(--bg-secondary)', borderRadius:14, padding:16, border:`1px solid ${color}30` }}>
@@ -39,9 +45,9 @@ function ActorForm({ color, accent, project, form, set, editId, onSave, onCancel
               <img src={form.foto} alt="preview" style={{ width:'100%', objectFit:'cover', maxHeight:160 }} />
               <button onClick={() => set('foto','')} style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.5)', border:'none', borderRadius:'50%', width:26, height:26, color:'#fff', fontSize:13, cursor:'pointer' }}>✕</button>
             </div>
-          : <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'16px', cursor:'pointer', fontFamily:'inherit', fontSize:12, color:'#aaa' }}>
-              Foto (opcional)
-              <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFoto} style={{ display:'none' }} />
+          : <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:'1px dashed #ccc', borderRadius:10, padding:'16px', cursor:uploadingFoto?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:'#aaa' }}>
+              {uploadingFoto ? 'Subiendo…' : 'Foto (opcional)'}
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleFoto} disabled={uploadingFoto} style={{ display:'none' }} />
             </label>
         }
       </div>

@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { requireApiKey } from "./_utils.js";
 
 const ACCOUNT_ID = "b55ca17d3e570f6641f664f1fdc1fc58";
 const BUCKET     = "planderodajes";
@@ -23,8 +24,11 @@ const CORS = {
 export const config = { path: "/.netlify/functions/r2-presign" };
 
 export default async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Allow-Headers": "Content-Type, X-API-Key" } });
   if (req.method !== "POST")   return new Response("Method not allowed", { status: 405, headers: CORS });
+
+  const authErr = requireApiKey(req);
+  if (authErr) return authErr;
 
   try {
     const { action, fileName, fileType, fileSize, key: existingKey } = await req.json();

@@ -1,9 +1,13 @@
 import { getStore } from "@netlify/blobs";
+import { requireApiKey, error } from "./_utils.js";
 
 export default async (req) => {
   if (req.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
   }
+
+  const authErr = requireApiKey(req);
+  if (authErr) return authErr;
 
   try {
     const store = getStore("projects");

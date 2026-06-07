@@ -8,12 +8,15 @@
  */
 
 import { getStore } from '@netlify/blobs'
-import { json, error, parseBody, handleOptions, requireFields } from './_utils.js'
+import { json, error, parseBody, handleOptions, requireFields, requireApiKey } from './_utils.js'
 
 const MAX_SIZE_BYTES = 1024 * 1024 // 1 MB
 
 export default async (req) => {
   if (req.method === 'OPTIONS') return handleOptions()
+
+  const authErr = requireApiKey(req)
+  if (authErr) return authErr
 
   try {
     // ── GET ───────────────────────────────────────────────────

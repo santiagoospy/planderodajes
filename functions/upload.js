@@ -1,11 +1,12 @@
 import { getStore } from "@netlify/blobs";
+import { requireApiKey } from "./_utils.js";
 
 export const config = { path: "/.netlify/functions/upload" };
 
 const HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "Content-Type, X-File-Name, X-File-Type, X-Chunk-Index, X-Total-Chunks, X-File-Id",
+    "Content-Type, X-API-Key, X-File-Name, X-File-Type, X-Chunk-Index, X-Total-Chunks, X-File-Id",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
@@ -14,6 +15,9 @@ export default async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: HEADERS });
   if (req.method !== "POST")
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: HEADERS });
+
+  const authErr = requireApiKey(req);
+  if (authErr) return authErr;
 
   try {
     const fileName    = req.headers.get("X-File-Name") || "file";

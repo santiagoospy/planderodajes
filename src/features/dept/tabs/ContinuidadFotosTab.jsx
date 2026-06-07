@@ -3,13 +3,15 @@ import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
+import { compressAndUploadToR2, uploadDataUrlToR2 } from '../../../utils/uploadR2'
 
 export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
   const { items: fotos, save: setFotos } = useDeptData(projectId, deptKey, 'continuidad_fotos', [])
   const [showAdd, setShowAdd] = useState(false)
   const [lightboxIdx, setLightboxIdx] = useState(-1)
   const [editId, setEditId]   = useState(null)
-  const [form, setForm] = useState({ escena:'', descripcion:'', data:'' })
+  const [form, setForm] = useState({ escena:'', descripcion:'', url:'' })
+  const [uploading, setUploading] = useState(false)
   const [cameraMode, setCameraMode] = useState(false)
   const fileInputRef = useRef(null)
   const videoRef     = useRef(null)
@@ -18,13 +20,12 @@ export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
+    setUploading(true)
     try {
-      if (file.type.startsWith('image/') && file.size < 1.5*1024*1024 && window.compressImage) {
-        set('data', await window.compressImage(file, 1200, 0.80))
-      } else {
-        const r = new FileReader(); r.onload = ev => set('data', ev.target.result); r.readAsDataURL(file)
-      }
-    } catch { const r = new FileReader(); r.onload = ev => set('data', ev.target.result); r.readAsDataURL(file) }
+      const { url } = await compressAndUploadToR2(file, 1200, 0.80)
+      set('url', url)
+    } catch { /* silent */ }
+    setUploading(false)
   }
 
   const startCamera = async () => {
@@ -33,29 +34,35 @@ export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
       if (videoRef.current) { videoRef.current.srcObject = stream; setCameraMode(true) }
     } catch { alert('No se puede acceder a la cámara') }
   }
-  const takePhoto = () => {
+  const takePhoto = async () => {
     if (canvasRef.current && videoRef.current) {
       const ctx = canvasRef.current.getContext('2d')
       canvasRef.current.width  = videoRef.current.videoWidth
       canvasRef.current.height = videoRef.current.videoHeight
       ctx.drawImage(videoRef.current, 0, 0)
-      set('data', canvasRef.current.toDataURL('image/jpeg'))
+      const dataUrl = canvasRef.current.toDataURL('image/jpeg')
       stopCamera()
+      setUploading(true)
+      try {
+        const { url } = await uploadDataUrlToR2(dataUrl, 'continuidad.jpg')
+        set('url', url)
+      } catch { /* silent */ }
+      setUploading(false)
     }
   }
   const stopCamera = () => {
     if (videoRef.current?.srcObject) { videoRef.current.srcObject.getTracks().forEach(t => t.stop()); setCameraMode(false) }
   }
   const save = () => {
-    if (!form.escena || !form.data) return
-    const item = { id:editId||Date.now(), ...form }
+    if (!form.escena || !form.url) return
+    const item = { id:editId||Date.now(), escena:form.escena, descripcion:form.descripcion, url:form.url }
     if (editId) setFotos(fotos.map(f => f.id===editId ? item : f))
     else        setFotos([...fotos, item])
-    setForm({ escena:'', descripcion:'', data:'' }); setEditId(null); setShowAdd(false); setCameraMode(false)
+    setForm({ escena:'', descripcion:'', url:'' }); setEditId(null); setShowAdd(false); setCameraMode(false)
   }
   const del = (id) => setFotos(fotos.filter(f => f.id !== id))
 
-  const lightboxImages = fotos.filter(f => f.data).map(f => ({ src: f.data, alt: `Escena ${f.escena}` }))
+  const lightboxImages = fotos.filter(f => f.data || f.url).map(f => ({ src: f.data || f.url, alt: `Escena ${f.escena}` }))
 
   return (
     <div>
@@ -64,12 +71,12 @@ export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
         {fotos.map(foto => (
           <div key={foto.id} style={{ position:'relative', borderRadius:12, overflow:'hidden', background:'var(--bg-secondary)', border:`1px solid ${color}20` }}>
-            {foto.data && <img src={foto.data} alt="continuidad" onClick={() => setLightboxIdx(fotos.findIndex(f => f.id === foto.id))} style={{ width:'100%', height:150, objectFit:'cover', cursor:'zoom-in' }} />}
+            {(foto.data || foto.url) && <img src={foto.data || foto.url} alt="continuidad" onClick={() => setLightboxIdx(fotos.findIndex(f => f.id === foto.id))} style={{ width:'100%', height:150, objectFit:'cover', cursor:'zoom-in' }} />}
             <div style={{ padding:10 }}>
               <div style={{ fontSize:11, fontWeight:700, color, marginBottom:4, fontFamily:'inherit' }}>Escena {foto.escena}</div>
               <div style={{ fontSize:10, color:'var(--text-secondary)', marginBottom:6, minHeight:30, fontFamily:'inherit' }}>{foto.descripcion}</div>
               <div style={{ display:'flex', gap:4 }}>
-                <button onClick={() => { setEditId(foto.id); setForm({ escena:foto.escena||'', descripcion:foto.descripcion||'', data:foto.data||'' }); setShowAdd(true) }} style={{ flex:1, background:'var(--bg-card-dark)', border:'none', borderRadius:6, color:'var(--text-secondary)', fontSize:11, cursor:'pointer', padding:'4px' }}>✎</button>
+                <button onClick={() => { setEditId(foto.id); setForm({ escena:foto.escena||'', descripcion:foto.descripcion||'', url:foto.url||foto.data||'' }); setShowAdd(true) }} style={{ flex:1, background:'var(--bg-card-dark)', border:'none', borderRadius:6, color:'var(--text-secondary)', fontSize:11, cursor:'pointer', padding:'4px' }}>✎</button>
                 <button onClick={() => del(foto.id)} style={{ flex:1, background:'var(--bg-error)', border:'none', borderRadius:6, color:'var(--color-primary)', fontSize:11, cursor:'pointer', padding:'4px' }}>✕</button>
               </div>
             </div>
@@ -90,7 +97,8 @@ export default function ContinuidadFotosTab({ color, deptKey, projectId }) {
                     <button onClick={startCamera} style={{ flex:1, fontFamily:'inherit', fontSize:12, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:10, padding:'10px', cursor:'pointer' }}>Tomar foto</button>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display:'none' }} />
-                  {form.data && <div style={{ fontSize:10, color:'#0fa87e', fontWeight:700, marginBottom:8 }}>✓ Foto seleccionada</div>}
+                  {uploading && <div style={{ fontSize:10, color:'#aaa', fontWeight:700, marginBottom:8 }}>Subiendo…</div>}
+                  {!uploading && form.url && <div style={{ fontSize:10, color:'#0fa87e', fontWeight:700, marginBottom:8 }}>✓ Foto lista</div>}
                 </div>
               : <div style={{ marginBottom:8 }}>
                   <video ref={videoRef} autoPlay style={{ width:'100%', borderRadius:10, marginBottom:8, maxHeight:300 }} />

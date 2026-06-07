@@ -5,6 +5,7 @@ import { SectionLabel } from '../../../components/ui/SectionLabel'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 import { PhotoAnnotator } from '../../../components/ui/PhotoAnnotator'
 import { Pencil } from 'lucide-react'
+import { compressAndUploadToR2, uploadDataUrlToR2 } from '../../../utils/uploadR2'
 
 function StarRating({ value, onChange }) {
   return (
@@ -29,10 +30,8 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
     const nuevas = []
     for (let i = 0; i < aSubir.length; i++) {
       try {
-        const data = window.compressImageStrong
-          ? await window.compressImageStrong(aSubir[i])
-          : await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(aSubir[i]) })
-        nuevas.push({ id: Date.now()+i+Math.random(), data, nombre: aSubir[i].name })
+        const { url, key } = await compressAndUploadToR2(aSubir[i], 1000, 0.60)
+        nuevas.push({ id: Date.now()+i+Math.random(), url, key, nombre: aSubir[i].name })
         setProgreso({ done:i+1, total:aSubir.length })
       } catch { /* skip */ }
     }
@@ -59,7 +58,7 @@ function MultiPhotoUploader({ fotos, setFotos, color, label='Fotos', max=24 }) {
         </div>
       )}
       <label style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-card-dark)', border:`1px dashed ${color}55`, borderRadius:10, padding:'12px', cursor:uploading?'wait':'pointer', fontFamily:'inherit', fontSize:12, color:uploading?'#aaa':color, fontWeight:700 }}>
-        {uploading ? `Comprimiendo ${progreso.done}/${progreso.total}…` : 'Subir fotos (se pueden seleccionar varias)'}
+        {uploading ? `Subiendo ${progreso.done}/${progreso.total}…` : 'Subir fotos (se pueden seleccionar varias)'}
         <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple onChange={handleFiles} disabled={uploading} style={{ display:'none' }} />
       </label>
     </div>
@@ -110,13 +109,21 @@ export default function LocacionesTab({ color, deptKey, projectId, project }) {
     return arr
   }
 
-  const saveAnnotation = (newDataUrl) => {
+  const saveAnnotation = async (newDataUrl) => {
     const { locId, fotoId } = annotating
-    setLocs(locs.map(l => l.id !== locId ? l : {
-      ...l,
-      fotos: (l.fotos || []).map(f => f.id !== fotoId ? f : { ...f, data: newDataUrl })
-    }))
     setAnnotating(null)
+    try {
+      const { url } = await uploadDataUrlToR2(newDataUrl, 'anotacion.jpg')
+      setLocs(locs.map(l => l.id !== locId ? l : {
+        ...l,
+        fotos: (l.fotos || []).map(f => f.id !== fotoId ? f : { ...f, url, data: undefined })
+      }))
+    } catch {
+      setLocs(locs.map(l => l.id !== locId ? l : {
+        ...l,
+        fotos: (l.fotos || []).map(f => f.id !== fotoId ? f : { ...f, data: newDataUrl })
+      }))
+    }
   }
 
   return (

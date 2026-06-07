@@ -5,10 +5,12 @@
  */
 export { compressImage, compressImageStrong } from '../utils/image'
 
+const API_KEY = () => import.meta.env.VITE_API_SECRET || ''
+
 export async function uploadFileToR2(file) {
   const res = await fetch('/.netlify/functions/r2-presign', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY() },
     body: JSON.stringify({
       action: 'upload',
       fileName: file.name,

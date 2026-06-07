@@ -3,6 +3,7 @@ import { Icon } from '../../../components/ui/Icon'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { ImageLightbox } from '../../../components/ui/ImageLightbox'
 import { onSurface } from '../../../utils/color'
+import { compressAndUploadToR2 } from '../../../utils/uploadR2'
 
 const fmt = (ts) => new Date(ts).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})
 
@@ -25,17 +26,8 @@ export default function DeptMuralTab({ color, deptKey, projectId, themeLight }) 
       const isImg = file.type.startsWith('image/')
       const isVid = file.type.startsWith('video/')
       const isPdf = file.type === 'application/pdf'
-      if (isImg && file.size < 1.5 * 1024 * 1024 && window.compressImage) {
-        const data = await window.compressImage(file, 1200, 0.8)
-        setAdjunto({ tipo:'imagen', nombre:file.name, data })
-      } else if (window.uploadFileToR2) {
-        const { url } = await window.uploadFileToR2(file)
-        setAdjunto({ tipo:isVid?'video':isPdf?'pdf':isImg?'imagen':'archivo', nombre:file.name, url })
-      } else {
-        const reader = new FileReader()
-        reader.onload = (ev) => setAdjunto({ tipo:isImg?'imagen':'archivo', nombre:file.name, data:ev.target.result })
-        reader.readAsDataURL(file)
-      }
+      const { url } = await compressAndUploadToR2(file, 1200, 0.8)
+      setAdjunto({ tipo:isVid?'video':isPdf?'pdf':isImg?'imagen':'archivo', nombre:file.name, url })
     } catch(err) { alert('Error: '+err.message) }
     setUploading(false)
   }

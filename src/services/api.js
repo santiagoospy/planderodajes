@@ -4,11 +4,11 @@
  */
 
 const BASE = '/.netlify/functions'
-const IS_DEV = import.meta.env.DEV
+const API_KEY = import.meta.env.VITE_API_SECRET || ''
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
     ...options,
   })
   if (!res.ok) {
