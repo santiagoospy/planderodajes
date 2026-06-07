@@ -6,30 +6,25 @@ import { useState } from 'react'
 import { Modal } from './Modal'
 import { Button } from './Button'
 import { Icon } from './Icon'
+import { hashPin } from '../../utils/hash'
 
-/**
- * @param {{
- *   title:      string,
- *   subtitle?:  string,
- *   onSuccess:  () => void,
- *   onCancel?:  () => void,
- *   correctPin: string,
- * }} props
- */
-export function PinModal({ title, subtitle, onSuccess, onCancel, correctPin }) {
+export function PinModal({ title, subtitle, onSuccess, onCancel, correctPin, pinHash }) {
   const [pin, setPin]     = useState('')
   const [error, setError] = useState(false)
 
   const digits = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
-  const press = (d) => {
+  const press = async (d) => {
     if (d === '⌫') { setPin(p => p.slice(0, -1)); setError(false); return }
     if (!d || pin.length >= 4) return
     const next = pin + d
     setPin(next)
     setError(false)
     if (next.length === 4) {
-      if (next === correctPin) { onSuccess(); setPin('') }
+      const ok = pinHash
+        ? await hashPin(next) === pinHash
+        : next === correctPin
+      if (ok) { onSuccess(); setPin('') }
       else { setError(true); setTimeout(() => setPin(''), 500) }
     }
   }

@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { api } from '../../services/api'
 import { compressAndUploadToR2 } from '../../utils/uploadR2'
+import { hashPin } from '../../utils/hash'
 
 const CATEGORIAS = ['Equipos','Cámaras','Lentes','Iluminación','Sonido','Props & Arte','Transporte','Vestuario','Servicios','Otros']
 const EMPTY_FORM = { titulo:'', descripcion:'', precio:'', contacto:'', nombre:'', categoria:'Equipos', fotos:[], pin:'' }
@@ -88,7 +89,7 @@ export function MarketplaceView({ onBack }) {
     const newItem = {
       id: Date.now(),
       ...form,
-      pin: btoa(form.pin),
+      pin: await hashPin(form.pin),
       createdAt: new Date().toLocaleDateString('es')
     }
     await persist([newItem, ...items])
@@ -98,8 +99,11 @@ export function MarketplaceView({ onBack }) {
   }
 
   // ── VERIFICAR PIN ──────────────────────────────────────────
-  const verifyPin = (item) => {
-    try { return atob(item.pin) === pinInput } catch { return item.pin === pinInput }
+  const verifyPin = async (item) => {
+    const h = await hashPin(pinInput)
+    if (h === item.pin) return true           // SHA-256 (new)
+    try { return atob(item.pin) === pinInput } catch {} // btoa (legacy)
+    return false
   }
 
   // ── FLUJO EDITAR ───────────────────────────────────────────
@@ -110,9 +114,9 @@ export function MarketplaceView({ onBack }) {
     setMode('pin-edit')
   }
 
-  const confirmPinEdit = () => {
+  const confirmPinEdit = async () => {
     const item = items.find(i => i.id === editId)
-    if (!item || !verifyPin(item)) { setPinError('PIN incorrecto'); return }
+    if (!item || !await verifyPin(item)) { setPinError('PIN incorrecto'); return }
     setForm({ ...item, pin: pinInput })
     setPinError('')
     setMode('edit')
@@ -121,9 +125,10 @@ export function MarketplaceView({ onBack }) {
   const submitEdit = async () => {
     if (!form.titulo || !form.contacto) return
     setSaving(true)
+    const pinH = await hashPin(form.pin)
     const updated = items.map(i =>
       i.id === editId
-        ? { ...i, ...form, pin: btoa(form.pin), updatedAt: new Date().toLocaleDateString('es') }
+        ? { ...i, ...form, pin: pinH, updatedAt: new Date().toLocaleDateString('es') }
         : i
     )
     await persist(updated)
@@ -143,7 +148,7 @@ export function MarketplaceView({ onBack }) {
 
   const confirmDel = async () => {
     const item = items.find(i => i.id === editId)
-    if (!item || !verifyPin(item)) { setPinError('PIN incorrecto'); return }
+    if (!item || !await verifyPin(item)) { setPinError('PIN incorrecto'); return }
     await persist(items.filter(i => i.id !== editId))
     setEditId(null)
     setMode(null)

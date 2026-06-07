@@ -543,6 +543,7 @@ export default function SceneView({ scene, depts, isAdmin, onBack, onUpdateScene
           title="Desbloquear edición"
           subtitle="PIN del proyecto"
           correctPin={project?.pin || '1234'}
+          pinHash={project?.pinHash}
           onSuccess={() => { onUnlock?.(); setShowPinModal(false) }}
           onCancel={() => setShowPinModal(false)}
         />

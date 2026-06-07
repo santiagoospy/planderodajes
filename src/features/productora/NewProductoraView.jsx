@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { storage } from '../../services/storage';
+import { hashPin } from '../../utils/hash';
 import { THEMES as WORKSPACE_THEMES } from '../../constants/themes';
 
 const productoraSlug = (text) => {
@@ -41,16 +42,17 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
                 setCreating(false);
                 return;
             }
+            const passwordHash = await hashPin(password)
             const prod = {
                 id: slug,
                 name: name.trim(),
-                password: password,
+                passwordHash,
                 colorTheme: colorTheme,
                 createdAt: Date.now(),
             };
             await api.saveProductora(slug, prod);
             storage.setProductora(slug, prod);
-            try { localStorage.setItem(`prod_pwd_${slug}`, password); } catch { }
+            try { localStorage.setItem(`prod_pwd_${slug}`, passwordHash); } catch { }
             onCreated(prod);
         } catch (e) {
             setError('Error de conexión: ' + (e.message || ''));

@@ -25,7 +25,7 @@ function AdminPinPrompt({ onCorrect, onBack }) {
   const [error, setError] = useState('')
 
   const check = () => {
-    if (pin === '4862') { onCorrect() }
+    if (pin === (import.meta.env.VITE_ADMIN_PIN || '4862')) { onCorrect() }
     else { setError('PIN incorrecto'); setPin('') }
   }
 

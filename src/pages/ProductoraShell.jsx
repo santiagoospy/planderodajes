@@ -6,6 +6,7 @@ import { storage } from '../services/storage'
 import { db } from '../services/db'
 import { buildProjectUrl, buildProductoraUrl } from '../utils/urls'
 import { uid } from '../utils/uid'
+import { hashPin } from '../utils/hash'
 import { DEPT_DEFAULTS } from '../constants/depts'
 
 import { THEMES, getTheme } from '../constants/themes'
@@ -45,11 +46,19 @@ export default function ProductoraShell({ productoraId }) {
         setProductora(data)
         storage.setProductora(productoraId, data)
 
-        // Check saved password
+        // Check saved password (hash for new, plain for legacy)
         try {
           const saved = localStorage.getItem(`prod_pwd_${productoraId}`)
-          if (!data.password || saved === data.password) setUnlocked(true)
-        } catch { if (!data.password) setUnlocked(true) }
+          if (data.passwordHash) {
+            if (saved === data.passwordHash) setUnlocked(true)
+          } else if (data.password) {
+            if (saved === data.password) setUnlocked(true)
+          } else {
+            setUnlocked(true)
+          }
+        } catch {
+          if (!data.passwordHash && !data.password) setUnlocked(true)
+        }
 
         // BUG FIX: api.listProjects() returns { projects: [...] }, not an array
         return api.listProjects().then(list => {
@@ -72,15 +81,19 @@ export default function ProductoraShell({ productoraId }) {
   const isLight  = theme.light
   const tc = (dark, light) => isLight ? light : dark
 
-  const handleUnlock = (e) => {
+  const handleUnlock = async (e) => {
     e?.preventDefault()
-    if (pin === productora?.password) {
-      try { localStorage.setItem(`prod_pwd_${productoraId}`, pin) } catch {}
-      setUnlocked(true)
+    let ok = false
+    if (productora?.passwordHash) {
+      const h = await hashPin(pin)
+      ok = h === productora.passwordHash
+      if (ok) try { localStorage.setItem(`prod_pwd_${productoraId}`, productora.passwordHash) } catch {}
     } else {
-      setPinError('Contraseña incorrecta')
-      setPin('')
+      ok = pin === productora?.password
+      if (ok) try { localStorage.setItem(`prod_pwd_${productoraId}`, pin) } catch {}
     }
+    if (ok) { setUnlocked(true) }
+    else { setPinError('Contraseña incorrecta'); setPin('') }
   }
 
   const handleLogout = () => {
@@ -93,6 +106,8 @@ export default function ProductoraShell({ productoraId }) {
     setSaving(true)
     try {
       const id = `proj_${uid()}`
+      const pinHash = productora?.passwordHash
+        || (productora?.password ? await hashPin(productora.password) : undefined)
       const proj = {
         id,
         productoraId,
@@ -100,7 +115,7 @@ export default function ProductoraShell({ productoraId }) {
         client: '',
         dates: '',
         crew: 0,
-        pin: productora?.password || '',
+        ...(pinHash ? { pinHash } : { pin: productora?.password || '' }),
         days: [],
         depts: { ...DEPT_DEFAULTS },
       }
@@ -151,7 +166,7 @@ export default function ProductoraShell({ productoraId }) {
   )
 
   // ── Auth gate ────────────────────────────────────────────────
-  if (!unlocked && productora?.password) return (
+  if (!unlocked && (productora?.passwordHash || productora?.password)) return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: theme.grad, padding: 32, fontFamily: 'inherit' }}>
       <button onClick={() => window.location.href = '/'} style={{ position: 'absolute', top: 20, left: 20, background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', fontFamily: 'inherit' }}>← Inicio</button>
       <div style={{ width: '100%', maxWidth: 340 }}>
@@ -237,8 +252,11 @@ export default function ProductoraShell({ productoraId }) {
                 {colorPinErr && <div style={{ fontSize: 11, color: 'rgba(255,200,150,0.9)', marginBottom: 8 }}>{colorPinErr}</div>}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setShowColors(false)} style={{ flex: 1, fontFamily: 'inherit', fontSize: 12, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: 8, padding: '9px', cursor: 'pointer' }}>Cancelar</button>
-                  <button onClick={() => {
-                    if (colorPin.trim().toLowerCase() === productoraId.toLowerCase() || colorPin === productora?.password) {
+                  <button onClick={async () => {
+                    const isId = colorPin.trim().toLowerCase() === productoraId.toLowerCase()
+                    const isHash = productora?.passwordHash && await hashPin(colorPin) === productora.passwordHash
+                    const isLegacy = colorPin === productora?.password
+                    if (isId || isHash || isLegacy) {
                       setColorPinOk(true); setColorPinErr('')
                     } else {
                       setColorPinErr('Código incorrecto. Usá el ID o la contraseña de la productora.')

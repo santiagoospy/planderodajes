@@ -26,7 +26,7 @@ export default function ADComentariosTab({ color, deptKey, projectId, project, i
         <div style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', fontFamily:'inherit', marginBottom:8 }}>Notas de Dirección</div>
         <div style={{ fontSize:12, color:'#aaa', fontFamily:'inherit', marginBottom:20 }}>Estas notas son internas del equipo de dirección. Ingresá el PIN para verlas.</div>
         <button onClick={() => setShowPin(true)} style={{ fontFamily:'inherit', fontSize:14, fontWeight:700, background:color, color:'#fff', border:'none', borderRadius:14, padding:'12px 28px', cursor:'pointer' }}>Ingresar PIN</button>
-        {showPin && <PinModal title="Notas de Dirección" subtitle="PIN del proyecto" correctPin={project?.pin} onSuccess={() => { setPinOk(true); setShowPin(false) }} onCancel={() => setShowPin(false)} />}
+        {showPin && <PinModal title="Notas de Dirección" subtitle="PIN del proyecto" correctPin={project?.pin} pinHash={project?.pinHash} onSuccess={() => { setPinOk(true); setShowPin(false) }} onCancel={() => setShowPin(false)} />}
       </div>
     )
   }

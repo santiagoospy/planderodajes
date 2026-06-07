@@ -699,6 +699,7 @@ export default function HomeView({
           title="Desbloquear edición"
           subtitle="Ingresá la contraseña del proyecto"
           correctPin={project.pin || '1234'}
+          pinHash={project.pinHash}
           onSuccess={() => {
             setShowPinModal(false)
             onUnlock()
