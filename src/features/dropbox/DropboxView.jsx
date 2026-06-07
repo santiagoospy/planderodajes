@@ -84,6 +84,45 @@ export default function DropboxView({ project, onBack }) {
 
   const fmtSize = (b) => (b > 1048576 ? ((b / 1048576).toFixed(1) + ' MB') : Math.round(b / 1024) + ' KB')
 
+  const FileCard = ({ f }) => (
+    <div key={f.id} style={{ background: 'rgba(0,0,0,0.15)', borderRadius: 12, overflow: 'hidden' }}>
+      <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
+        {f.type && f.type.startsWith('image/') ? (
+          <img src={f.url} alt={f.name} style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <div style={{ height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.1)' }}>
+            <Icon name={f.type?.includes('wordprocessingml') ? 'FileText' : 'Paperclip'} size={36} color="rgba(255,255,255,0.6)" />
+          </div>
+        )}
+      </a>
+      <div style={{ padding: '8px 10px' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
+            {f.size ? fmtSize(f.size) : ''} · {new Date(f.ts).toLocaleDateString()}
+          </span>
+          <button onClick={() => deleteFile(f.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 2, fontSize: 14 }} title="Eliminar">
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  // Group files: folders first (sorted), then loose files
+  const folderMap = {}
+  const loose = []
+  for (const f of files) {
+    if (f.folder) {
+      if (!folderMap[f.folder]) folderMap[f.folder] = []
+      folderMap[f.folder].push(f)
+    } else {
+      loose.push(f)
+    }
+  }
+  const folderNames = Object.keys(folderMap).sort()
+  const hasFolders = folderNames.length > 0
+
   return (
     <div style={{ minHeight: '100dvh', background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)', fontFamily: 'Inter, sans-serif' }} className="slide-l">
       <div style={{ padding: 'calc(env(safe-area-inset-top,0px) + 14px) 20px 18px', position: 'sticky', top: 0, zIndex: 10, background: 'linear-gradient(165deg, #084C5A 0%, #0B7285 50%, #2EC4B6 100%)' }}>
@@ -96,13 +135,9 @@ export default function DropboxView({ project, onBack }) {
           </span>
           <label className="tap" style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#fff', fontWeight: 700, cursor: uploading ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: uploading ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
             {uploading ? (
-              <>
-                <Icon name="Loader" size={12} color="currentColor" /> Subiendo…
-              </>
+              <><Icon name="Loader" size={12} color="currentColor" /> Subiendo…</>
             ) : (
-              <>
-                <Icon name="Upload" size={12} color="currentColor" /> Subir
-              </>
+              <><Icon name="Upload" size={12} color="currentColor" /> Subir</>
             )}
             <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp4,.mov" style={{ display: 'none' }} onChange={handleUpload} disabled={uploading} />
           </label>
@@ -120,32 +155,35 @@ export default function DropboxView({ project, onBack }) {
             <div style={{ fontSize: 12 }}>Subí fotos, PDFs o documentos del proyecto</div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-            {files.map(f => (
-              <div key={f.id} style={{ background: 'rgba(0,0,0,0.15)', borderRadius: 12, overflow: 'hidden' }}>
-                <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
-                  {f.type && f.type.startsWith('image/') ? (
-                    <img src={f.url} alt={f.name} style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
-                  ) : (
-                    <div style={{ height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.1)' }}>
-                      <Icon name="FileText" size={36} color="rgba(255,255,255,0.6)" />
-                    </div>
-                  )}
-                </a>
-                <div style={{ padding: '8px 10px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
-                      {f.size ? fmtSize(f.size) : ''} · {new Date(f.ts).toLocaleDateString()}
-                    </span>
-                    <button onClick={() => deleteFile(f.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 2, fontSize: 14 }} title="Eliminar">
-                      ✕
-                    </button>
-                  </div>
+          <>
+            {/* Carpetas */}
+            {folderNames.map(folder => (
+              <div key={folder} style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                  <Icon name="Folder" size={15} color="rgba(255,255,255,0.7)" />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.06em' }}>{folder.toUpperCase()}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{folderMap[folder].length} archivo{folderMap[folder].length !== 1 ? 's' : ''}</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                  {folderMap[folder].map(f => <FileCard key={f.id} f={f} />)}
                 </div>
               </div>
             ))}
-          </div>
+            {/* Archivos sin carpeta */}
+            {loose.length > 0 && (
+              <div>
+                {hasFolders && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                    <Icon name="Files" size={15} color="rgba(255,255,255,0.7)" />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.06em' }}>GENERAL</span>
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                  {loose.map(f => <FileCard key={f.id} f={f} />)}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

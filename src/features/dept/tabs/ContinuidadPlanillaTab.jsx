@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useDeptData } from '../../../hooks/useDeptData'
 import { Icon } from '../../../components/ui/Icon'
 import { SectionLabel } from '../../../components/ui/SectionLabel'
+import { uploadFileToR2 } from '../../../services/s3-upload'
+import { api } from '../../../services/api'
 
 const ESTADO_OPTIONS = [
   { key: 'valida',       label: 'VÁLIDA',       color: '#22c55e' },
@@ -36,7 +38,7 @@ function Field({ label, children }) {
   )
 }
 
-async function exportDocx(header, fichas, projectName) {
+async function exportDocx(header, fichas, projectName, projectId, deptKey) {
   const {
     Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
     AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign, PageBreak,
@@ -275,12 +277,38 @@ async function exportDocx(header, fichas, projectName) {
   })
 
   const blob = await Packer.toBlob(doc)
+  const fileName = `Continuidad_${(projectName || 'Rodaje').replace(/\s+/g, '_')}_${Date.now()}.docx`
+
+  // Browser download
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `Continuidad_${(projectName || 'Rodaje').replace(/\s+/g, '_')}.docx`
+  a.download = fileName
   a.click()
   URL.revokeObjectURL(url)
+
+  // Upload to R2 and save to mural + dropbox in parallel (best-effort, don't block)
+  if (projectId) {
+    try {
+      const file = new File([blob], fileName, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+      const { url: r2url } = await uploadFileToR2(file)
+
+      const ts = Date.now()
+      const muralEntry = { id: ts, autor: 'Continuidad', ts, adjunto: { tipo: 'archivo', nombre: fileName, url: r2url } }
+      const dropboxEntry = { id: ts + 1, name: fileName, type: file.type, url: r2url, size: blob.size, ts, folder: 'Continuidad' }
+
+      await Promise.all([
+        api.getDeptData(projectId, deptKey, 'mural').then(existing => {
+          const list = Array.isArray(existing) ? existing : []
+          return api.saveDeptData(projectId, deptKey, 'mural', [...list, muralEntry])
+        }).catch(() => {}),
+        api.getDeptData(projectId, '_shared', 'dropbox').then(existing => {
+          const list = Array.isArray(existing) ? existing : []
+          return api.saveDeptData(projectId, '_shared', 'dropbox', [...list, dropboxEntry])
+        }).catch(() => {}),
+      ])
+    } catch { /* upload failure doesn't block the local download */ }
+  }
 }
 
 export default function ContinuidadPlanillaTab({ color, deptKey, projectId, project }) {
@@ -318,7 +346,7 @@ export default function ContinuidadPlanillaTab({ color, deptKey, projectId, proj
     if (fichas.length === 0) return
     setExporting(true)
     try {
-      await exportDocx(header, fichas, project?.name || project?.title || '')
+      await exportDocx(header, fichas, project?.name || project?.title || '', projectId, deptKey)
     } finally {
       setExporting(false)
     }
