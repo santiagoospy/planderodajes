@@ -17,7 +17,6 @@ const LANDING_ACTIONS = [
   { key: 'create',      icon: 'Plus',         label: 'Crear espacio de trabajo', desc: 'Freelance o productora' },
   { key: 'marketplace', icon: 'ShoppingCart', label: 'Marketplace',            desc: 'Equipos, props y servicios' },
   { key: 'demo',        icon: 'Play',         label: 'Ver demo',               desc: 'Explorar el Proyecto Cero' },
-  { key: 'admin',       icon: 'Settings',     label: 'Admin',                  desc: 'Ver productoras y proyectos' },
 ]
 
 function AdminPinPrompt({ onCorrect, onBack }) {
@@ -302,6 +301,15 @@ export default function LandingPage() {
                 <Icon name="ChevronRight" size={18} color="rgba(255,255,255,0.3)" />
               </button>
             ))}
+
+            {/* Admin — botón chico, discreto */}
+            <button
+              onClick={() => handleAction('admin')}
+              className="tap flex items-center gap-2 mt-4 px-1 py-2 border-0 cursor-pointer bg-transparent"
+            >
+              <Icon name="Settings" size={13} color="rgba(255,255,255,0.25)" />
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', fontFamily: 'inherit' }}>Admin</span>
+            </button>
           </div>
         )}
 
@@ -370,18 +378,15 @@ export default function LandingPage() {
                   transition: 'width 0.2s ease',
                 }}
               >
-                {active && (
-                  <span style={{
-                    position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)',
-                    width:6, height:6, borderRadius:'50%',
-                    background:'rgba(255,255,255,0.95)',
-                    boxShadow:'0 0 0 2px rgba(255,255,255,0.35)',
-                    display:'block',
-                  }}/>
-                )}
               </button>
             )
           })}
+        </div>
+
+        {/* Hecho en Paraguay */}
+        <div className="flex items-center justify-center gap-1.5 pb-2 pt-1">
+          <span style={{ fontSize: 16 }}>🇵🇾</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'inherit', letterSpacing: '0.02em' }}>Hecho en Paraguay</span>
         </div>
       </div>
 
