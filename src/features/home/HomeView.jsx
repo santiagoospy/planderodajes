@@ -319,8 +319,8 @@ export default function HomeView({
               {editingProjectName ? (
                 <input type="text" value={newProjectName}
                   onChange={e => setNewProjectName(e.target.value)}
-                  onBlur={() => { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }) }}
-                  onKeyDown={e => { if (e.key==='Enter') { setEditingProjectName(false); onUpdateProject({ ...project, name: newProjectName }) }}}
+                  onBlur={() => { setEditingProjectName(false); if (newProjectName.trim()) onUpdateProject({ ...project, name: newProjectName.trim(), title: newProjectName.trim() }) }}
+                  onKeyDown={e => { if (e.key==='Enter') { setEditingProjectName(false); if (newProjectName.trim()) onUpdateProject({ ...project, name: newProjectName.trim(), title: newProjectName.trim() }) }}}
                   autoFocus
                   style={{ fontFamily:'inherit', fontSize:22, fontWeight:800, border:'none', borderBottom:`2px solid ${isLightTheme ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'}`, borderRadius:0, padding:'2px 0', background:'transparent', color:textColor, outline:'none', width:'100%' }}
                 />

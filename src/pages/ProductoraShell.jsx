@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Lock, Palette, Link as LinkIcon, Check, Trash2, Plus, X, ChevronLeft } from 'lucide-react'
+import { Lock, Palette, Link as LinkIcon, Check, Trash2, Plus, X, ChevronLeft, Pencil } from 'lucide-react'
 import { LoadingScreen } from '../components/ui/LoadingScreen'
 import { api } from '../services/api'
 import { storage } from '../services/storage'
@@ -26,6 +26,8 @@ export default function ProductoraShell({ productoraId }) {
   const [confirmDel,  setConfirmDel]  = useState(null)
   const [deleting,    setDeleting]    = useState(null)
   const [copied,      setCopied]      = useState(null)
+  const [editingId,   setEditingId]   = useState(null)
+  const [editingTitle, setEditingTitle] = useState('')
   const [showColors,  setShowColors]  = useState(false)
   const [colorPin,    setColorPin]    = useState('')
   const [colorPinOk,  setColorPinOk]  = useState(false)
@@ -141,6 +143,20 @@ export default function ProductoraShell({ productoraId }) {
     setProductora(updated)
     db.saveProductora(productoraId, updated)
     setShowColors(false); setColorPinOk(false); setColorPin('')
+  }
+
+  const startRename = (p) => {
+    setEditingId(p.id)
+    setEditingTitle(p.title || p.name || '')
+  }
+
+  const saveRename = async (p) => {
+    const trimmed = editingTitle.trim()
+    if (!trimmed || trimmed === (p.title || p.name)) { setEditingId(null); return }
+    const updated = { ...p, title: trimmed, name: trimmed }
+    setProjects(prev => prev.map(x => x.id === p.id ? updated : x))
+    setEditingId(null)
+    try { await api.saveProject(p.id, updated) } catch {}
   }
 
   const copyLink = (id) => {
@@ -315,10 +331,25 @@ export default function ProductoraShell({ productoraId }) {
                       </button>
                     </div>
                   </div>
+                ) : editingId === p.id ? (
+                  <div style={{ padding: '12px 16px' }}>
+                    <div style={{ fontSize: 10, color: tc('rgba(255,255,255,0.4)', 'rgba(0,0,0,0.35)'), letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>RENOMBRAR PROYECTO</div>
+                    <input
+                      value={editingTitle}
+                      onChange={e => setEditingTitle(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveRename(p); if (e.key === 'Escape') setEditingId(null) }}
+                      autoFocus
+                      style={{ width: '100%', fontFamily: 'inherit', fontSize: 15, fontWeight: 700, background: tc('rgba(255,255,255,0.12)', 'rgba(0,0,0,0.08)'), border: `1.5px solid ${tc('rgba(255,255,255,0.3)', 'rgba(0,0,0,0.2)')}`, borderRadius: 8, padding: '10px 12px', color: tc('#fff', '#1a1714'), outline: 'none', marginBottom: 10, boxSizing: 'border-box' }}
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => setEditingId(null)} style={{ flex: 1, fontFamily: 'inherit', fontSize: 12, background: tc('rgba(255,255,255,0.08)', 'rgba(0,0,0,0.06)'), color: tc('rgba(255,255,255,0.5)', 'rgba(0,0,0,0.4)'), border: 'none', borderRadius: 8, padding: '9px', cursor: 'pointer' }}>Cancelar</button>
+                      <button onClick={() => saveRename(p)} disabled={!editingTitle.trim()} style={{ flex: 2, fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: editingTitle.trim() ? tc('rgba(255,255,255,0.9)', '#1a1714') : tc('rgba(255,255,255,0.15)', 'rgba(0,0,0,0.1)'), color: editingTitle.trim() ? tc('#1a1714', '#fff') : tc('rgba(255,255,255,0.3)', 'rgba(0,0,0,0.3)'), border: 'none', borderRadius: 8, padding: '9px', cursor: editingTitle.trim() ? 'pointer' : 'not-allowed' }}>Guardar nombre</button>
+                    </div>
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px' }}>
                     <div onClick={() => window.location.href = buildProjectUrl(p.id)} style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: tc('#fff', '#1a1714') }}>{p.title}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: tc('#fff', '#1a1714') }}>{p.title || p.name}</div>
                       <div style={{ fontSize: 11, color: tc('rgba(255,255,255,0.45)', 'rgba(0,0,0,0.4)'), marginTop: 2 }}>
                         {p.client || ''}{p.client && p.dates ? ' · ' : ''}{p.dates || 'sin fechas'}
                       </div>
@@ -326,6 +357,9 @@ export default function ProductoraShell({ productoraId }) {
                         {(p.days || []).length} día{(p.days || []).length !== 1 ? 's' : ''} · {(p.days || []).reduce((s, d) => s + (d.scenes || []).length, 0)} escenas
                       </div>
                     </div>
+                    <button onClick={() => startRename(p)} title="Renombrar" style={{ background: tc('rgba(255,255,255,0.08)', 'rgba(0,0,0,0.06)'), border: 'none', borderRadius: 8, color: tc('rgba(255,255,255,0.5)', 'rgba(0,0,0,0.4)'), fontSize: 13, cursor: 'pointer', padding: '8px 10px' }}>
+                      <Pencil size={14} color="currentColor" />
+                    </button>
                     <button onClick={() => copyLink(p.id)} style={{ background: copied === p.id ? tc('rgba(255,255,255,0.9)', 'rgba(0,0,0,0.12)') : tc('rgba(255,255,255,0.08)', 'rgba(0,0,0,0.06)'), border: 'none', borderRadius: 8, color: copied === p.id ? tc('#0f3460', '#1a1714') : tc('rgba(255,255,255,0.5)', 'rgba(0,0,0,0.4)'), fontSize: 13, cursor: 'pointer', padding: '8px 12px', fontFamily: 'inherit' }}>
                       {copied === p.id ? <Check size={14} color="currentColor" /> : <LinkIcon size={14} color="currentColor" />}
                     </button>
