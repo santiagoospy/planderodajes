@@ -1,9 +1,17 @@
 import { getStore } from "@netlify/blobs";
-import { requireApiKey, error } from "./_utils.js";
+import { requireApiKey, handleOptions } from "./_utils.js";
+
+const CORS = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, X-API-Key",
+};
 
 export default async (req) => {
+  if (req.method === "OPTIONS") return handleOptions();
   if (req.method !== "GET") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: CORS });
   }
 
   const authErr = requireApiKey(req);
@@ -13,23 +21,18 @@ export default async (req) => {
     const store = getStore("projects");
     const { blobs } = await store.list();
 
-    const projects = [];
-    for (const blob of blobs) {
-      const project = await store.get(blob.key, { type: "json" });
-      if (project) {
-        projects.push({ ...project, _blobKey: blob.key });
-      }
-    }
+    // Parallel fetch — faster than sequential and avoids timeouts on large stores
+    const results = await Promise.allSettled(
+      blobs.map(blob => store.get(blob.key, { type: "json" }).then(p => p ? { ...p, _blobKey: blob.key } : null))
+    );
 
-    return new Response(
-      JSON.stringify({ projects }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    console.error("Error listing:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    const projects = results
+      .filter(r => r.status === "fulfilled" && r.value !== null)
+      .map(r => r.value);
+
+    return new Response(JSON.stringify({ projects }), { status: 200, headers: CORS });
+  } catch (err) {
+    console.error("[list-projects] error:", err.message);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
   }
 };

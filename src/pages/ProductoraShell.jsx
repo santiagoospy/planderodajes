@@ -62,12 +62,17 @@ export default function ProductoraShell({ productoraId }) {
           if (!data.passwordHash && !data.password) setUnlocked(true)
         }
 
-        // BUG FIX: api.listProjects() returns { projects: [...] }, not an array
-        return api.listProjects().then(list => {
-          if (cancelled) return
-          const mine = (list?.projects || []).filter(p => p.productoraId === productoraId)
-          setProjects(mine)
-        })
+        // listProjects has its own catch so a failure here doesn't swallow productora data
+        return api.listProjects()
+          .then(list => {
+            if (cancelled) return
+            const mine = (list?.projects || []).filter(p => p.productoraId === productoraId)
+            setProjects(mine)
+          })
+          .catch(err => {
+            console.error('[ProductoraShell] listProjects failed:', err)
+            // No-op: productora still shows, projects just stay empty
+          })
       })
       .catch(() => {
         const cached = storage.getProductora(productoraId)
@@ -153,10 +158,22 @@ export default function ProductoraShell({ productoraId }) {
   const saveRename = async (p) => {
     const trimmed = editingTitle.trim()
     if (!trimmed || trimmed === (p.title || p.name)) { setEditingId(null); return }
-    const updated = { ...p, title: trimmed, name: trimmed }
-    setProjects(prev => prev.map(x => x.id === p.id ? updated : x))
+    // Optimistic update
+    const displayed = { ...p, title: trimmed, name: trimmed }
+    setProjects(prev => prev.map(x => x.id === p.id ? displayed : x))
     setEditingId(null)
-    try { await api.saveProject(p.id, updated) } catch {}
+    try {
+      // Fetch fresh copy before saving to avoid overwriting with stale ProductoraShell snapshot
+      const fresh = await api.getProject(p.id)
+      const toSave = fresh
+        ? { ...fresh, title: trimmed, name: trimmed }
+        : { ...p, title: trimmed, name: trimmed }
+      // Strip internal blob key so it doesn't pollute project data
+      delete toSave._blobKey
+      await api.saveProject(p.id, toSave)
+    } catch (err) {
+      console.error('[saveRename]', err)
+    }
   }
 
   const copyLink = (id) => {
