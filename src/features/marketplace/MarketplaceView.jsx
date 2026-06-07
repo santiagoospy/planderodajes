@@ -160,9 +160,13 @@ export function MarketplaceView({ onBack }) {
     window.open('https://wa.me/' + num, '_blank')
   }
 
-  const openDetail = (item) => {
-    setSelected(item)
+  const openDetail = async (item) => {
+    const updated = items.map(i => i.id === item.id ? { ...i, vistas: (i.vistas || 0) + 1 } : i)
+    const withViews = updated.find(i => i.id === item.id)
+    setItems(updated)
+    setSelected(withViews)
     setPhotoIdx(0)
+    try { await api.set('marketplace', 'items', updated) } catch {}
   }
 
   const closeModal = () => {
@@ -417,9 +421,17 @@ export function MarketplaceView({ onBack }) {
               <div className="text-sm text-[#555]">{item.contacto}</div>
             </div>
 
-            {item.createdAt && (
-              <div className="text-[10px] text-[#bbb] text-right">Publicado el {item.createdAt}</div>
-            )}
+            <div className="flex items-center justify-between">
+              {item.createdAt && (
+                <div className="text-[10px] text-[#bbb]">Publicado el {item.createdAt}</div>
+              )}
+              {(item.vistas || 0) > 0 && (
+                <div className="text-[10px] text-[#bbb] flex items-center gap-1">
+                  <Icon name="Eye" size={11} color="#bbb" />
+                  {item.vistas} {item.vistas === 1 ? 'vista' : 'vistas'}
+                </div>
+              )}
+            </div>
 
             <button
               onClick={() => openWhatsApp(item.contacto)}
@@ -538,10 +550,16 @@ export function MarketplaceView({ onBack }) {
                   {item.precio && (
                     <div className="text-xs font-bold text-[#0B7285] mb-1">{item.precio}</div>
                   )}
-                  <div className="text-[10px] text-[#aaa] mb-2 flex items-center gap-1">
+                  <div className="text-[10px] text-[#aaa] mb-1 flex items-center gap-1">
                     <Icon name="Phone" size={10} color="#aaa" />
                     {item.contacto}{item.nombre ? ' · ' + item.nombre : ''}
                   </div>
+                  {(item.vistas || 0) > 0 && (
+                    <div className="text-[10px] text-[#bbb] mb-2 flex items-center gap-1">
+                      <Icon name="Eye" size={10} color="#bbb" />
+                      {item.vistas} {item.vistas === 1 ? 'vista' : 'vistas'}
+                    </div>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); openWhatsApp(item.contacto) }}
                     className="w-full text-center bg-[#25D366] text-white rounded-lg px-3 py-2 text-[11px] font-bold border-0 cursor-pointer font-[Inter] mb-2 flex items-center justify-center gap-1"

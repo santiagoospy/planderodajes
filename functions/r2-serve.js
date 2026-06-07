@@ -36,9 +36,18 @@ export default async (req) => {
 
   try {
     const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-    // URL presigned GET válida 7 días — redirigimos al cliente directo a R2
     const signedUrl = await getSignedUrl(s3, cmd, { expiresIn: 604800 });
-    return Response.redirect(signedUrl, 302);
+    // Proxy the content instead of redirecting so CORS headers are always present.
+    // A redirect to the raw R2 URL strips our CORS headers, tainting canvas elements.
+    const r2Res = await fetch(signedUrl);
+    return new Response(r2Res.body, {
+      status: r2Res.status,
+      headers: {
+        ...CORS,
+        "Content-Type": r2Res.headers.get("Content-Type") || "application/octet-stream",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
   } catch (err) {
     console.error("[r2-serve] error:", err.message);
     return new Response(JSON.stringify({ error: err.message }), {
