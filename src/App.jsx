@@ -11,6 +11,7 @@
 
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { LoadingScreen } from './components/ui/LoadingScreen'
+import { UpdateBanner } from './components/ui/UpdateBanner'
 import { setSyncNotifier } from './services/sync'
 import { getProjectIdFromUrl, getProductoraIdFromUrl } from './utils/urls'
 
@@ -35,25 +36,31 @@ export default function App() {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [])
 
+  let content
   if (projectId) {
-    return (
+    content = (
       <Suspense fallback={<LoadingScreen text="Cargando proyecto..." />}>
         <ProjectShell projectId={projectId} />
       </Suspense>
     )
-  }
-
-  if (productoraId) {
-    return (
+  } else if (productoraId) {
+    content = (
       <Suspense fallback={<LoadingScreen text="Cargando espacio..." />}>
         <ProductoraShell productoraId={productoraId} />
+      </Suspense>
+    )
+  } else {
+    content = (
+      <Suspense fallback={<LoadingScreen />}>
+        <LandingPage />
       </Suspense>
     )
   }
 
   return (
-    <Suspense fallback={<LoadingScreen />}>
-      <LandingPage />
-    </Suspense>
+    <>
+      {content}
+      <UpdateBanner />
+    </>
   )
 }
