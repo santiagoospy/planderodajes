@@ -38,246 +38,159 @@ function Field({ label, children }) {
   )
 }
 
-async function exportDocx(header, fichas, projectName, projectId, deptKey) {
-  const {
-    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-    AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlign, PageBreak,
-  } = await import('docx')
+async function exportPdf(header, fichas, projectName, projectId, deptKey) {
+  const { jsPDF } = await import('jspdf')
+  const { default: autoTable } = await import('jspdf-autotable')
 
-  const border = { style: BorderStyle.SINGLE, size: 6, color: 'CCCCCC' }
-  const borders = { top: border, bottom: border, left: border, right: border }
-  const noBorder = { style: BorderStyle.NONE }
-  const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
-  const darkHeader = '2C3E50'
-  const midHeader = '34495E'
-  const white = 'FFFFFF'
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const margin = 15
+  const contentW = pageW - margin * 2
+  const darkBg  = [44, 62, 80]   // #2C3E50
+  const midBg   = [52, 73, 94]   // #34495E
+  const white   = [255, 255, 255]
+  const borderC = [204, 204, 204]
 
-  const hCell = (text, fill = darkHeader, span = 1) =>
-    new TableCell({
-      columnSpan: span,
-      borders,
-      shading: { fill, type: ShadingType.CLEAR },
-      margins: { top: 60, bottom: 60, left: 80, right: 80 },
-      children: [new Paragraph({
-        alignment: AlignmentType.LEFT,
-        children: [new TextRun({ text, bold: true, color: white, size: 20 })],
-      })],
-    })
+  const tableStyle = {
+    theme: 'grid',
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 2.5, lineColor: borderC, lineWidth: 0.3 },
+    margin: { left: margin, right: margin },
+    tableWidth: contentW,
+  }
+  const hStyle = { fillColor: darkBg, textColor: white, fontStyle: 'bold', fontSize: 9 }
+  const mStyle = { fillColor: midBg,  textColor: white, fontStyle: 'bold', fontSize: 8 }
 
-  const vCell = (text = '') =>
-    new TableCell({
-      borders,
-      margins: { top: 80, bottom: 200, left: 80, right: 80 },
-      children: [new Paragraph({ children: [new TextRun({ text: text || '', size: 20 })] })],
-    })
+  for (let i = 0; i < fichas.length; i++) {
+    const ficha = fichas[i]
+    if (i > 0) doc.addPage()
 
-  const hCellCenter = (text, fill = midHeader) =>
-    new TableCell({
-      borders,
-      shading: { fill, type: ShadingType.CLEAR },
-      margins: { top: 60, bottom: 60, left: 80, right: 80 },
-      children: [new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text, bold: true, color: white, size: 18 })],
-      })],
-    })
-
-  const sectionTitle = (text) =>
-    new Paragraph({
-      spacing: { after: 120, before: 200 },
-      children: [new TextRun({ text, bold: true, size: 24 })],
-    })
-
-  const tableWidth = 10080
-
-  const makePageForFicha = (ficha, isFirst) => {
-    const items = []
-
-    if (!isFirst) items.push(new Paragraph({ children: [new PageBreak()] }))
+    let y = margin
 
     // Title
-    items.push(new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
-      children: [new TextRun({ text: 'CONTINUIDAD DE RODAJE', bold: true, size: 32, font: 'Arial' })],
-    }))
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(16)
+    doc.text('CONTINUIDAD DE RODAJE', pageW / 2, y + 5, { align: 'center' })
+    y += 12
 
-    // Header table: Producción, Director, DOP, Continuista / Fecha
-    items.push(new Table({
-      width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: [5040, 5040],
-      rows: [
-        new TableRow({ children: [
-          hCell('PRODUCCIÓN / PELÍCULA'),
-          new TableCell({ borders, margins: { top: 80, bottom: 80, left: 80, right: 80 }, children: [new Paragraph({ children: [new TextRun({ text: header.produccion || projectName || '', size: 20 })] })] }),
-        ]}),
-        new TableRow({ children: [
-          hCell('DIRECTOR'),
-          new TableCell({ borders, margins: { top: 80, bottom: 80, left: 80, right: 80 }, children: [new Paragraph({ children: [new TextRun({ text: header.director || '', size: 20 })] })] }),
-        ]}),
-        new TableRow({ children: [
-          hCell('DOP / DIRECCIÓN DE FOTOGRAFÍA'),
-          new TableCell({ borders, margins: { top: 80, bottom: 80, left: 80, right: 80 }, children: [new Paragraph({ children: [new TextRun({ text: header.dop || '', size: 20 })] })] }),
-        ]}),
-        new TableRow({ children: [
-          hCell('CONTINUISTA'),
-          hCell('FECHA', darkHeader),
-        ]}),
-        new TableRow({ children: [
-          new TableCell({ borders, margins: { top: 80, bottom: 80, left: 80, right: 80 }, children: [new Paragraph({ children: [new TextRun({ text: header.continuista || '', size: 20 })] })] }),
-          new TableCell({ borders, margins: { top: 80, bottom: 80, left: 80, right: 80 }, children: [new Paragraph({ children: [new TextRun({ text: ficha.fecha || '', size: 20 })] })] }),
-        ]}),
+    // Header table
+    autoTable(doc, {
+      ...tableStyle,
+      startY: y,
+      body: [
+        [{ content: 'PRODUCCIÓN / PELÍCULA', styles: hStyle }, { content: header.produccion || projectName || '' }],
+        [{ content: 'DIRECTOR',              styles: hStyle }, { content: header.director || '' }],
+        [{ content: 'DOP / DIRECCIÓN DE FOTOGRAFÍA', styles: hStyle }, { content: header.dop || '' }],
+        [{ content: 'CONTINUISTA',           styles: hStyle }, { content: 'FECHA', styles: hStyle }],
+        [{ content: header.continuista || '' }, { content: ficha.fecha || '' }],
       ],
-    }))
-
-    items.push(new Paragraph({ spacing: { after: 200 } }))
+      columnStyles: { 0: { cellWidth: contentW / 2 }, 1: { cellWidth: contentW / 2 } },
+    })
+    y = doc.lastAutoTable.finalY + 4
 
     // Escena / Plano / Toma
-    items.push(new Table({
-      width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: [3360, 3360, 3360],
-      rows: [
-        new TableRow({ children: [
-          hCellCenter('ESCENA / SEQUENCE'),
-          hCellCenter('PLANO'),
-          hCellCenter('TOMA / TAKE'),
-        ]}),
-        new TableRow({ children: [
-          vCell(ficha.escena),
-          vCell(ficha.plano),
-          vCell(ficha.toma),
-        ]}),
-      ],
-    }))
+    autoTable(doc, {
+      ...tableStyle,
+      startY: y,
+      head: [[
+        { content: 'ESCENA / SEQUENCE', styles: { ...mStyle, halign: 'center' } },
+        { content: 'PLANO',             styles: { ...mStyle, halign: 'center' } },
+        { content: 'TOMA / TAKE',       styles: { ...mStyle, halign: 'center' } },
+      ]],
+      body: [[
+        { content: ficha.escena || '', styles: { halign: 'center', minCellHeight: 8 } },
+        { content: ficha.plano  || '', styles: { halign: 'center' } },
+        { content: ficha.toma   || '', styles: { halign: 'center' } },
+      ]],
+      columnStyles: { 0: { cellWidth: contentW / 3 }, 1: { cellWidth: contentW / 3 }, 2: { cellWidth: contentW / 3 } },
+    })
+    y = doc.lastAutoTable.finalY + 4
 
-    items.push(new Paragraph({ spacing: { after: 200 } }))
-    items.push(sectionTitle('DETALLES TÉCNICOS'))
+    // Sección técnica
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(0)
+    doc.text('DETALLES TÉCNICOS', margin, y + 4)
+    y += 7
 
-    // Técnico
-    items.push(new Table({
-      width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: [2520, 2520, 2520, 2520],
-      rows: [
-        new TableRow({ children: [
-          hCellCenter('CÁMARA'),
-          hCellCenter('LENTE / FOCAL'),
-          hCellCenter('FORMATO'),
-          hCellCenter('VELOCIDAD OBTURADOR'),
-        ]}),
-        new TableRow({ children: [
-          vCell(ficha.camara),
-          vCell(ficha.lente),
-          vCell(ficha.formato),
-          vCell(ficha.velocidadObturador),
-        ]}),
-      ],
-    }))
+    autoTable(doc, {
+      ...tableStyle,
+      startY: y,
+      head: [[
+        { content: 'CÁMARA',              styles: { ...mStyle, halign: 'center' } },
+        { content: 'LENTE / FOCAL',       styles: { ...mStyle, halign: 'center' } },
+        { content: 'FORMATO',             styles: { ...mStyle, halign: 'center' } },
+        { content: 'VELOCIDAD OBTURADOR', styles: { ...mStyle, halign: 'center' } },
+      ]],
+      body: [[
+        { content: ficha.camara || '',             styles: { halign: 'center', minCellHeight: 8 } },
+        { content: ficha.lente  || '',             styles: { halign: 'center' } },
+        { content: ficha.formato || '',            styles: { halign: 'center' } },
+        { content: ficha.velocidadObturador || '', styles: { halign: 'center' } },
+      ]],
+      columnStyles: { 0: { cellWidth: contentW / 4 }, 1: { cellWidth: contentW / 4 }, 2: { cellWidth: contentW / 4 }, 3: { cellWidth: contentW / 4 } },
+    })
+    y = doc.lastAutoTable.finalY + 4
 
-    items.push(new Paragraph({ spacing: { after: 200 } }))
-    items.push(sectionTitle('CONTINUIDAD / DESCRIPCIÓN DE PLANO'))
+    // Descripción de plano
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text('CONTINUIDAD / DESCRIPCIÓN DE PLANO', margin, y + 4)
+    y += 7
 
-    const mkDescRow = (label, value) => [
-      new TableRow({ children: [
-        new TableCell({
-          borders, shading: { fill: midHeader, type: ShadingType.CLEAR },
-          margins: { top: 60, bottom: 60, left: 80, right: 80 },
-          children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, color: white, size: 18 })] })],
-        }),
-      ]}),
-      new TableRow({ children: [
-        new TableCell({
-          borders, margins: { top: 80, bottom: 200, left: 80, right: 80 },
-          children: [new Paragraph({ children: [new TextRun({ text: value || '', size: 20 })] })],
-        }),
-      ]}),
+    const descFields = [
+      ['TIPO DE MOVIMIENTO / ENCUADRE',    ficha.movimientoEncuadre],
+      ['POSICIÓN / MOVIMIENTO DEL ACTOR',  ficha.posicionActor],
+      ['VESTUARIO / PROPS / ACCESORIOS',   ficha.vestuario],
+      ['ILUMINACIÓN / CONDICIONES DE LUZ', ficha.iluminacion],
     ]
-
-    items.push(new Table({
-      width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: [tableWidth],
-      rows: [
-        ...mkDescRow('TIPO DE MOVIMIENTO / ENCUADRE', ficha.movimientoEncuadre),
-        ...mkDescRow('POSICIÓN / MOVIMIENTO DEL ACTOR', ficha.posicionActor),
-        ...mkDescRow('VESTUARIO / PROPS / ACCESORIOS', ficha.vestuario),
-        ...mkDescRow('ILUMINACIÓN / CONDICIONES DE LUZ', ficha.iluminacion),
-      ],
-    }))
-
-    items.push(new Paragraph({ spacing: { after: 200 } }))
+    autoTable(doc, {
+      ...tableStyle,
+      startY: y,
+      body: descFields.flatMap(([label, value]) => [
+        [{ content: label, styles: mStyle, colSpan: 1 }],
+        [{ content: value || '', styles: { minCellHeight: 10 } }],
+      ]),
+      columnStyles: { 0: { cellWidth: contentW } },
+    })
+    y = doc.lastAutoTable.finalY + 4
 
     // Estado + Observaciones
     const estadoLabel = ESTADO_OPTIONS.find(e => e.key === ficha.estadoToma)?.label || ''
-    const estadoText = ['VÁLIDA', 'REPETIR', 'NO VÁLIDA', 'FALSO INICIO']
-      .map(e => (e === estadoLabel ? '☑' : '☐') + ' ' + e)
+    const estadoLines = ['VÁLIDA', 'REPETIR', 'NO VÁLIDA', 'FALSO INICIO']
+      .map(e => (e === estadoLabel ? '☑ ' : '☐ ') + e)
+      .join('\n')
 
-    items.push(new Table({
-      width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: [5040, 5040],
-      rows: [
-        new TableRow({ children: [
-          new TableCell({
-            borders, shading: { fill: midHeader, type: ShadingType.CLEAR },
-            margins: { top: 60, bottom: 60, left: 80, right: 80 },
-            children: [new Paragraph({ children: [new TextRun({ text: 'ESTADO DE TOMA', bold: true, color: white, size: 18 })] })],
-          }),
-          new TableCell({
-            borders, shading: { fill: midHeader, type: ShadingType.CLEAR },
-            margins: { top: 60, bottom: 60, left: 80, right: 80 },
-            children: [new Paragraph({ children: [new TextRun({ text: 'OBSERVACIONES / NOTAS DE DIRECCIÓN', bold: true, color: white, size: 18 })] })],
-          }),
-        ]}),
-        new TableRow({ children: [
-          new TableCell({
-            borders, margins: { top: 80, bottom: 200, left: 80, right: 80 },
-            children: estadoText.map(t => new Paragraph({ children: [new TextRun({ text: t, size: 20 })] })),
-          }),
-          new TableCell({
-            borders, margins: { top: 80, bottom: 200, left: 80, right: 80 },
-            children: [new Paragraph({ children: [new TextRun({ text: ficha.observaciones || '', size: 20 })] })],
-          }),
-        ]}),
-      ],
-    }))
-
-    items.push(new Paragraph({ spacing: { after: 240 } }))
+    autoTable(doc, {
+      ...tableStyle,
+      startY: y,
+      head: [[
+        { content: 'ESTADO DE TOMA',                    styles: mStyle },
+        { content: 'OBSERVACIONES / NOTAS DE DIRECCIÓN', styles: mStyle },
+      ]],
+      body: [[
+        { content: estadoLines, styles: { minCellHeight: 18 } },
+        { content: ficha.observaciones || '', styles: { minCellHeight: 18 } },
+      ]],
+      columnStyles: { 0: { cellWidth: contentW / 2 }, 1: { cellWidth: contentW / 2 } },
+    })
+    y = doc.lastAutoTable.finalY + 8
 
     // Firmas
-    items.push(new Table({
-      width: { size: tableWidth, type: WidthType.DXA },
-      columnWidths: [3360, 3360, 3360],
-      rows: [
-        new TableRow({ children: [
-          new TableCell({ borders: noBorders, margins: { top: 60, left: 80, bottom: 60, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '_________________', size: 18 })] })] }),
-          new TableCell({ borders: noBorders, margins: { top: 60, left: 80, bottom: 60, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '_________________', size: 18 })] })] }),
-          new TableCell({ borders: noBorders, margins: { top: 60, left: 80, bottom: 60, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '_________________', size: 18 })] })] }),
-        ]}),
-        new TableRow({ children: [
-          new TableCell({ borders: noBorders, margins: { top: 0, left: 80, bottom: 60, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Continuista', size: 18 })] })] }),
-          new TableCell({ borders: noBorders, margins: { top: 0, left: 80, bottom: 60, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Dirección / DOP', size: 18 })] })] }),
-          new TableCell({ borders: noBorders, margins: { top: 0, left: 80, bottom: 60, right: 80 }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Producción', size: 18 })] })] }),
-        ]}),
-      ],
-    }))
-
-    return items
+    const colW = contentW / 3
+    const lines = ['_________________', '_________________', '_________________']
+    const labels = ['Continuista', 'Dirección / DOP', 'Producción']
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    lines.forEach((_, ci) => {
+      const cx = margin + ci * colW + colW / 2
+      doc.text(lines[ci], cx, y + 4, { align: 'center' })
+      doc.text(labels[ci], cx, y + 9, { align: 'center' })
+    })
   }
 
-  const allItems = fichas.flatMap((ficha, i) => makePageForFicha(ficha, i === 0))
-
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: {
-          size: { width: 12240, height: 15840 },
-          margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 },
-        },
-      },
-      children: allItems,
-    }],
-  })
-
-  const blob = await Packer.toBlob(doc)
-  const fileName = `Continuidad_${(projectName || 'Rodaje').replace(/\s+/g, '_')}_${Date.now()}.docx`
+  const fileName = `Continuidad_${(projectName || 'Rodaje').replace(/\s+/g, '_')}_${Date.now()}.pdf`
+  const blob = doc.output('blob')
 
   // Browser download
   const url = URL.createObjectURL(blob)
@@ -290,12 +203,12 @@ async function exportDocx(header, fichas, projectName, projectId, deptKey) {
   // Upload to R2 and save to mural + dropbox in parallel (best-effort, don't block)
   if (projectId) {
     try {
-      const file = new File([blob], fileName, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+      const file = new File([blob], fileName, { type: 'application/pdf' })
       const { url: r2url } = await uploadFileToR2(file)
 
       const ts = Date.now()
-      const muralEntry = { id: ts, autor: 'Continuidad', ts, adjunto: { tipo: 'archivo', nombre: fileName, url: r2url } }
-      const dropboxEntry = { id: ts + 1, name: fileName, type: file.type, url: r2url, size: blob.size, ts, folder: 'Continuidad' }
+      const muralEntry  = { id: ts,     autor: 'Continuidad', ts, adjunto: { tipo: 'pdf', nombre: fileName, url: r2url } }
+      const dropboxEntry = { id: ts + 1, name: fileName, type: 'application/pdf', url: r2url, size: blob.size, ts, folder: 'Continuidad' }
 
       await Promise.all([
         api.getDeptData(projectId, deptKey, 'mural').then(existing => {
@@ -346,7 +259,7 @@ export default function ContinuidadPlanillaTab({ color, deptKey, projectId, proj
     if (fichas.length === 0) return
     setExporting(true)
     try {
-      await exportDocx(header, fichas, project?.name || project?.title || '', projectId, deptKey)
+      await exportPdf(header, fichas, project?.name || project?.title || '', projectId, deptKey)
     } finally {
       setExporting(false)
     }
