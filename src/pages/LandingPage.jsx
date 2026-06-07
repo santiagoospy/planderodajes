@@ -362,7 +362,7 @@ export default function LandingPage() {
       </div>
 
       {/* Theme picker — paleta de colores */}
-      <div className="flex items-center justify-center pb-8 pt-6 max-w-[480px] mx-auto w-full">
+      <div className="flex flex-col items-center pb-8 pt-6 max-w-[480px] mx-auto w-full gap-3">
         <div style={{ display:'flex', borderRadius:14, overflow:'hidden', boxShadow:'0 4px 20px rgba(0,0,0,0.35)' }}>
           {THEME_KEYS.map((key) => {
             const active = theme === key
@@ -384,7 +384,7 @@ export default function LandingPage() {
         </div>
 
         {/* Hecho en Paraguay */}
-        <div className="flex items-center justify-center gap-1.5 pb-2 pt-1">
+        <div className="flex items-center justify-center gap-1.5">
           <span style={{ fontSize: 16 }}>🇵🇾</span>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'inherit', letterSpacing: '0.02em' }}>Hecho en Paraguay</span>
         </div>

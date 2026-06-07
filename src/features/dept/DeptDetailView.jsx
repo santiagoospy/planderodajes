@@ -22,7 +22,7 @@ import ADComentariosTab  from './tabs/ADComentariosTab'
 import LocacionesTab     from './tabs/LocacionesTab'
 import CastingTab        from './tabs/CastingTab'
 import CateringTab       from './tabs/CateringTab'
-import ContinuidadNotasTab from './tabs/ContinuidadNotasTab'
+import ContinuidadPlanillaTab from './tabs/ContinuidadPlanillaTab'
 import ContinuidadFotosTab from './tabs/ContinuidadFotosTab'
 
 // Tab key → section key mapping (for section filtering)
@@ -31,7 +31,7 @@ const TAB_TO_SECTION = {
   mural:'mural', integrantes:'integrantes', adcomentarios:'info',
   crew_total:'integrantes', rental:'info', elenco:'checklist',
   menu:'integrantes', tarjetas:'checklist', checklist_equipo:'checklist',
-  locaciones:'info', continuidad_notas:'checklist', continuidad_fotos:'mural',
+  locaciones:'info', continuidad_planilla:'checklist', continuidad_fotos:'mural',
   pedidos:'pedidos',
 }
 
@@ -215,7 +215,7 @@ export default function DeptDetailView({
         {tab === 'locaciones'       && <LocacionesTab      {...tabProps}/>}
         {tab === 'elenco'           && <CastingTab         {...tabProps}/>}
         {tab === 'menu'             && <CateringTab        {...tabProps}/>}
-        {tab === 'continuidad_notas'&& <ContinuidadNotasTab {...tabProps}/>}
+        {tab === 'continuidad_planilla' && <ContinuidadPlanillaTab {...tabProps}/>}
         {tab === 'continuidad_fotos'&& <ContinuidadFotosTab {...tabProps}/>}
       </div>
 
