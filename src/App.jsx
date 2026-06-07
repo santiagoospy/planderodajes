@@ -14,6 +14,7 @@ import { LoadingScreen } from './components/ui/LoadingScreen'
 import { UpdateBanner } from './components/ui/UpdateBanner'
 import { setSyncNotifier } from './services/sync'
 import { getProjectIdFromUrl, getProductoraIdFromUrl } from './utils/urls'
+import { Icon } from './components/ui/Icon'
 
 // Route-level code splitting
 const LandingPage     = lazy(() => import('./pages/LandingPage'))
@@ -61,6 +62,35 @@ export default function App() {
     <>
       {content}
       <UpdateBanner />
+      <button
+        onClick={() => window.location.reload()}
+        title="Actualizar"
+        style={{
+          position: 'fixed',
+          bottom: 18,
+          left: 18,
+          zIndex: 9999,
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0,0,0,0.18)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          opacity: 0.45,
+          transition: 'opacity 0.2s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '0.45'}
+        onTouchStart={e => e.currentTarget.style.opacity = '0.85'}
+        onTouchEnd={e => e.currentTarget.style.opacity = '0.45'}
+      >
+        <Icon name="RotateCw" size={15} color="#fff" />
+      </button>
     </>
   )
 }
