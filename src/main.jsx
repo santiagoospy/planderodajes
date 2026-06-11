@@ -13,6 +13,17 @@ window.compressImageStrong = compressImageStrong
 // Make database functions globally available for Scouting and Messaging views
 window._fb = db
 
+// Safety net: si un deploy nuevo borró el chunk que esta pestaña (vieja) intenta
+// importar, Vite dispara 'vite:preloadError'. Recargamos UNA vez para traer el
+// index.html fresco con los hashes nuevos. Sin esto → pantalla en blanco.
+window.addEventListener('vite:preloadError', event => {
+  event.preventDefault()
+  if (!sessionStorage.getItem('pdr-preload-reloaded')) {
+    sessionStorage.setItem('pdr-preload-reloaded', '1')
+    window.location.reload()
+  }
+})
+
 // Register Service Worker for offline support + update detection
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -34,3 +45,7 @@ createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 )
+
+// La app montó bien → permitir un nuevo auto-reload si un futuro deploy
+// (en esta misma sesión) vuelve a invalidar chunks.
+sessionStorage.removeItem('pdr-preload-reloaded')
