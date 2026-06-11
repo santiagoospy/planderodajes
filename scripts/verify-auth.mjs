@@ -69,8 +69,8 @@ try {
   check(claimBad.status === 403, `reclamo con contraseña INCORRECTA → ${claimBad.status} (debe 403)`)
   const claimOk = await call('/claim-productora', userA.token, { method: 'POST', body: JSON.stringify({ productoraId: PROD, password: PWD }) })
   check(claimOk.status === 200 && claimOk.body?.role === 'owner', `reclamo con contraseña correcta → ${claimOk.status} role=${claimOk.body?.role}`)
-  const claimB = await call('/claim-productora', userB.token, { method: 'POST', body: JSON.stringify({ productoraId: PROD, password: PWD }) })
-  check(claimB.status === 409, `userB intenta reclamar lo ya reclamado → ${claimB.status} (debe 409)`)
+  const claimBwrong = await call('/claim-productora', userB.token, { method: 'POST', body: JSON.stringify({ productoraId: PROD, password: 'mal' }) })
+  check(claimBwrong.status === 403, `userB con contraseña incorrecta → ${claimBwrong.status} (debe 403, queda afuera)`)
 
   console.log('\n— 3. Crear un proyecto en esa productora (owner puede) —')
   const proj = 'proj-verif-' + Date.now()
@@ -91,13 +91,13 @@ try {
   const seesB = (listB.body?.projects || []).some(p => p.id === proj)
   check(listB.status === 200 && !seesB, `userB NO ve el proyecto ajeno en su lista → ${!seesB}`)
 
-  console.log('\n— 6. Invitar a userB y que acceda —')
-  const inv = await call('/invite-member', userA.token, { method: 'POST', body: JSON.stringify({ productoraId: PROD, email: (await admin.auth.admin.getUserById(userB.id)).data.user.email }) })
-  check(inv.status === 200, `owner invita a userB → ${inv.status}`)
-  const acc = await call('/accept-invites', userB.token, { method: 'POST' })
-  check(acc.status === 200 && (acc.body?.joined || []).includes(PROD), `userB acepta invitación → joined ${JSON.stringify(acc.body?.joined)}`)
+  console.log('\n— 6. userB entra con la MISMA contraseña → queda MIEMBRO —')
+  const joinB = await call('/claim-productora', userB.token, { method: 'POST', body: JSON.stringify({ productoraId: PROD, password: PWD }) })
+  check(joinB.status === 200 && joinB.body?.role === 'member', `userB entra con contraseña correcta → ${joinB.status} role=${joinB.body?.role} (debe member)`)
   const readB2 = await call(`/data?store=projects&key=${proj}`, userB.token)
   check(readB2.status === 200, `userB ahora SÍ lee el proyecto (ya es miembro) → ${readB2.status}`)
+  const reJoinA = await call('/claim-productora', userA.token, { method: 'POST', body: JSON.stringify({ productoraId: PROD, password: PWD }) })
+  check(reJoinA.status === 200 && reJoinA.body?.role === 'owner', `userA re-entra → sigue owner (idempotente) → role=${reJoinA.body?.role}`)
 
   // limpiar blobs de prueba
   await call('/data', userA.token, { method: 'POST', body: JSON.stringify({ store: 'projects', key: proj, delete: true }) })

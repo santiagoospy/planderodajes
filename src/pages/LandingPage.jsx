@@ -15,7 +15,7 @@ import { memberships } from '../services/memberships'
 import { THEME_KEYS, getTheme } from '../constants/themes'
 
 const LANDING_ACTIONS = [
-  { key: 'enter',       icon: 'LogIn',        label: 'Reclamar productora',    desc: 'Conectá tu productora con tu cuenta' },
+  { key: 'enter',       icon: 'LogIn',        label: 'Entrar a tu productora', desc: 'Con el código y la contraseña de tu productora' },
   { key: 'create',      icon: 'Plus',         label: 'Crear espacio de trabajo', desc: 'Freelance o productora' },
   { key: 'marketplace', icon: 'ShoppingCart', label: 'Marketplace',            desc: 'Equipos, props y servicios' },
   { key: 'demo',        icon: 'Play',         label: 'Ver demo',               desc: 'Explorar el Proyecto Cero' },
@@ -370,8 +370,8 @@ export default function LandingPage() {
               <Icon name="ChevronLeft" size={16} color="rgba(255,255,255,0.6)" />
               Volver
             </button>
-            <div className="text-xl font-bold text-white mb-2">Reclamar tu productora</div>
-            <div className="text-sm text-white/50 mb-6">Conectá una productora existente a tu cuenta con su código y contraseña. Quedás como dueño.</div>
+            <div className="text-xl font-bold text-white mb-2">Entrar a tu productora</div>
+            <div className="text-sm text-white/50 mb-6">Conectá tu productora a tu cuenta con su código y contraseña (la de siempre). El primero del equipo queda como dueño; el resto, como miembros.</div>
             <form onSubmit={handleEnter}>
               <input
                 value={codigo}

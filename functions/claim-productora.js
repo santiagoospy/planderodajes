@@ -40,29 +40,37 @@ export default async (req) => {
     if (!okPwd) return error('Contraseña incorrecta', 403)
 
     const sb = sbAdmin()
+    const name = prod.name || productoraId
 
-    // 3. ¿Ya tiene dueño?
+    // 3. ¿Ya soy miembro? Idempotente: devuelvo mi rol actual.
+    const { data: mine } = await sb
+      .from('memberships')
+      .select('role')
+      .eq('productora_id', productoraId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (mine) return json({ ok: true, productoraId, role: mine.role, name })
+
+    // 4. ¿Ya hay dueño? El PRIMERO que entra con la contraseña queda owner; el
+    //    resto (con la misma contraseña) quedan member. Calza con el modelo de
+    //    "contraseña compartida del equipo".
     const { data: owner } = await sb
       .from('memberships')
       .select('user_id')
       .eq('productora_id', productoraId)
       .eq('role', 'owner')
       .maybeSingle()
+    const role = owner ? 'member' : 'owner'
 
-    if (owner && owner.user_id !== user.id) {
-      return error('Esta productora ya fue reclamada por otra persona.', 409)
-    }
-
-    // 4. Crear (o confirmar) la membresía owner. Idempotente.
     const { error: upErr } = await sb
       .from('memberships')
       .upsert(
-        { user_id: user.id, productora_id: productoraId, role: 'owner' },
+        { user_id: user.id, productora_id: productoraId, role },
         { onConflict: 'user_id,productora_id' }
       )
     if (upErr) throw new Error(upErr.message)
 
-    return json({ ok: true, productoraId, role: 'owner', name: prod.name || productoraId })
+    return json({ ok: true, productoraId, role, name })
   } catch (err) {
     console.error('[claim-productora]', err.message)
     return error(err.message || 'Error interno', 500)
