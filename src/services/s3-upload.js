@@ -4,13 +4,16 @@
  * Image compression lives in utils/image.js (single source of truth).
  */
 export { compressImage, compressImageStrong } from '../utils/image'
-
-const API_KEY = () => import.meta.env.VITE_API_SECRET || ''
+import { Auth } from './auth'
 
 export async function uploadFileToR2(file) {
+  const token = await Auth.getToken()
   const res = await fetch('/.netlify/functions/r2-presign', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY() },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({
       action: 'upload',
       fileName: file.name,

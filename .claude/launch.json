@@ -8,6 +8,12 @@
       "port": 5173
     },
     {
+      "name": "netlify",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["netlify", "dev"],
+      "port": 8888
+    },
+    {
       "name": "mockup-palette",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", ".", "-p", "5174", "--cors", "-c-1"],

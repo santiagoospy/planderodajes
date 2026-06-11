@@ -3,12 +3,17 @@
  * Falls back silently in local dev (no functions running).
  */
 
+import { Auth } from './auth'
+
 const BASE = '/.netlify/functions'
-const API_KEY = import.meta.env.VITE_API_SECRET || ''
 
 async function apiFetch(path, options = {}) {
+  const token = await Auth.getToken()
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...options,
   })
   if (!res.ok) {

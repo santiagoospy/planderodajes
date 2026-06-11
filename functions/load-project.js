@@ -1,8 +1,15 @@
 import { getStore } from "@netlify/blobs";
+import { getUser, isAdmin } from "./_supabase.js";
 
 export default async (req) => {
   if (req.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
+  }
+
+  // Endpoint legacy sin modelo de membresía: restringido a admin.
+  const user = await getUser(req);
+  if (!user || !isAdmin(user)) {
+    return new Response(JSON.stringify({ error: "Solo admin" }), { status: 403, headers: { "Content-Type": "application/json" } });
   }
 
   try {

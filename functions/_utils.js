@@ -2,7 +2,7 @@
  * Shared utilities for all Netlify Functions.
  */
 
-const ALLOWED_HEADERS = 'Content-Type, X-API-Key'
+const ALLOWED_HEADERS = 'Content-Type, Authorization'
 
 /** Build a standard JSON response */
 export function json(data, status = 200) {
@@ -47,17 +47,4 @@ export function handleOptions() {
 export function requireFields(body, fields) {
   const missing = fields.filter(f => body[f] == null || body[f] === '')
   if (missing.length) throw new Error(`Missing required fields: ${missing.join(', ')}`)
-}
-
-/**
- * Validate X-API-Key header against API_SECRET env var.
- * Returns a 401 Response if invalid, or null if OK.
- * Skip validation if API_SECRET is not configured (dev mode).
- */
-export function requireApiKey(req) {
-  const secret = process.env.API_SECRET
-  if (!secret) return null // no configurado → dev mode, dejar pasar
-  const key = req.headers.get('X-API-Key')
-  if (key !== secret) return error('Unauthorized', 401)
-  return null
 }
