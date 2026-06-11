@@ -1,1 +1,0 @@
-import{r as t}from"./react-vendor-DhEz86-d.js";import{e as l}from"./index-6KHnE1fg.js";function x(s,u,a,e=[]){const[D,f]=t.useState(null),[m,o]=t.useState(!1);t.useEffect(()=>!s||!u?void 0:l.onDeptData(s,u,a,r=>{f(r??e),o(!0)}),[s,u,a]);const b=t.useCallback(n=>{f(n),l.saveDeptData(s,u,a,n)},[s,u,a]);return{items:D??e,ready:m,save:b}}export{x as u};

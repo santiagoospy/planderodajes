@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
     outDir: 'dist',
-    emptyOutDir: false,
+    // true: limpia dist/ en cada build para no acumular chunks viejos (que además
+    // pueden contener secretos de bundles previos). public/ + index.html regeneran
+    // todo el contenido top-level, así que es seguro.
+    emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 800,
     rollupOptions: {
@@ -21,6 +24,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // En Windows el watcher de Vite choca con archivos bloqueados de .netlify
+    // (EBUSY) al correr `netlify dev`. Ignoramos esas carpetas generadas.
+    watch: {
+      ignored: ['**/.netlify/**', '**/dist/**'],
+    },
     proxy: {
       '/.netlify/functions': {
         target: 'http://localhost:8888',

@@ -10,23 +10,28 @@ import { MarketplaceView } from '../features/marketplace/MarketplaceView'
 import { getPinnedProjects, unpinProject, productoraSlug, buildProjectUrl, buildProductoraUrl } from '../utils/urls'
 import { SEED_PROJECT } from '../constants/seed'
 import { api } from '../services/api'
+import { Auth } from '../services/auth'
+import { memberships } from '../services/memberships'
 import { THEME_KEYS, getTheme } from '../constants/themes'
 
 const LANDING_ACTIONS = [
-  { key: 'enter',       icon: 'LogIn',        label: 'Ingresar',               desc: 'Accedé a tu espacio existente' },
+  { key: 'enter',       icon: 'LogIn',        label: 'Entrar a tu productora', desc: 'Con el código y la contraseña de tu productora' },
   { key: 'create',      icon: 'Plus',         label: 'Crear espacio de trabajo', desc: 'Freelance o productora' },
   { key: 'marketplace', icon: 'ShoppingCart', label: 'Marketplace',            desc: 'Equipos, props y servicios' },
   { key: 'demo',        icon: 'Play',         label: 'Ver demo',               desc: 'Explorar el Proyecto Cero' },
 ]
 
-function AdminPinPrompt({ onCorrect, onBack }) {
-  const [pin, setPin] = useState('')
-  const [error, setError] = useState('')
+// Gate de admin por ROL real (ADMIN_EMAILS en el backend), no por PIN.
+function AdminGate({ onCorrect, onBack }) {
+  const [estado, setEstado] = useState('checking') // 'checking' | 'denied'
 
-  const check = () => {
-    if (pin === (import.meta.env.VITE_ADMIN_PIN || '4862')) { onCorrect() }
-    else { setError('PIN incorrecto'); setPin('') }
-  }
+  useEffect(() => {
+    let alive = true
+    memberships.whoami()
+      .then(r => { if (alive) (r?.isAdmin ? onCorrect() : setEstado('denied')) })
+      .catch(() => { if (alive) setEstado('denied') })
+    return () => { alive = false }
+  }, [])
 
   return (
     <div className="px-5 slide-up">
@@ -35,26 +40,9 @@ function AdminPinPrompt({ onCorrect, onBack }) {
         Volver
       </button>
       <div className="text-xl font-bold text-white mb-2">Admin</div>
-      <div className="text-sm text-white/50 mb-6">Ingresá el PIN para continuar</div>
-      <input
-        type="password"
-        value={pin}
-        onChange={e => { setPin(e.target.value); setError('') }}
-        onKeyDown={e => e.key === 'Enter' && check()}
-        placeholder="PIN"
-        autoFocus
-        className="w-full rounded-[14px] px-4 py-3.5 text-base outline-none mb-3 font-[Inter] text-center tracking-widest"
-        style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
-      />
-      {error && <div className="text-red-300 text-sm text-center mb-3">{error}</div>}
-      <button
-        onClick={check}
-        disabled={!pin}
-        className="tap w-full py-3.5 rounded-[14px] text-base font-bold text-white border-0 cursor-pointer disabled:opacity-40"
-        style={{ background: 'rgba(255,255,255,0.2)' }}
-      >
-        Ingresar
-      </button>
+      {estado === 'checking'
+        ? <div className="text-sm text-white/50">Verificando permisos…</div>
+        : <div className="text-sm text-red-300">No tenés permisos de administrador.</div>}
     </div>
   )
 }
@@ -193,10 +181,36 @@ export default function LandingPage() {
   const [theme, setTheme] = useState(() => localStorage.getItem('pdr:landing-theme') || 'celeste')
   const [modo, setModo]   = useState(null)  // null | 'enter' | 'create' | 'marketplace' | 'admin'
   const [codigo, setCodigo] = useState('')
+  const [claimPwd, setClaimPwd] = useState('')
+  const [claimErr, setClaimErr] = useState('')
+  const [claiming, setClaiming] = useState(false)
   const [pinnedList, setPinnedList] = useState(() => getPinnedProjects())
   const [adminUnlocked, setAdminUnlocked] = useState(false)
+  const [mis, setMis] = useState([])        // mis productoras (membresías) [{ productora_id, role, name }]
+  const [userEmail, setUserEmail] = useState('')
 
   const grad = getTheme(theme).grad
+
+  // Cargar mis productoras (membresías) + email del usuario logueado.
+  const loadMine = async () => {
+    try {
+      const rows = await memberships.mine()
+      // Traer el nombre de cada productora (best-effort).
+      const withNames = await Promise.all(rows.map(async (r) => {
+        let name = r.productora_id
+        try { const p = await api.getProductora(r.productora_id); if (p?.name) name = p.name } catch {}
+        return { ...r, name }
+      }))
+      setMis(withNames)
+    } catch { /* sin sesión o tablas aún no creadas */ }
+  }
+
+  useEffect(() => {
+    Auth.getUser().then(u => { setUserEmail(u?.email || ''); if (u) loadMine() })
+    // Recargar cuando la sesión queda lista o cambia (evita la carrera al primer load).
+    const unsub = Auth.onChange(u => { setUserEmail(u?.email || ''); if (u) loadMine() })
+    return () => unsub()
+  }, [])
 
   const changeTheme = (key) => {
     setTheme(key)
@@ -211,11 +225,18 @@ export default function LandingPage() {
     setModo(key)
   }
 
-  const handleEnter = (e) => {
+  const handleEnter = async (e) => {
     e?.preventDefault()
     const id = productoraSlug(codigo)
-    if (!id) return
-    window.location.href = `/?org=${id}`
+    if (!id || !claimPwd) return
+    setClaiming(true); setClaimErr('')
+    try {
+      await memberships.claim(id, claimPwd)
+      window.location.href = `/?org=${id}`
+    } catch (err) {
+      setClaimErr(err?.message || 'No se pudo reclamar. Verificá el código y la contraseña.')
+      setClaiming(false)
+    }
   }
 
   const handleOpenPinned = (proj) => {
@@ -242,6 +263,35 @@ export default function LandingPage() {
           </div>
           <div className="text-[15px] text-white/50 mt-2">Organizá tus producciones</div>
         </div>
+
+        {/* Mis productoras (membresías) */}
+        {!modo && mis.length > 0 && (
+          <div className="px-5 pb-2">
+            <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-white/50 mb-3 uppercase">
+              <Icon name="Building2" size={11} color="rgba(255,255,255,0.5)" />
+              Mis productoras
+            </div>
+            <div className="flex flex-col gap-2 mb-5">
+              {mis.map(m => (
+                <button
+                  key={m.productora_id}
+                  onClick={() => window.location.href = buildProductoraUrl(m.productora_id)}
+                  className="tap flex items-center gap-4 px-4 py-3.5 rounded-[14px] text-left w-full border-0 cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.12)' }}
+                >
+                  <div className="flex items-center justify-center flex-shrink-0 rounded-[11px]" style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.18)' }}>
+                    <Icon name="Building2" size={18} color="rgba(255,255,255,0.9)" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[15px] font-bold text-white truncate">{m.name}</div>
+                    <div className="text-xs text-white/40">{m.role === 'owner' ? 'Dueño' : 'Miembro'}</div>
+                  </div>
+                  <Icon name="ChevronRight" size={18} color="rgba(255,255,255,0.3)" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Pinned projects */}
         {pinnedList.length > 0 && (
@@ -320,23 +370,33 @@ export default function LandingPage() {
               <Icon name="ChevronLeft" size={16} color="rgba(255,255,255,0.6)" />
               Volver
             </button>
-            <div className="text-xl font-bold text-white mb-6">Ingresar a tu espacio</div>
+            <div className="text-xl font-bold text-white mb-2">Entrar a tu productora</div>
+            <div className="text-sm text-white/50 mb-6">Conectá tu productora a tu cuenta con su código y contraseña (la de siempre). El primero del equipo queda como dueño; el resto, como miembros.</div>
             <form onSubmit={handleEnter}>
               <input
                 value={codigo}
-                onChange={e => setCodigo(e.target.value)}
+                onChange={e => { setCodigo(e.target.value); setClaimErr('') }}
                 placeholder="Código de tu productora..."
                 autoFocus
+                className="w-full rounded-[14px] px-4 py-3.5 text-base outline-none mb-3 font-[Inter]"
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+              />
+              <input
+                type="password"
+                value={claimPwd}
+                onChange={e => { setClaimPwd(e.target.value); setClaimErr('') }}
+                placeholder="Contraseña de la productora"
                 className="w-full rounded-[14px] px-4 py-3.5 text-base outline-none mb-4 font-[Inter]"
                 style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
               />
+              {claimErr && <div className="text-red-200 text-sm mb-3">{claimErr}</div>}
               <button
                 type="submit"
-                disabled={!codigo.trim()}
+                disabled={!codigo.trim() || !claimPwd || claiming}
                 className="tap w-full py-3.5 rounded-[14px] text-base font-bold text-white border-0 cursor-pointer disabled:opacity-40"
                 style={{ background: 'rgba(255,255,255,0.2)' }}
               >
-                Ingresar
+                {claiming ? 'Reclamando…' : 'Reclamar'}
               </button>
             </form>
           </div>
@@ -354,12 +414,27 @@ export default function LandingPage() {
 
         {/* Admin mode */}
         {modo === 'admin' && !adminUnlocked && (
-          <AdminPinPrompt onCorrect={() => setAdminUnlocked(true)} onBack={() => setModo(null)} />
+          <AdminGate onCorrect={() => setAdminUnlocked(true)} onBack={() => setModo(null)} />
         )}
         {modo === 'admin' && adminUnlocked && (
           <AdminView onBack={() => { setModo(null); setAdminUnlocked(false) }} />
         )}
       </div>
+
+      {/* Usuario logueado + salir */}
+      {userEmail && !modo && (
+        <div className="flex items-center justify-center gap-2 pt-4 max-w-[480px] mx-auto w-full">
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{userEmail}</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+          <button
+            onClick={async () => { await Auth.signOut() }}
+            className="bg-transparent border-0 cursor-pointer"
+            style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: 'inherit', fontWeight: 600 }}
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      )}
 
       {/* Theme picker — paleta de colores */}
       <div className="flex flex-col items-center pb-8 pt-6 max-w-[480px] mx-auto w-full gap-3">

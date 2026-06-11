@@ -6,6 +6,12 @@
   directory    = "functions"
   node_bundler = "esbuild"
 
+# ── Security headers + CSP (Capa 3) ─────────────────────────────────────────
+# Se emiten TODOS desde netlify/edge-functions/csp.js (no acá): con edge functions
+# el pipeline de [[headers]] de netlify.toml no llega a la salida, así que los
+# headers de seguridad y el CSP dinámico (estricto en prod / relajado en localhost)
+# se setean en el edge function, que sí funciona de forma confiable.
+
 [[redirects]]
   from   = "/*"
   to     = "/index.html"

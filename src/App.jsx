@@ -15,6 +15,7 @@ import { UpdateBanner } from './components/ui/UpdateBanner'
 import { setSyncNotifier } from './services/sync'
 import { getProjectIdFromUrl, getProductoraIdFromUrl } from './utils/urls'
 import { Icon } from './components/ui/Icon'
+import AuthGate from './features/auth/AuthGate'
 
 // Route-level code splitting
 const LandingPage     = lazy(() => import('./pages/LandingPage'))
@@ -59,7 +60,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <AuthGate>
       {content}
       <UpdateBanner />
       <button
@@ -91,6 +92,6 @@ export default function App() {
       >
         <Icon name="RotateCw" size={15} color="#fff" />
       </button>
-    </>
+    </AuthGate>
   )
 }

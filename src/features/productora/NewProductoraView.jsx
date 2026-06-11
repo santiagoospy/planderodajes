@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { storage } from '../../services/storage';
 import { hashPin } from '../../utils/hash';
+import { memberships } from '../../services/memberships';
 import { THEMES as WORKSPACE_THEMES } from '../../constants/themes';
 
 const productoraSlug = (text) => {
@@ -53,6 +54,10 @@ export const NewProductoraView = ({ onCreated, onCancel }) => {
             await api.saveProductora(slug, prod);
             storage.setProductora(slug, prod);
             try { localStorage.setItem(`prod_pwd_${slug}`, passwordHash); } catch { }
+            // El creador queda como dueño (membresía). Reusa el reclamo con la
+            // contraseña recién definida. Best-effort: si el backend aún no está
+            // listo no bloquea la creación.
+            try { await memberships.claim(slug, password); } catch (e) { console.warn('[productora] claim owner falló:', e?.message); }
             onCreated(prod);
         } catch (e) {
             setError('Error de conexión: ' + (e.message || ''));
