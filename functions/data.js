@@ -145,14 +145,19 @@ async function authorize({ store, key, isList, isWrite, shouldDelete, value, use
     return await need(proj.productoraId)
   }
 
-  // ── dept:<projectId>:<deptKey> ──
-  if (store.startsWith('dept:')) {
-    const projectId = projectIdOfDeptStore(store)
+  // ── stores por proyecto: dept:<projectId>:<deptKey>  y  ppm:<projectId> ──
+  if (store.startsWith('dept:') || store.startsWith('ppm:')) {
+    const projectId = store.startsWith('dept:')
+      ? projectIdOfDeptStore(store)
+      : store.slice('ppm:'.length)
     if (projectId === DEMO_PROJECT_ID && !isWrite) return null
     const proj = await getStore('projects').get(projectId, { type: 'json' }).catch(() => null)
     if (!proj) return isWrite ? error('Proyecto inexistente', 404) : null
     return await need(proj.productoraId)
   }
+
+  // ── marketplace: tablón público; cualquier usuario logueado puede leer/escribir ──
+  if (store === 'marketplace') return null
 
   // store desconocido → denegar por defecto (seguro)
   return error('Store no permitido', 403)
