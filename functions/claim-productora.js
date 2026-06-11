@@ -27,13 +27,17 @@ export default async (req) => {
     const prod = await getStore('productoras').get(productoraId, { type: 'json' })
     if (!prod) return error('No existe una productora con ese código', 404)
 
-    // 2. Verificar la contraseña contra el hash guardado.
-    if (!prod.passwordHash) {
+    // 2. Verificar la contraseña. Productoras nuevas guardan `passwordHash`
+    //    (SHA-256); las viejas guardan `password` en texto plano (compat).
+    let okPwd
+    if (prod.passwordHash) {
+      okPwd = sha256hex(body.password) === prod.passwordHash
+    } else if (prod.password != null && prod.password !== '') {
+      okPwd = String(body.password) === String(prod.password)
+    } else {
       return error('Esta productora no tiene contraseña. Pedile al admin que te la asigne.', 409)
     }
-    if (sha256hex(body.password) !== prod.passwordHash) {
-      return error('Contraseña incorrecta', 403)
-    }
+    if (!okPwd) return error('Contraseña incorrecta', 403)
 
     const sb = sbAdmin()
 
