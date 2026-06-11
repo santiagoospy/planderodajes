@@ -9,7 +9,9 @@
 const REPORT_ONLY = true
 
 const SUPABASE = 'https://edkustriidxptxdkivpv.supabase.co'
-const R2 = 'https://b55ca17d3e570f6641f664f1fdc1fc58.r2.cloudflarestorage.com'
+// Comodín: las subidas usan virtual-hosted style (bucket como subdominio),
+// p.ej. planderodajes.<account>.r2.cloudflarestorage.com
+const R2 = 'https://*.r2.cloudflarestorage.com'
 
 const ORIGINS = {
   script:  ['https://cdnjs.cloudflare.com', 'https://unpkg.com', 'https://accounts.google.com'], // xlsx, suncalc, Google login
