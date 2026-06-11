@@ -10,6 +10,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'node:crypto'
+import ws from 'ws'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
@@ -23,6 +24,9 @@ export function sbAdmin() {
   if (!_admin) {
     _admin = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
+      // No usamos realtime, pero supabase-js construye el cliente igual y exige
+      // WebSocket nativo (ausente en Node 20 de Netlify). Le damos `ws`.
+      realtime: { transport: ws },
     })
   }
   return _admin

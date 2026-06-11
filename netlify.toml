@@ -2,12 +2,6 @@
   command = "echo pre-built"
   publish = "dist"
 
-# Node 22 para el runtime de las Netlify Functions: @supabase/supabase-js requiere
-# WebSocket nativo, que Node 20 no tiene (las functions tiraban 502). No afecta el
-# Node local (esto es solo el entorno de Netlify).
-[build.environment]
-  NODE_VERSION = "22"
-
 [functions]
   directory    = "functions"
   node_bundler = "esbuild"
