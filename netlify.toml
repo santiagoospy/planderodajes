@@ -6,19 +6,11 @@
   directory    = "functions"
   node_bundler = "esbuild"
 
-# ── Security headers (Capa 3) ───────────────────────────────────────────────
-# El CSP NO va acá: se emite dinámicamente desde netlify/edge-functions/csp.js
-# (estricto en prod, relajado en localhost para el HMR de Vite).
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    # La app usa cámara (continuidad/claqueta/visor) y geolocalización (sol/clima):
-    # se permiten para el propio origen; el resto se bloquea.
-    Permissions-Policy = "camera=(self), geolocation=(self), gyroscope=(self), accelerometer=(self), microphone=(), payment=(), usb=()"
+# ── Security headers + CSP (Capa 3) ─────────────────────────────────────────
+# Se emiten TODOS desde netlify/edge-functions/csp.js (no acá): con edge functions
+# el pipeline de [[headers]] de netlify.toml no llega a la salida, así que los
+# headers de seguridad y el CSP dinámico (estricto en prod / relajado en localhost)
+# se setean en el edge function, que sí funciona de forma confiable.
 
 [[redirects]]
   from   = "/*"

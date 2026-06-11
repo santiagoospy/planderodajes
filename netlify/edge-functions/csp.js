@@ -54,6 +54,20 @@ function buildCsp(isDev) {
   return directives.join('; ')
 }
 
+// Headers de seguridad para el documento HTML. Se setean acá (no en netlify.toml)
+// porque con edge functions el pipeline de headers de netlify.toml no llega a la
+// salida. El edge function sí setea headers de forma confiable.
+const SECURITY_HEADERS = {
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  // La app usa cámara (continuidad/claqueta/visor) y geolocalización (sol/clima):
+  // se permiten para el propio origen; el resto se bloquea.
+  'Permissions-Policy':
+    'camera=(self), geolocation=(self), gyroscope=(self), accelerometer=(self), microphone=(), payment=(), usb=()',
+}
+
 export default async (request, context) => {
   const response = await context.next()
   // El CSP solo gobierna documentos HTML; no tocar assets ni JSON.
@@ -61,6 +75,8 @@ export default async (request, context) => {
 
   const host = new URL(request.url).hostname
   const isDev = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')
+
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) response.headers.set(k, v)
 
   const header = REPORT_ONLY ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy'
   response.headers.set(header, buildCsp(isDev))
